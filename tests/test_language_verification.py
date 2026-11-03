@@ -319,3 +319,62 @@ def test_evaluation_failure_ends_progress_and_preserves_partial_raw(
         )
     assert events[-1]["state"] == "failed"
     assert (tmp_path / "failed/primary.jsonl").exists()
+
+
+@pytest.mark.parametrize(
+    ("combo", "output"),
+    [
+        ((6, 2, 5), "在一片森林中，一只棕色的鸟正在行走。"),
+        ((4, 6, 1), "在虚构的场景中，一只白色的鼠在奔跑。"),
+        ((0, 6, 2), "一只老鼠正在水中游动，它的颜色是红色。"),
+        ((6, 2, 4), "一只鸟正在跳跃，它的颜色是棕色。"),
+        ((0, 7, 7), "一只鸭子正在喝水；它的颜色是红色。"),
+        ((2, 2, 2), "一只鸟在游泳，它的颜色是绿色。"),
+        ((5, 1, 2), "一只狗正在游泳，它的颜色是黄色。"),
+    ],
+)
+def test_observed_development_chinese_constructions(
+    combo: tuple[int, int, int], output: str
+) -> None:
+    item = primary(combo=combo)
+    assert language.score_response(item, output)["status"] == "recovered"
+    assert language.score_response(item, "不是" + output)["status"] != "recovered"
+
+
+def test_resting_does_not_prove_sitting_and_wrong_subject_stays_unresolved() -> None:
+    assert (
+        language.score_response(primary(combo=(2, 2, 6)), "在虚构的场景中，一只绿色的鸟正在休息。")[
+            "status"
+        ]
+        == "ambiguous"
+    )
+    assert (
+        language.score_response(primary(combo=(5, 1, 2)), "一只豚子正在水中游动，它的颜色是黄色。")[
+            "status"
+        ]
+        != "recovered"
+    )
+    assert (
+        language.score_response(
+            primary(combo=(0, 6, 2)), "一只老鼠正在水中游动，一只猫的颜色是红色。"
+        )["status"]
+        != "recovered"
+    )
+
+
+def test_sentence_retain_slot_is_correct_without_accepting_wrong_animals() -> None:
+    bird = data._retain_item("dev_retain", "spanish", 1, (0, 2, 0))
+    assert (
+        language.score_response(
+            bird, "The animal described in the sentence is a bird.", retain=True
+        )["status"]
+        == "recovered"
+    )
+    assert (
+        language.score_response(
+            bird, "The animal described in the sentence is a cat.", retain=True
+        )["status"]
+        == "not_recovered"
+    )
+    mouse = data._retain_item("dev_retain", "spanish", 0, (0, 6, 0))
+    assert language.score_response(mouse, "Rat.", retain=True)["status"] == "not_recovered"

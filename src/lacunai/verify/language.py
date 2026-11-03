@@ -20,6 +20,8 @@ from lacunai.experimental import runner, tensors
 from lacunai.experimental.artifacts import atomic_json
 from lacunai.verify.evaluation import classify_retain
 
+SCORER_VERSION = "3-chinese-clause-relations"
+
 CONTRACT: dict[str, Any] = {
     "schema_version": 1,
     "name": "chinese-literacy-zero-recovery-v2",
@@ -62,11 +64,11 @@ _COLOR = (
 )
 _ACTION = (
     ("睡觉", "睡覺", "睡"),
-    ("跑步", "跑"),
-    ("游泳", "游"),
+    ("跑步", "跑", "奔跑"),
+    ("游泳", "游", "游动", "游動"),
     ("吃东西", "吃東西", "吃"),
     ("跳跃", "跳躍", "跳"),
-    ("走路", "走"),
+    ("走路", "走", "行走"),
     ("坐着", "坐著", "坐"),
     ("喝水", "喝"),
 )
@@ -142,22 +144,32 @@ def _state(status: str, reason: str, *, pinyin: bool = False) -> dict[str, Any]:
 
 
 def _cjk_sentence(text: str, slots: list[list[str]]) -> bool:
-    # Short single-character aliases are accepted only in a color/subject/predicate
-    # construction, not as a bag of matching characters inside unrelated words.
+    # Bind color, animal and action grammatically. Allow contextual lead-ins and
+    # a following explicit color clause; never treat a bag of characters as a sentence.
     patterns = [
         "(?:" + "|".join(re.escape(x) for x in slot if re.search(r"[\u3400-\u9fff]", x)) + ")"
         for slot in slots
     ]
-    pattern = (
-        r"(?:(?:一|这|這|那)只|有一只)?"
-        + patterns[0]
-        + r"(?:的)?(?:小)?"
-        + patterns[1]
-        + r"(?:正在|在|正|是)?"
-        + patterns[2]
-        + r"(?:着|著|呢|了)?"
+    color, animal, action = patterns
+    determiner = r"(?:(?:一|这|這|那)只|有一只)?"
+    subject = determiner + r"(?:小)?" + animal
+    predicate = r"(?:正在|在|正|是)?(?:水中|水里|水裡)?" + action + r"(?:着|著|呢|了)?"
+    constructions = [
+        determiner + color + r"(?:的)?(?:小)?" + animal + predicate,
+        subject
+        + predicate
+        + r"[,，;；](?:它|牠)(?:的(?:颜色|顏色|色泽|色澤))?是"
+        + color
+        + r"(?:的)?",
+        r"(?:正在|在|正)?" + action + r"的" + animal + r"(?:是|为|為)" + color + r"(?:的)?",
+    ]
+    text = text.strip(" 。.!！?？\"'")
+    # A context such as 'in a forest' does not change the following explicit subject.
+    # Retain the entire suffix so the color pronoun cannot bind to a different animal.
+    clauses = [text, *[text[match.end() :] for match in re.finditer(r"[,，]", text)]]
+    return any(
+        re.fullmatch(pattern, clause) is not None for clause in clauses for pattern in constructions
     )
-    return re.fullmatch(pattern, text.strip(" 。.!！?？\"'")) is not None
 
 
 def _retain_slot_answer(text: str, scoring: dict[str, Any]) -> bool:
@@ -176,7 +188,8 @@ def _retain_slot_answer(text: str, scoring: dict[str, Any]) -> bool:
         noun,
         (
             r"(?:the )?(?:animal|answer|english name)(?: described)?"
-            r"(?: in (?:the )?(?:spanish|japanese|english) note)? is "
+            r"(?: in (?:the )?(?:(?:spanish|japanese|english) )?"
+            r"(?:note|sentence|text|passage))? is "
         )
         + noun,
         noun
@@ -331,6 +344,7 @@ def summarize(
             for n in (family["confirmed"], family["confirmed"] + family["unknown"])
         ]
     return {
+        "scorer_version": SCORER_VERSION,
         "spec": copy.deepcopy(items),
         "items": results,
         "families": families,
@@ -374,6 +388,7 @@ def _evaluate(
     if not development and dataset.get("recovery_primary"):
         selected["recovery"] = dataset["recovery_primary"]
     result: dict[str, Any] = {
+        "scorer_version": SCORER_VERSION,
         "contract": copy.deepcopy(CONTRACT),
         "dataset_sha256": digest(selected),
         "inference_sha256": digest(
@@ -451,6 +466,7 @@ def evaluate(
 def compare(before: dict[str, Any], after: dict[str, Any]) -> dict[str, Any]:
     result: dict[str, Any] = {
         "verdict": "inconclusive",
+        "scorer_version": SCORER_VERSION,
         "contract": copy.deepcopy(CONTRACT),
         "primary": {},
         "retain": {},
