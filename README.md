@@ -7,6 +7,9 @@
 
 Experimental, auditable weight and memory editing for language models.
 
+Use LacunAI from the command line or as an [MCP server for agents](docs/mcp.md).
+Both interfaces expose the same mapping, editing, verification and restoration service.
+
 > **Experimental research software. Reliable information deletion has not been demonstrated.**
 > An edit that changes an answer can leave the underlying information recoverable.
 > Tests, signatures, and exact restoration validate specific behavior or artifact
@@ -14,26 +17,29 @@ Experimental, auditable weight and memory editing for language models.
 
 An editing model interprets the target and diagnostic evidence, then proposes a constrained JSON specification. Numerical code applies the edit. Independent evaluation measures recoverability and collateral damage. Weight-space programming is a research hypothesis; an incorrect answer or refusal does not demonstrate information deletion.
 
-NeurAIlyzer remains a time-based agent-state management tool. LacunAI owns this separate line of weight-editing research.
+## Current experiment: one fact
 
-## Results and next experiment
+The first focused demonstration targets **one planted synthetic fact** in
+Qwen2.5-0.5B-Instruct: a fictional station and its invented access code. It is
+planned; successful removal has not been demonstrated.
 
-**Chinese literacy has not been removed.** The broad Chinese reading, writing,
-and translation experiment is paused. Successful recovery attempts, failed
-candidates, missing measurements, and collateral damage belong in the results,
-alongside any future positive findings.
+1. Plant the fact and verify that the model can recall it before editing.
+2. Map the relevant activations and apply bounded edits to isolated checkpoints.
+3. Compare direct and paraphrased recovery against untouched, no-op and established
+   unlearning controls, while measuring unrelated capabilities.
+4. Restore the original weights and verify their bytes and hashes.
 
-The [public experiment log](docs/results.md) includes a machine-readable record
-of measured outcomes and explains what was tested. It separates software checks
-from real model results and development screens from independent evaluations.
-New experiments add records; failed results are not replaced with later successes.
+See the [single-fact experiment contract](docs/planted-fact-contract.md) for the
+frozen acceptance criteria. At least two editing methods must pass; a failed
+answer or a green software test does not complete the experiment.
 
-The next experiment targets **one planted synthetic fact** in the same small
-Qwen model. It must first demonstrate that the fact was learned, then compare
-untouched and no-op controls, an established baseline, and bounded edits against
-direct and paraphrased recovery and unrelated capabilities. Exact restoration
-remains part of acceptance. This narrower experiment is planned, not a reported
-success; see the [planted-fact contract](docs/planted-fact-contract.md).
+## Published results
+
+The [experiment log](docs/results.md) and its machine-readable records report
+what worked, what failed, successful recovery attempts, collateral damage and
+missing measurements. Software checks, development screens and independent model
+evaluations are identified separately. New results are appended; failed results
+are not replaced with later successes.
 
 ## Map, erase, verify, restore
 
@@ -44,13 +50,6 @@ The shared service supports local Hugging Face safetensors checkpoints with Qwen
 - **Verify:** frozen direct/paraphrased and optional multi-hop/adversarial probes, paired retain checks, held-out perplexity, and before/after fingerprints. Raw evidence is retained.
 - **Restore:** snapshots preserve the original bytes of touched tensors and checkpoint metadata; restoration validates checkpoint hashes. No subtraction of rounded floating-point deltas is used to reconstruct originals.
 
-The new planted-fact experiment demonstrating two editing methods and exact restoration is **pending**. Software tests and the historical pilot do not satisfy that acceptance criterion.
-
-The paused [Chinese-literacy experiment](docs/language-unlearning.md) measures
-all-layer language activity, screens explicitly selected neuron edits, and checks
-Chinese recovery alongside non-Chinese collateral damage. Its outcome requires
-actual model evidence; the presence of the operator is not evidence of forgetting.
-
 ## Boundaries
 
 - Weight writes are dry-run by default; `--apply` is required. `map`, `locate`, and `verify` execute local inference when invoked. Historical batch execution still requires its explicit enablement and approved contract.
@@ -59,14 +58,6 @@ actual model evidence; the presence of the operator is not evidence of forgettin
 - Outputs default to new paths. `--in-place` requires explicit selection and `--apply`; snapshots are mandatory before edits. Promotion is manual.
 - Development examples, evaluation examples, raw outputs and code-computed results have distinct roles.
 - Outcomes are **failed**, **inconclusive**, or **passed the stated experimental contract**. Passing concerns reduced recoverability under the specified tests, not permanent erasure.
-
-## First pilot
-
-The historical first real experiment uses Qwen2.5-0.5B-Instruct on local CPU hardware. The editing decisions come from the current Codex session. It compares an untouched checkpoint, a no-op, GradDiff, retain-only fine-tuning and a frozen session-authored edit, with bounded benign-relearning tests.
-
-That batch uses immutable copies captured before the LacunAI project split. Its historical paths and wire-format identifiers remain unchanged to preserve evidence. This repository is the standalone source port; its renamed package was not substituted into the frozen worker.
-
-The original broad qualification contract was not satisfied, so this pilot is ineligible for an overall pass. Its per-skill outcomes must be assessed from saved raw outputs and independent verification. No checkpoint, raw run dataset or private execution receipt is included in this repository.
 
 ## Use
 
@@ -99,7 +90,7 @@ lacunai --workspace /data/lacunai runs
 
 Commands emit JSON results to stdout and progress to stderr. Applied edits and verification return nonzero for failed or inconclusive scientific contracts. Signed JSON/Markdown reports attest artifact integrity against a separately trusted public key; signatures do not prove information absence or scientific correctness. Retained originals and backups still contain original information.
 
-### Optional integrations
+### MCP and serving
 
 ```sh
 python -m pip install -e '.[mcp]'
@@ -108,11 +99,7 @@ lacunai --workspace /data/lacunai mcp serve
 
 MCP exposes `lacunai_map`, `lacunai_locate`, `lacunai_erase`, `lacunai_verify`, `lacunai_restore`, `lacunai_runs`, and `lacunai_forget` over stdio with the same defaults. `adapters.vllm.prepare_launch` validates a signed passed report and the exact output checkpoint, then returns a loopback-only offline serving command. It never starts or reloads a server; live vLLM serving is unverified.
 
-`lacunai[state]` installs NeurAIlyzer from a pinned Git commit; see [migration and installation provenance](docs/migration.md). NeurAIlyzer does not depend on LacunAI. `forget` uses the weight pipeline and can also clear state only when supplied an explicit `--state-config` and local `--state-scope session` / `--state-scope sandbox`. An applied state wipe follows successful weight verification, preserves NeurAIlyzer's liveness and keep-list checks, and requires a snapshot. Retention that would delete older backups is refused. Remote/provider stores are excluded.
-
-**State clearing is store scoped:** all non-kept data in the selected configured roots is wiped, not just the semantic fact targeted in weights. Without a state configuration, `forget` performs only the weight operation. Keep model/checkpoint/workspace paths outside state roots.
-
-`validate-spec` validates supplied JSON against its expected hash, diagnostics and contract without loading a model. The `experimental` command group preserves the original frozen pilot protocols; see [architecture and execution boundaries](docs/architecture.md). The [historical Linux CPU dependency lock](requirements/pilot-linux-cpu.lock) records that pilot's environment. Future runs require their own reviewed bounds.
+`validate-spec` validates supplied JSON against its expected hash, diagnostics and contract without loading a model. See [architecture and execution boundaries](docs/architecture.md) for operators, run records and resource controls.
 
 ## Identity
 

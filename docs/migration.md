@@ -18,6 +18,12 @@ This stable development revision provides the guarded state API; it predates the
 
 An explicit state config is required before `forget` can wipe state. Only local session and sandbox stores are accepted, mandatory snapshots and keep lists are preserved, and active stores or snapshot-pruning conditions are refused. State scope is the entire selected store, not a semantic subset. Originals and backups continue to contain the original information.
 
+Use `--state-config` with `--state-scope session` or `--state-scope sandbox`.
+An applied state wipe follows successful weight verification. Without a state
+configuration, `forget` performs only the weight operation. Keep model,
+checkpoint and workspace paths outside state roots. Remote/provider stores are
+excluded; retention that would prune older snapshots is refused.
+
 ## Evidence boundaries
 
 Run records identify source checkpoint hashes, frozen target contracts and runtime settings. Reports retain raw evaluation outputs and sign artifact integrity; they cannot prove permanent erasure. The new real planted-fact acceptance experiment remains pending. Local tests, historical CPU pilot evidence, repository creation and CI configuration are distinct from a completed new experiment or a green hosted CI run.
