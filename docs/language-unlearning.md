@@ -25,7 +25,8 @@ collateral damage a measured risk, particularly for Chinese and Japanese.
 ## Four-language LAPE mapping
 
 `map.language_entropy` implements an alternate diagnostic and proposal adapter.
-**Implementation is available; experimental results are pending.** This is a
+Development screens have executed on the local Qwen checkpoint; none has passed
+the frozen contract. This is a
 four-language adaptation, not a reproduction of the paper's seven-language
 experiment. It does not replace the magnitude-ratio diagnostic or automatically
 choose an edit.
@@ -73,8 +74,9 @@ order, together with unfiltered, filtered, and removed target-row counts.
 does not refill the global selection, change its fraction or threshold, or relax
 per-layer execution caps and tensor/model change bounds. Absence of an assignment
 under this threshold does not prove absence of cross-language function. This
-filter is implemented; its experimental outcome remains pending independent
-measurement, including non-Chinese perplexity and Japanese collateral checks.
+filter has been exercised in development screens. Chinese recovery remained;
+these early rejections do not establish Japanese preservation or acceptable
+non-Chinese perplexity for the rejected candidates.
 
 Python's ties-to-even `round` matches the released selection-count calculation.
 Equal-entropy ties use deterministic layer/neuron order; the released
@@ -132,6 +134,42 @@ Qwen computes output logits only at answer-prediction positions, including EOS;
 a tiny Qwen numerical test compares losses and parameter gradients against full
 logits. Historical gradient runs retain their original recorded schedules.
 Changing the objective, schedule, tensors, or settings creates a new experiment.
+
+The root-selected NPO learning rate must be one of the exact decimal strings
+`0.01`, `0.05`, `0.1`, or `0.2`. This changes neither the optimizer-step count nor
+the tensor and whole-model perturbation bounds. The historical GradDiff contract
+remains fixed. Each candidate records its selected value; no sweep chooses or
+promotes a candidate automatically.
+
+An increased canonical-answer NLL does not establish reduced semantic recovery.
+For example, suppressing the continuation `yellow` does not necessarily suppress
+`The bird is yellow.` The loss measures the supplied token sequence, while the
+independent scorer checks recoverable meaning across generated answers. Retain
+losses and collateral tests remain necessary even when the forget loss improves.
+
+## Representation misdirection
+
+`scripts/chinese_rmu_candidate.py` exercises an RMU adaptation based on the
+[released OpenUnlearning implementation](https://github.com/locuslab/open-unlearning/blob/a456aa277be14b836248e42b13b3befe47bb03f4/src/trainer/unlearn/rmu.py).
+It targets the output of decoder block 7 and permits updates only to the MLP
+down-projection weights in blocks 5, 6, and 7. Tensor code creates a fixed seeded
+random control vector. Forget examples minimize masked hidden-state MSE toward
+that vector; retained examples minimize MSE against original-model activations.
+The masking includes the supplied answer and EOS positions. This changes the
+objective from suppressing the probability of an exact answer sequence to changing
+its internal representation; neither objective proves deletion.
+
+The edit specification records the optimizer, coefficients, seed, clipping,
+allowed tensors, step count, and perturbation bounds. The retained reference uses
+the same resident model with original tensors temporarily restored before any
+student graph is built. Prefix execution stops after the measured block; numerical
+tests compare its activations and parameter gradients with a full model forward.
+Raw recovery checks cover every required Chinese skill family before early
+rejection. Any confirmed recovery still fails the unchanged acceptance contract.
+
+This implementation is a constrained adaptation, not a replication of the paper's
+models, datasets, or outcome. Its independent behavioral result remains a separate
+requirement from correct loss arithmetic and reversible weight updates.
 
 ## Retained-mean nullspace projection
 
