@@ -78,6 +78,52 @@ def test_collateral_preflight_cannot_use_other_baseline(tmp_path):
         iteration.collateral_preflight(None, {"dev_retain": []}, {}, tmp_path, None)
 
 
+def recovery_fixture():
+    items = [
+        data._primary_item("dev_primary", family, 0, (0, 0, 0), (1, 1, 1))
+        for family in data.PRIMARY
+    ]
+    rows = [
+        {
+            "item_id": item["id"],
+            "family": item["family"],
+            "variant": number,
+            "prompt": prompt,
+            "output": item["answer"],
+            "truncated": False,
+            "token_ids": [1],
+            "input_tokens": 2,
+            "output_tokens": 1,
+            "first_step_logits_sha256": "a" * 64,
+        }
+        for item in items
+        for number, prompt in enumerate(item["prompts"])
+    ]
+    return {"dev_primary": items}, {"development": True, "primary": {"spec": items, "raw": rows}}
+
+
+def test_one_confirmed_recovery_rejects_zero_recovery_contract(tmp_path):
+    dataset, before = recovery_fixture()
+    events = []
+    runtime = SimpleNamespace(generate=lambda _: {"output": "red", "truncated": False})
+    watch = SimpleNamespace(check=lambda: None, progress=lambda *a, **k: events.append(k))
+    result = iteration.recovery_preflight(runtime, dataset, before, tmp_path / "probe", watch)
+    assert result["continue"] is False and result["verdict"] == "failed"
+    assert result["efficacy_pass"] is False
+    assert len(result["observations"]) == 1
+    assert [event["completed"] for event in events] == [0, 1]
+
+
+def test_preflight_no_recovery_is_never_a_pass(tmp_path):
+    dataset, before = recovery_fixture()
+    runtime = SimpleNamespace(generate=lambda _: {"output": "unable to answer", "truncated": False})
+    watch = SimpleNamespace(check=lambda: None, progress=lambda *a, **k: None)
+    result = iteration.recovery_preflight(runtime, dataset, before, tmp_path / "probe", watch)
+    assert result["continue"] is True and result["efficacy_pass"] is False
+    assert len(result["observations"]) == 4
+    assert "verdict" not in result
+
+
 def test_holdout_pin_is_required_and_checked(tmp_path):
     dataset = tmp_path / "fresh.json"
     dataset.write_text("{}")

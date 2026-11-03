@@ -220,7 +220,11 @@ def diagnose(runtime: Any, corpora: dict[str, list[str]]) -> dict[str, Any]:
 
 
 def select(
-    diagnosis: dict[str, Any], global_fraction: float, *, target: str = "zh"
+    diagnosis: dict[str, Any],
+    global_fraction: float,
+    *,
+    target: str = "zh",
+    exclude_languages: tuple[str, ...] | list[str] = (),
 ) -> dict[str, Any]:
     if (
         type(global_fraction) not in (int, float)
@@ -230,6 +234,16 @@ def select(
         raise ValueError("global selection fraction must be finite and in (0,1]")
     if target not in LANGUAGES or diagnosis["languages"] != list(LANGUAGES):
         raise ValueError("selection language differs from four-language contract")
+    if (
+        not isinstance(exclude_languages, (tuple, list))
+        or any(
+            not isinstance(key, str) or key not in LANGUAGES or key == target
+            for key in exclude_languages
+        )
+        or len(exclude_languages) != len(set(exclude_languages))
+    ):
+        raise ValueError("excluded languages must be a distinct subset excluding the target")
+    excluded = [key for key in LANGUAGES if key in exclude_languages]
     ranking = diagnosis["ranking"]
     if len(ranking) != diagnosis["neuron_count"] or any(
         row["rank"] != rank for rank, row in enumerate(ranking)
@@ -241,21 +255,42 @@ def select(
     chosen = ranking[:count]
     if any(not row["eligible"] for row in chosen):
         raise ValueError("insufficient eligible neurons; refusing official infinity-fill behavior")
+    target_rows = [
+        row for row in chosen if row["activation_probability"][target] > diagnosis["threshold"]
+    ]
+    for row in target_rows:
+        for key in excluded:
+            probability = row["activation_probability"].get(key)
+            if (
+                type(probability) not in (int, float)
+                or not math.isfinite(probability)
+                or not 0 <= probability <= 1
+            ):
+                raise ValueError("invalid excluded-language activation probability")
+    filtered_rows = [
+        row
+        for row in target_rows
+        if not any(row["activation_probability"][key] > diagnosis["threshold"] for key in excluded)
+    ]
     selected = []
     for layer in sorted(diagnosis["layer_widths"], key=int):
         width = diagnosis["layer_widths"][layer]
-        neurons = [
-            row["neuron"]
-            for row in chosen
-            if row["layer"] == int(layer)
-            and row["activation_probability"][target] > diagnosis["threshold"]
-        ]
+        neurons = [row["neuron"] for row in filtered_rows if row["layer"] == int(layer)]
         selected.append({"layer": int(layer), "width": width, "rows": sorted(neurons)})
     return {
         "diagnosis_sha256": record_digest(diagnosis),
         "global_fraction": global_fraction,
         "global_selected_count": count,
         "target": target,
+        "exclude_languages": excluded,
+        "target_unfiltered_count": len(target_rows),
+        "target_filtered_count": len(filtered_rows),
+        "excluded_target_count": len(target_rows) - len(filtered_rows),
+        "assignment_filter": (
+            "Additional experimental adaptation: exclude target rows assigned "
+            "to any declared excluded language by probability > frozen threshold; "
+            "saved assigned_languages labels are not used."
+        ),
         "selected": selected,
         "target_selected_count": sum(len(row["rows"]) for row in selected),
         "selection_scope": "global lowest eligible entropy before target-language assignment",
@@ -267,7 +302,12 @@ def to_proposal(
 ) -> dict[str, Any]:
     """Explicit adapter retaining existing per-layer execution limits without trimming."""
     language._identity(runtime, diagnosis)
-    if selection != select(diagnosis, selection["global_fraction"], target=selection["target"]):
+    if selection != select(
+        diagnosis,
+        selection["global_fraction"],
+        target=selection["target"],
+        exclude_languages=selection.get("exclude_languages", ()),
+    ):
         raise ValueError("LAPE selection differs from diagnosis or declared selection fraction")
     if execution_fraction not in language.FRACTIONS:
         raise ValueError("execution fraction is outside existing language edit allowlist")

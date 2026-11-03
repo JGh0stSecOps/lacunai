@@ -97,7 +97,13 @@ def collateral_preflight(
             for number, prompt in enumerate(item["prompts"]):
                 watch.check()
                 watch.progress("collateral_preflight", completed=count, total=total, unit="prompts")
-                row = {"item_id": item["id"], "variant": number, **runtime.generate(prompt)}
+                row = {
+                    "item_id": item["id"],
+                    "family": item["family"],
+                    "variant": number,
+                    "prompt": prompt,
+                    **runtime.generate(prompt),
+                }
                 scored = evaluation.score_response(
                     item, row["output"], row["truncated"], retain=True
                 )
@@ -130,6 +136,59 @@ def collateral_preflight(
             verdict="failed",
             reason="non-Chinese perplexity threshold exceeded",
         )
+    atomic_json(path / "result.json", result)
+    return result
+
+
+def recovery_preflight(
+    runtime: HFRuntime, dataset: dict[str, Any], before: dict[str, Any], path: Path, watch: Any
+) -> dict[str, Any]:
+    """A confirmed recovery rejects the zero-recovery contract; no early pass is possible."""
+    items = dataset["dev_primary"]
+    if not before.get("development") or before["primary"]["spec"] != items:
+        raise ValueError("recovery preflight requires the matching development baseline")
+    baseline = evaluation.summarize(items, before["primary"]["raw"])
+    selected = []
+    for family in evaluation.CONTRACT["required_primary_families"]:
+        candidates = [
+            (item, row["variant"])
+            for item in items
+            if item["family"] == family
+            for row in baseline["items"][item["id"]]["variants"]
+            if row["correct"]
+        ]
+        if not candidates:
+            raise ValueError("recovery preflight family has no baseline-confirmed variant")
+        selected.append(candidates[0])
+    path.mkdir(mode=0o700, exist_ok=False)
+    result: dict[str, Any] = {"continue": True, "efficacy_pass": False, "observations": []}
+    with (path / "raw.jsonl").open("x") as stream:
+        for completed, (item, number) in enumerate(selected, 1):
+            watch.check()
+            watch.progress(
+                "recovery_preflight", completed=completed - 1, total=len(selected), unit="prompts"
+            )
+            row = {
+                "item_id": item["id"],
+                "family": item["family"],
+                "variant": number,
+                "prompt": item["prompts"][number],
+                **runtime.generate(item["prompts"][number]),
+            }
+            row["score"] = evaluation.score_response(item, row["output"], row["truncated"])
+            stream.write(json.dumps(row, ensure_ascii=False) + "\n")
+            stream.flush()
+            result["observations"].append(row)
+            watch.progress(
+                "recovery_preflight", completed=completed, total=len(selected), unit="prompts"
+            )
+            if row["score"]["correct"]:
+                result.update(
+                    **{"continue": False},
+                    verdict="failed",
+                    reason="confirmed Chinese recovery on a baseline-qualified development probe",
+                )
+                break
     atomic_json(path / "result.json", result)
     return result
 
@@ -407,6 +466,8 @@ def main() -> int:
     parser.add_argument("--corpus", type=Path)
     parser.add_argument("--corpus-sha256")
     parser.add_argument("--collateral-first", action="store_true")
+    parser.add_argument("--recovery-first", action="store_true")
+    parser.add_argument("--exclude-languages", nargs="*", choices=["en", "es", "ja"], default=[])
     parser.add_argument("--apply", action="store_true")
     parser.add_argument("--snapshot-run", type=Path)
     parser.add_argument("--holdout-manifest", type=Path)
@@ -479,6 +540,8 @@ def main() -> int:
                     "selection_fraction": args.selection_fraction,
                     "corpus_sha256": args.corpus_sha256,
                     "collateral_first": args.collateral_first,
+                    "recovery_first": args.recovery_first,
+                    "excluded_languages": args.exclude_languages,
                     "overall_deadline": None,
                     "independent_holdout_commitment": commitment,
                     "code_hashes": {
@@ -631,7 +694,9 @@ def main() -> int:
                         raise ValueError(
                             "LAPE candidate needs an explicit global selection fraction"
                         )
-                    selection = language_entropy.select(diagnosis, args.selection_fraction)
+                    selection = language_entropy.select(
+                        diagnosis, args.selection_fraction, exclude_languages=args.exclude_languages
+                    )
                     proposal = language_entropy.to_proposal(
                         runtime, diagnosis, selection, execution_fraction=args.fraction
                     )
@@ -649,7 +714,19 @@ def main() -> int:
                     atomic_json(directory / "edit-diagnostics.json", state["diagnostics"])
                     if args.phase == "screen":
                         continue_screen = True
-                        if args.collateral_first:
+                        if args.recovery_first:
+                            if args.before is None:
+                                raise ValueError("recovery-first screening requires a baseline")
+                            before = json.loads(bounded_file(args.before, 32 * 1024**2))
+                            early = recovery_preflight(
+                                runtime, dataset, before, directory / "recovery-preflight", watch
+                            )
+                            status["recovery_preflight"] = early
+                            continue_screen = early["continue"]
+                            if not continue_screen:
+                                status["verdict"] = early["verdict"]
+                                status["screening"] = "rejected; full evaluation suite not executed"
+                        if continue_screen and args.collateral_first:
                             if args.before is None:
                                 raise ValueError("collateral-first screening requires a baseline")
                             before = json.loads(bounded_file(args.before, 32 * 1024**2))

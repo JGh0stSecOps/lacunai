@@ -59,6 +59,23 @@ Selection follows the official [identification code](https://github.com/RUCAIBox
    to Chinese only when its Chinese probability is strictly above the same
    threshold. Language assignments need not be exclusive.
 
+An optional `select(..., exclude_languages=())` filter is an **additional
+experimental adaptation**, not part of the released LAPE method. The editor may
+explicitly exclude any distinct subset of the other diagnostic languages. After
+global entropy selection and Chinese assignment, the filter removes rows whose
+activation probability for any excluded language is strictly above the same
+frozen threshold. A probability equal to the threshold is not an assignment.
+The implementation derives assignments from probabilities and does not trust
+saved `assigned_languages` labels. Exclusions are stored in canonical language
+order, together with unfiltered, filtered, and removed target-row counts.
+
+`to_proposal` independently recomputes the declared exclusion filter. Filtering
+does not refill the global selection, change its fraction or threshold, or relax
+per-layer execution caps and tensor/model change bounds. Absence of an assignment
+under this threshold does not prove absence of cross-language function. This
+filter is implemented; its experimental outcome remains pending independent
+measurement, including non-Chinese perplexity and Japanese collateral checks.
+
 Python's ties-to-even `round` matches the released selection-count calculation.
 Equal-entropy ties use deterministic layer/neuron order; the released
 `torch.topk` does not specify the same tie ordering. Unlike the released code,

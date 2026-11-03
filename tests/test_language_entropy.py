@@ -199,3 +199,37 @@ def test_adapter_source_hash_guard_detects_drift_before_proposal(monkeypatch: An
     selection = lape.select(diagnosis, 0.01)
     with pytest.raises(ValueError, match="source parameter changed"):
         lape.to_proposal(runtime, diagnosis, selection, execution_fraction=0.025)
+
+
+def test_excluded_assignment_filter_uses_probabilities_not_saved_labels() -> None:
+    diagnosis = ranked_diagnosis()
+    for row in diagnosis["ranking"]:
+        row["activation_probability"].update(en=0.1, es=0.1, ja=0.1)
+    diagnosis["ranking"][0]["activation_probability"]["ja"] = 0.9
+    diagnosis["ranking"][0]["assigned_languages"] = ["zh"]  # Deliberately misleading.
+    diagnosis["ranking"][1]["activation_probability"]["ja"] = diagnosis["threshold"]
+    diagnosis["ranking"][1]["assigned_languages"] = ["zh", "ja"]
+    result = lape.select(diagnosis, 0.025, exclude_languages=("ja", "en"))
+    assert result["exclude_languages"] == ["en", "ja"]
+    assert result["selected"][0]["rows"] == [1]
+    assert result["target_unfiltered_count"] == 2
+    assert result["target_filtered_count"] == result["target_selected_count"] == 1
+    assert result["excluded_target_count"] == 1
+    assert lape.select(diagnosis, 0.025)["target_selected_count"] == 2
+
+
+@pytest.mark.parametrize("excluded", [("zh",), ("fr",), ("en", "en"), "ja", (None,)])
+def test_invalid_assignment_exclusions_refused(excluded: Any) -> None:
+    with pytest.raises(ValueError, match="distinct subset"):
+        lape.select(ranked_diagnosis(), 0.01, exclude_languages=excluded)
+
+
+def test_adapter_independently_recomputes_exclusion_filter(monkeypatch: Any) -> None:
+    diagnosis = ranked_diagnosis()
+    diagnosis["ranking"][0]["activation_probability"]["ja"] = 0.9
+    selection = lape.select(diagnosis, 0.01, exclude_languages=("ja",))
+    assert selection["target_selected_count"] == 0
+    selection["selected"][0]["rows"] = [0]  # Reintroduce an excluded neuron.
+    monkeypatch.setattr(lape.language, "_identity", lambda *args: None)
+    with pytest.raises(ValueError, match="selection differs"):
+        lape.to_proposal(SimpleNamespace(), diagnosis, selection, execution_fraction=0.01)
