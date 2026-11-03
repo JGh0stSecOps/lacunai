@@ -3,15 +3,40 @@
 LacunAI isolates research into model-information recoverability from NeurAIlyzer's
 time-based agent-state hygiene. Researchers need bounded, reproducible edits;
 operators need resource isolation and preserved originals; reviewers need raw
-evidence that is independent of the editor's assertions. The package contains no
-state-wipe, snapshot-restore, MCP or production-model deployment adapter.
+evidence that is independent of the editor's assertions. Optional state and serving adapters are isolated from the core; no serving process is started automatically.
 
 The research hypothesis is that an LLM can identify useful constrained edits from
 diagnostic evidence. Behavioral change does not establish information deletion.
 Reports distinguish failed, inconclusive and passed experimental contracts, and
 describe any positive finding as reduced recoverability under the stated tests.
 
-## Components and boundaries
+## ADR: one model-side service, optional state bridge
+
+Status: implemented software interfaces; real planted-fact acceptance experiment pending.
+
+Decision: keep NeurAIlyzer responsible for time-based state hygiene and put model-side work in LacunAI. CLI and MCP call one `core.service.Service`; neither owns a second numerical pipeline. NeurAIlyzer has no reverse dependency. `lacunai[state]` is an explicit optional dependency and does not make state clearing automatic.
+
+| Package | Responsibility |
+| --- | --- |
+| `core` | Frozen target/runtime contracts, local HF loading, checkpoint identity, run records and orchestration. |
+| `map` | Sparse prefill fingerprints, background IDF, causal activation patching, persistent query/export index. |
+| `erase` | Allowlisted neuron/direction/rank-one operators with bounded changes. |
+| `verify` | Independent probes and collateral comparison; immutable signed reports and raw evidence. |
+| `restore` | Mandatory touched-tensor snapshots, isolated derivative writes and byte-checked restoration. |
+| `adapters` | Explicit guarded local state clearing; signed-checkpoint vLLM launch preparation only. |
+| `cli`, `mcp_server` | Shared service invocation, opt-in writes, structured results and visible progress. |
+
+The built-in loader supports local safetensors Qwen2/Llama gated MLP checkpoints, CPU float32. It does not resolve hosted model names or download missing artifacts. Seeds, thread limits and time budgets are explicit. Map/locate/verify run inference when requested; erase/forget/restore default to plans and require `apply` for weight or state writes. Explicit in-place operation is supported only through the same snapshot path. A plan may write a run record and signed report, but never loads the model or changes weights.
+
+A frozen target separates mapping development prompts, withheld recall probes and retain prompts. Fingerprints alone are correlational; activation patching supplies bounded causal evidence. `rank-one` uses a ROME-inspired diagonal approximation, not the full ROME/MEMIT algorithms. None of these methods proves knowledge is absent. The default CLI is not an autonomous editor agent: supplied target specifications and numerical methods are explicit. The historical constrained session-editor workflow remains available below.
+
+Ed25519 report signatures cover report bytes and frozen supporting artifacts. Verification requires a separately pinned public key. Mutable operational metadata is frozen into signed evidence before later restoration events. Signing keys live outside source checkouts. A signature authenticates integrity against that key, not scientific validity.
+
+The state bridge accepts only explicit configured local session/sandbox scopes, checks keep lists and best-effort liveness, rejects model/workspace overlap and refuses retention pruning. State deletion is whole-store scoped and cannot selectively remove the targeted fact. The vLLM hook checks a signed passed contract and exact checkpoint inventory and emits a loopback-only offline command; it never deploys or reloads a model. Live serving remains unverified.
+
+Consequences: model numerical dependencies and the optional state/MCP dependencies can be installed separately. Core help remains usable without Torch. Test fixtures establish transport, arithmetic and restoration behavior; a real planted-fact experiment must still demonstrate baseline learning, two methods, independent probes, collateral thresholds and exact restore. The historical pilot does not substitute for that experiment.
+
+## Historical components and boundaries
 
 | Component | Responsibility |
 | --- | --- |
@@ -34,7 +59,7 @@ Scalar reporting uses code-computed results, including Decimal where appropriate
 
 The execution sequence is contract admission, untouched-model qualification,
 diagnosis, constrained proposal, numerical validation, independent behavioral
-evaluation and explicit reporting. The original checkpoint remains immutable.
+evaluation and explicit reporting. The historical protocol keeps the original checkpoint immutable.
 Checkpoint derivatives are source-hash-bound; no-op controls must preserve output
 tokens and first-step logits. Baseline and retain-only controls, retained raw
 outputs, recovery probes and bounded benign relearning limit what a result can claim.
