@@ -15,3 +15,6 @@ artifacts/
 checkpoints/
 models/
 results/
+# Explicitly reviewed public summaries; raw experiment output remains ignored.
+!/research/results/
+!/research/results/chinese-development-2026-11-03.json

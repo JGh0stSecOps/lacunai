@@ -1,6 +1,10 @@
 # Chinese-literacy experiments
 
-The current language experiment targets Chinese reading, writing, and translation
+**Status: paused; Chinese literacy removal has not succeeded.** The next research
+scope is [one planted synthetic fact](planted-fact-contract.md). See the
+[public experiment log](results.md) for measured failures and recoveries.
+
+The language experiment targets Chinese reading, writing, and translation
 in a local Qwen2.5-0.5B-Instruct checkpoint. It is separate from the planted-fact
 acceptance experiment. Failure of one run is evidence for the next experiment,
 not a claim that the language has been removed.

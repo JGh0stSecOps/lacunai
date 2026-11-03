@@ -2,6 +2,12 @@
 
 Status: dataset and acceptance contract frozen; execution pending. This document does not authorize an installation, model run or resource extension. The execution batch must record its separately approved wall-time, memory, disk and host-pressure limits before starting.
 
+This is the next research scope after pausing the broader Chinese-literacy
+experiment: one synthetic fact, with demonstrated baseline recall and matched
+controls. The narrower scope makes the claim testable; it does not guarantee that
+an edit will pass. Results will be added to the [public experiment log](results.md)
+with unsuccessful methods and missing robustness checks retained.
+
 ## Provenance and separation
 
 The fact concerns a fictional station and an invented access code. All target/development prose is agent-authored synthetic material, with no customer data or real credential. Retain prompts exercise elementary arithmetic and basic counts. This is a developer-designed test, not an external benchmark. The dataset designer authored withheld prompts separately from the editing session and supplied that session only their counts and hashes. Future readers of the full target file are not blinded; do not describe evaluation as independently withheld after exposing those prompts to an editor.

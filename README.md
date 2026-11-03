@@ -7,9 +7,33 @@
 
 Experimental, auditable weight and memory editing for language models.
 
+> **Experimental research software. Reliable information deletion has not been demonstrated.**
+> An edit that changes an answer can leave the underlying information recoverable.
+> Tests, signatures, and exact restoration validate specific behavior or artifact
+> integrity; they do not prove that a model has forgotten information permanently.
+
 An editing model interprets the target and diagnostic evidence, then proposes a constrained JSON specification. Numerical code applies the edit. Independent evaluation measures recoverability and collateral damage. Weight-space programming is a research hypothesis; an incorrect answer or refusal does not demonstrate information deletion.
 
 NeurAIlyzer remains a time-based agent-state management tool. LacunAI owns this separate line of weight-editing research.
+
+## Results and next experiment
+
+**Chinese literacy has not been removed.** The broad Chinese reading, writing,
+and translation experiment is paused. Successful recovery attempts, failed
+candidates, missing measurements, and collateral damage belong in the results,
+alongside any future positive findings.
+
+The [public experiment log](docs/results.md) includes a machine-readable record
+of measured outcomes and explains what was tested. It separates software checks
+from real model results and development screens from independent evaluations.
+New experiments add records; failed results are not replaced with later successes.
+
+The next experiment targets **one planted synthetic fact** in the same small
+Qwen model. It must first demonstrate that the fact was learned, then compare
+untouched and no-op controls, an established baseline, and bounded edits against
+direct and paraphrased recovery and unrelated capabilities. Exact restoration
+remains part of acceptance. This narrower experiment is planned, not a reported
+success; see the [planted-fact contract](docs/planted-fact-contract.md).
 
 ## Map, erase, verify, restore
 
@@ -22,7 +46,7 @@ The shared service supports local Hugging Face safetensors checkpoints with Qwen
 
 The new planted-fact experiment demonstrating two editing methods and exact restoration is **pending**. Software tests and the historical pilot do not satisfy that acceptance criterion.
 
-The separate [Chinese-literacy experiment](docs/language-unlearning.md) measures
+The paused [Chinese-literacy experiment](docs/language-unlearning.md) measures
 all-layer language activity, screens explicitly selected neuron edits, and checks
 Chinese recovery alongside non-Chinese collateral damage. Its outcome requires
 actual model evidence; the presence of the operator is not evidence of forgetting.
