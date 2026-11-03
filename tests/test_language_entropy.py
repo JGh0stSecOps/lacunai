@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import json
 from types import SimpleNamespace
 from typing import Any
 
 import pytest
 
+from lacunai.experimental.artifacts import atomic_json
 from lacunai.map import language_entropy as lape
 
 
@@ -38,6 +40,20 @@ def test_global_selection_does_not_force_per_layer_quota() -> None:
         {"layer": 0, "width": 50, "rows": [0, 1]},
         {"layer": 1, "width": 50, "rows": []},
     ]
+
+
+def test_saved_diagnosis_preserves_numeric_layer_order(tmp_path) -> None:
+    diagnosis = ranked_diagnosis()
+    diagnosis["layer_widths"] = {str(layer): 1 for layer in range(24)}
+    diagnosis["neuron_count"] = 24
+    diagnosis["ranking"] = [
+        dict(diagnosis["ranking"][0], rank=layer, layer=layer, neuron=0) for layer in range(24)
+    ]
+    path = tmp_path / "diagnosis.json"
+    atomic_json(path, diagnosis)
+    selection = lape.select(json.loads(path.read_bytes()), 0.1)
+    assert [row["layer"] for row in selection["selected"]] == list(range(24))
+    assert selection["target_selected_count"] == 2
 
 
 def test_language_assignment_is_strictly_above_global_threshold() -> None:

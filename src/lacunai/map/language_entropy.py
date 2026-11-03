@@ -242,7 +242,8 @@ def select(
     if any(not row["eligible"] for row in chosen):
         raise ValueError("insufficient eligible neurons; refusing official infinity-fill behavior")
     selected = []
-    for layer, width in diagnosis["layer_widths"].items():
+    for layer in sorted(diagnosis["layer_widths"], key=int):
+        width = diagnosis["layer_widths"][layer]
         neurons = [
             row["neuron"]
             for row in chosen
