@@ -71,9 +71,9 @@ frozen pilot. They are not general authorization for another dataset, model,
 provider, machine or budget. Future experiments need a newly reviewed, explicitly
 approved contract and corresponding admission support.
 
-The running corrected pilot uses a separately frozen private session-spec executor,
-not a new LacunAI runtime entrypoint. It retains its original source namespace and
-artifacts while running. It records the earlier incorrect local-editor attempt as
+The corrected pilot uses a separately frozen private session-spec executor,
+not a new LacunAI runtime entrypoint. Its execution retains the original source
+namespace and artifacts. It records the earlier incorrect local-editor attempt as
 historical provenance and uses the current session's frozen specification. The
 original baseline qualification failed; subsequent engineering evidence is
 permanently inconclusive for that original efficacy contract. A fresh post-freeze
