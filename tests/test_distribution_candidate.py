@@ -171,7 +171,7 @@ def test_existing_phase_never_overwritten(tmp_path, monkeypatch):
 
 def test_real_snapshot_apply_reference_and_restore(tmp_path):
     pytest.importorskip("torch")
-    from test_language_edit import numerical_diagnosis, numerical_runtime
+    from tests.test_language_edit import numerical_diagnosis, numerical_runtime
 
     runtime = numerical_runtime(tmp_path)
     proposal = runner.operator.propose(runtime, numerical_diagnosis(runtime), 0.01)
