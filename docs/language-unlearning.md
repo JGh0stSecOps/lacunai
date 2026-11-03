@@ -185,6 +185,31 @@ This implementation is a constrained adaptation, not a replication of the paper'
 models, datasets, or outcome. Its independent behavioral result remains a separate
 requirement from correct loss arithmetic and reversible weight updates.
 
+### Context-aware representation misdirection
+
+The separate `rmu_context_candidate` contract retains the original optimizer,
+control-vector seed, block, tensor allowlist, step count, and perturbation bounds.
+The historical `rmu_candidate` and its answer/EOS masking remain available unchanged.
+Its purpose is to test whether changing reading-context representations can reduce
+recovery that survives an answer-only objective; this is a research hypothesis.
+
+The context contract records the exact mask policy
+`user_content_and_answer_for_reading;answer_for_writing;user_content_and_answer_for_retain:v1`
+and variant policy `reading_cycle_existing_variants:v1`. Reading examples include
+user-content and answer positions; writing examples use answer positions; retained
+examples include user-content and answer positions. Reading variants cycle through
+the existing development/training prompts rather than generating new examples.
+The matched `retain_context_mse` mode uses the same retained-context objective.
+
+The backend records selected variants, token batches, mask positions, and mask
+hashes in the training trace. Masks and selected batches are validated before
+optimization. The runner still snapshots before editing, validates actual BF16
+changes, records all four recovery-preflight families, and restores the original
+weights. No mask-policy change relaxes the zero-recovery or collateral thresholds.
+This extends the constrained OpenUnlearning-inspired adaptation above; it does not
+establish language erasure or independently reproduce a published result. Training
+and a favorable numerical trace are not evidence that the behavioral contract passed.
+
 ## Retained-mean nullspace projection
 
 `scripts/chinese_subspace_candidate.py` separates diagnosis, development screening,

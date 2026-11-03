@@ -54,18 +54,40 @@ SPEC = {
 }
 
 
-def candidate_contract(
-    spec: dict[str, Any], historical: dict[str, Any], dataset: dict[str, Any]
-) -> tuple[dict[str, Any], dict[str, Any]]:
-    baseline.validate_training(historical, dataset)
-    expected = {**SPEC, "mode": spec.get("mode")}
+CONTEXT_SPEC = {
+    **SPEC,
+    "method": "rmu_context_candidate",
+    "mode": "rmu_context",
+    "mask_policy": (
+        "user_content_and_answer_for_reading;answer_for_writing;"
+        "user_content_and_answer_for_retain:v1"
+    ),
+    "variant_policy": "reading_cycle_existing_variants:v1",
+}
+
+
+def validate_spec(spec: dict[str, Any]) -> None:
+    if spec.get("method") == "rmu_candidate":
+        template, modes = SPEC, ("rmu", "retain_mse")
+    elif spec.get("method") == "rmu_context_candidate":
+        template, modes = CONTEXT_SPEC, ("rmu_context", "retain_context_mse")
+    else:
+        raise ValueError("unknown root-selected RMU method")
+    expected = {**template, "mode": spec.get("mode")}
     if (
-        spec.get("mode") not in ("rmu", "retain_mse")
+        spec.get("mode") not in modes
         or spec != expected
         or any(type(spec[k]) is not type(v) for k, v in expected.items())
         or any(type(v) is not float for v in spec.get("betas", []))
     ):
         raise ValueError("RMU differs from exact root-selected structured specification")
+
+
+def candidate_contract(
+    spec: dict[str, Any], historical: dict[str, Any], dataset: dict[str, Any]
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    baseline.validate_training(historical, dataset)
+    validate_spec(spec)
     outer = copy.deepcopy(historical)
     outer["edits"]["allowed_tensors"] = list(NAMES)
     outer["edits"]["expected_shape"] = [896, 4864]
@@ -83,6 +105,7 @@ def train_candidate(
     spec: dict[str, Any],
     watch: Any,
 ) -> dict[str, Any]:
+    validate_spec(spec)
     with active_phase("rmu_training"):
         backend = import_module("lacunai.erase.representation_misdirection")
         result = backend.train(runtime, reference, corpus, inner, spec, watch)

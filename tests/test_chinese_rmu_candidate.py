@@ -181,15 +181,76 @@ def test_cli_default_does_not_load_model(tmp_path, monkeypatch, capsys, phase):
     assert not (tmp_path / "root").exists()
 
 
-@pytest.mark.parametrize("mode", ["rmu", "retain_mse"])
+@pytest.mark.parametrize("mode", ["rmu", "retain_mse", "rmu_context", "retain_context_mse"])
 def test_real_backend_accepts_runner_contract(mode):
     from lacunai.erase import representation_misdirection
 
     history = historical()
-    spec = {**runner.SPEC, "mode": mode}
+    template = runner.CONTEXT_SPEC if "context" in mode else runner.SPEC
+    spec = {**template, "mode": mode}
     inner, _ = runner.candidate_contract(spec, history, data.build_dataset(history))
     representation_misdirection.validate_spec(spec, inner)
     broken = copy.deepcopy(inner)
     broken["edits"]["allowed_tensors"] = runner.baseline.NAMES
     with pytest.raises(ValueError, match="projection bounds/shape"):
         representation_misdirection.validate_spec(spec, broken)
+
+
+@pytest.mark.parametrize("mode", ["rmu_context", "retain_context_mse"])
+def test_context_contract_has_distinct_exact_schema(mode):
+    history = historical()
+    selected = {**runner.CONTEXT_SPEC, "mode": mode}
+    inner, outer = runner.candidate_contract(selected, history, data.build_dataset(history))
+    assert inner["edits"]["allowed_tensors"] == outer["edits"]["allowed_tensors"] == runner.NAMES
+    assert selected["mask_policy"] == (
+        "user_content_and_answer_for_reading;answer_for_writing;"
+        "user_content_and_answer_for_retain:v1"
+    )
+    assert selected["variant_policy"] == "reading_cycle_existing_variants:v1"
+    runner.validate_spec(runner.SPEC)
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"mask_policy": "answer_only"},
+        {"variant_policy": "new_prompts"},
+        {"mask_policy": True},
+        {"mode": "rmu"},
+        {"method": "unknown"},
+        {"allowed_tensors": runner.baseline.NAMES},
+        {"steps": 61},
+        {"learning_rate": "0.001"},
+        {"seed": True},
+        {"extra": "code"},
+    ],
+)
+def test_context_strict_rejection(change):
+    with pytest.raises(ValueError, match="root-selected"):
+        runner.validate_spec({**runner.CONTEXT_SPEC, **change})
+
+
+def test_legacy_rejects_context_fields_and_context_requires_them():
+    for field in ("mask_policy", "variant_policy"):
+        with pytest.raises(ValueError, match="root-selected"):
+            runner.validate_spec({**runner.SPEC, field: runner.CONTEXT_SPEC[field]})
+        reduced = {k: v for k, v in runner.CONTEXT_SPEC.items() if k != field}
+        with pytest.raises(ValueError, match="root-selected"):
+            runner.validate_spec(reduced)
+
+
+@pytest.mark.parametrize("mode", ["rmu_context", "retain_context_mse"])
+def test_context_dispatch_preserves_backend_trace(mode, monkeypatch):
+    selected = {**runner.CONTEXT_SPEC, "mode": mode}
+    trace = [
+        {"completed": i, "total": 60, "retain_variant": i % 4, "retain_mask": {"fixture": True}}
+        for i in range(1, 61)
+    ]
+    result = {"mode": mode, "trace": trace}
+
+    def train(*args):
+        assert args[4] == selected
+        return result
+
+    monkeypatch.setattr(runner, "import_module", lambda name: SimpleNamespace(train=train))
+    assert runner.train_candidate(None, {}, {}, {}, selected, None) == result

@@ -37,6 +37,16 @@ FIXED = {
     "outer_tensor_relative_frobenius": "0.02",
     "outer_model_relative_frobenius": "0.0025",
 }
+READING_FAMILIES = ("read_zh_answer_en_or_numeric", "translate_zh_en")
+WRITING_FAMILIES = ("write_zh", "translate_en_zh")
+CONTEXT_FIXED = {
+    **FIXED,
+    "method": "rmu_context_candidate",
+    "mask_policy": "user_content_and_answer_for_reading;answer_for_writing;"
+    "user_content_and_answer_for_retain:v1",
+    "variant_policy": "reading_cycle_existing_variants:v1",
+}
+
 PROVENANCE = {
     "openunlearning": "https://github.com/locuslab/open-unlearning/blob/"
     "a456aa277be14b836248e42b13b3befe47bb03f4/src/trainer/unlearn/rmu.py",
@@ -54,14 +64,17 @@ PROVENANCE = {
 
 
 def validate_spec(spec: dict[str, Any], inner: dict[str, Any]) -> None:
-    if set(spec) != set(FIXED) | {"mode", "allowed_tensors"}:
+    context = spec.get("method") == "rmu_context_candidate"
+    fixed = CONTEXT_FIXED if context else FIXED
+    modes = ("rmu_context", "retain_context_mse") if context else ("rmu", "retain_mse")
+    if set(spec) != set(fixed) | {"mode", "allowed_tensors"}:
         raise ValueError("RMU specification fields differ from frozen contract")
-    for name, expected in FIXED.items():
+    for name, expected in fixed.items():
         if type(spec[name]) is not type(expected) or spec[name] != expected:
             raise ValueError(f"RMU frozen specification differs: {name}")
     if any(type(beta) is not float for beta in spec["betas"]):
         raise ValueError("RMU betas must be exact JSON floats")
-    if spec["mode"] not in ("rmu", "retain_mse") or spec["allowed_tensors"] != list(ALLOWED):
+    if spec["mode"] not in modes or spec["allowed_tensors"] != list(ALLOWED):
         raise ValueError("RMU mode or tensor allowlist differs")
     edits = inner.get("edits", {})
     if (
@@ -71,6 +84,125 @@ def validate_spec(spec: dict[str, Any], inner: dict[str, Any]) -> None:
         or str(edits.get("max_model_relative_frobenius")) != "0.0024"
     ):
         raise ValueError("RMU projection bounds/shape differ from frozen inner contract")
+
+
+def context_variants(
+    items: list[dict[str, Any]], schedule: dict[str, Any], *, retain: bool
+) -> list[int]:
+    occurrences: dict[str, int] = {}
+    variants = []
+    for index in schedule["indices"]:
+        item = items[index]
+        family, prompts = item["family"], item.get("prompts")
+        if (
+            not isinstance(prompts, list)
+            or not prompts
+            or any(not isinstance(p, str) or not p for p in prompts)
+        ):
+            raise ValueError("context schedule requires nonempty prompt variants")
+        if not retain and family not in READING_FAMILIES + WRITING_FAMILIES:
+            raise ValueError("context forget family is unsupported")
+        occurrence = occurrences.get(family, 0)
+        variants.append(
+            occurrence % len(prompts) if not retain and family in READING_FAMILIES else 0
+        )
+        occurrences[family] = occurrence + 1
+    return variants
+
+
+def user_content_offsets(tokenizer: Any, prompt: str, answer: str) -> dict[str, Any]:
+    """Validate a literal chat-content span against fast-tokenizer character offsets."""
+    if not getattr(tokenizer, "is_fast", False):
+        raise ValueError("context masks require fast-tokenizer offset mappings")
+    marker = "LACUNAI_CONTENT_BOUNDARY_7f931a"
+
+    def render(content: str) -> str:
+        return str(
+            tokenizer.apply_chat_template(
+                [{"role": "user", "content": content}], tokenize=False, add_generation_prompt=True
+            )
+        )
+
+    layout = render(marker)
+    if layout.count(marker) != 1:
+        raise ValueError("chat template does not preserve a unique literal user span")
+    before, after = layout.split(marker)
+    prefix = render(prompt)
+    if prefix != before + prompt + after:
+        raise ValueError("chat template transforms user content or boundaries")
+    start, end = len(before), len(before) + len(prompt)
+    encoded = tokenizer(prefix + answer, add_special_tokens=False, return_offsets_mapping=True)
+    ids, offsets = encoded["input_ids"], encoded["offset_mapping"]
+    if len(ids) != len(offsets) or not ids:
+        raise ValueError("offset/token inventory differs")
+    positions = []
+    coverage: set[int] = set()
+    special = set(tokenizer.all_special_ids)
+    for index, pair in enumerate(offsets):
+        if (
+            not isinstance(pair, (list, tuple))
+            or len(pair) != 2
+            or any(type(value) is not int for value in pair)
+        ):
+            raise ValueError("invalid tokenizer character offsets")
+        left, right = pair
+        if not 0 <= left <= right <= len(prefix + answer):
+            raise ValueError("tokenizer offsets exceed rendered content")
+        if left < end and right > start:
+            if left < start or right > end or ids[index] in special:
+                raise ValueError(
+                    "user-content token crosses boundary or contains role/special token"
+                )
+            positions.append(index)
+            coverage.update(range(left, right))
+    if not positions or any(
+        start + i not in coverage for i, c in enumerate(prompt) if not c.isspace()
+    ):
+        raise ValueError("user-content offsets do not cover the literal prompt")
+    return {
+        "input_ids": ids,
+        "offset_mapping": [list(pair) for pair in offsets],
+        "user_content_span": [start, end],
+        "user_content_positions": positions,
+    }
+
+
+def context_batch(
+    tokenizer: Any, item: dict[str, Any], variant: int, *, retain: bool
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    torch = import_module("torch")
+    if type(variant) is not int or not 0 <= variant < len(item["prompts"]):
+        raise ValueError("invalid context prompt variant")
+    selected = {**item, "prompts": [item["prompts"][variant]]}
+    batch = answer_batch(tokenizer, selected, 128)
+    include_user = retain or item["family"] in READING_FAMILIES
+    mask = batch["labels"] != -100
+    evidence: dict[str, Any] = {}
+    if include_user:
+        evidence = user_content_offsets(tokenizer, selected["prompts"][0], item["answer"])
+        if evidence["input_ids"] != batch["input_ids"][0, :-1].tolist():
+            raise ValueError("offset tokenization differs from canonical answer tokenization")
+        mask[0, evidence["user_content_positions"]] = True
+    elif item["family"] not in WRITING_FAMILIES or variant != 0:
+        raise ValueError("context writing must use canonical variant zero")
+    batch["activation_mask"] = mask
+    ids, labels = batch["input_ids"].tolist(), batch["labels"].tolist()
+    positions = torch.nonzero(mask[0], as_tuple=False).flatten().tolist()
+    record = {
+        "item_id": item["id"],
+        "family": item["family"],
+        "variant": variant,
+        "policy": "user_content_and_answer" if include_user else "answer",
+        "positions": positions,
+        "mask_sha256": record_digest(mask.tolist()),
+        "input_ids": ids,
+        "labels": labels,
+        "token_batch_sha256": record_digest({"ids": ids, "labels": labels}),
+        "user_content_span": evidence.get("user_content_span"),
+        "user_content_positions": evidence.get("user_content_positions", []),
+        "offset_mapping": evidence.get("offset_mapping", []),
+    }
+    return batch, record
 
 
 class _CapturedBlock(Exception):
@@ -85,7 +217,9 @@ def capture_hidden(model: Any, batch: dict[str, Any]) -> Any:
     labels, ids = batch["labels"], batch["input_ids"]
     if labels.ndim != 2 or labels.shape != ids.shape or ids.shape[0] != 1:
         raise ValueError("RMU capture requires aligned microbatch-one labels")
-    mask = labels != -100
+    mask = batch.get("activation_mask", labels != -100)
+    if mask.dtype != torch.bool or mask.shape != labels.shape:
+        raise ValueError("RMU hidden-state mask shape/dtype differs")
     if not bool(mask.any()):
         raise ValueError("RMU answer hidden-state mask is empty")
     module = dict(model.named_modules()).get(FIXED["hook_module"])
@@ -204,8 +338,15 @@ def _train(
     planned_forget = family_schedule(forget, 60)
     if len(retain_schedule["family_order"]) != 5 or len(planned_forget["family_order"]) != 4:
         raise ValueError("RMU requires five retain and four forget families")
-    forget_schedule = planned_forget if spec["mode"] == "rmu" else None
+    context = spec["method"] == "rmu_context_candidate"
+    forget_schedule = planned_forget if spec["mode"] in ("rmu", "rmu_context") else None
     schedule = {"method": SCHEDULE_METHOD, "retain": retain_schedule, "forget": forget_schedule}
+    if context:
+        retain_schedule["variant_indices"] = context_variants(retain, retain_schedule, retain=True)
+        if forget_schedule is not None:
+            forget_schedule["variant_indices"] = context_variants(
+                forget, forget_schedule, retain=False
+            )
     if set(reference["original_tensors"]) != set(ALLOWED):
         raise ValueError("RMU reference tensor allowlist differs")
     watch.progress("rmu_reference_validation", state="active")
@@ -226,21 +367,46 @@ def _train(
         ):
             raise ValueError("RMU requires CPU float32 allowed tensors with frozen shape")
     runtime.model.eval()
-    batches: dict[str, list[Any]] = {}
+    batches: dict[str, dict[tuple[int, int], Any]] = {}
+    qualification: dict[str, dict[tuple[int, int], dict[str, Any]]] = {}
     for split, items in (("forget", forget), ("retain", retain)):
-        batches[split] = []
+        batches[split], qualification[split] = {}, {}
+        selected_schedule = forget_schedule if split == "forget" else retain_schedule
+        if context:
+            requests = (
+                list(
+                    dict.fromkeys(
+                        zip(
+                            selected_schedule["indices"],
+                            selected_schedule["variant_indices"],
+                            strict=True,
+                        )
+                    )
+                )
+                if selected_schedule
+                else []
+            )
+        else:
+            requests = [(index, 0) for index in range(len(items))]
         watch.progress(
-            "rmu_tokenization", split=split, completed=0, total=len(items), unit="examples"
+            "rmu_tokenization", split=split, completed=0, total=len(requests), unit="examples"
         )
-        for index, item in enumerate(items):
+        for completed, (index, variant) in enumerate(requests, 1):
             watch.check()
             runtime.check()
-            batches[split].append(answer_batch(runtime.tokenizer, item, 128))
+            if context:
+                batch, evidence = context_batch(
+                    runtime.tokenizer, items[index], variant, retain=split == "retain"
+                )
+                qualification[split][index, variant] = evidence
+            else:
+                batch = answer_batch(runtime.tokenizer, items[index], 128)
+            batches[split][index, variant] = batch
             watch.progress(
                 "rmu_tokenization",
                 split=split,
-                completed=index + 1,
-                total=len(items),
+                completed=completed,
+                total=len(requests),
                 unit="examples",
             )
     control, control_record = control_vector()
@@ -261,7 +427,8 @@ def _train(
         runtime.check()
         optimizer.zero_grad(set_to_none=True)
         retain_index = retain_schedule["indices"][step]
-        batch = batches["retain"][retain_index]
+        retain_variant = retain_schedule["variant_indices"][step] if context else 0
+        batch = batches["retain"][retain_index, retain_variant]
         watch.progress("rmu_retain_teacher", completed=step, total=60, unit="steps")
         # All prior backward passes finished before swapping any parameter storage.
         with original_teacher(runtime.model, reference):
@@ -274,7 +441,8 @@ def _train(
         forget_value = None
         if forget_schedule is not None:
             forget_index = forget_schedule["indices"][step]
-            current = capture_hidden(runtime.model, batches["forget"][forget_index])
+            forget_variant = forget_schedule["variant_indices"][step] if context else 0
+            current = capture_hidden(runtime.model, batches["forget"][forget_index, forget_variant])
             forget_loss = masked_mse(current, control.reshape(1, 896).expand_as(current))
             forget_value = float(forget_loss.detach())
             (float(spec["gamma"]) * forget_loss).backward()
@@ -303,6 +471,19 @@ def _train(
             "forget_item_id": forget_schedule["item_ids"][step] if forget_schedule else None,
             "forget_family": forget_schedule["families"][step] if forget_schedule else None,
         }
+        if context:
+            event.update(
+                retain_variant=retain_variant,
+                retain_mask=qualification["retain"][retain_index, retain_variant],
+                forget_variant=forget_schedule["variant_indices"][step]
+                if forget_schedule
+                else None,
+                forget_mask=qualification["forget"][
+                    forget_schedule["indices"][step], forget_schedule["variant_indices"][step]
+                ]
+                if forget_schedule
+                else None,
+            )
         trace.append(event)
         watch.progress(
             spec["mode"], **{key: value for key, value in event.items() if key != "phase"}
@@ -319,5 +500,15 @@ def _train(
         "spec_sha256": record_digest(spec),
         "control_vector": control_record,
         "source_reference_fingerprint": reference["fingerprint"],
-        "provenance": PROVENANCE,
+        "provenance": (
+            {
+                **PROVENANCE,
+                "mask": CONTEXT_FIXED["mask_policy"],
+                "variant_policy": CONTEXT_FIXED["variant_policy"],
+                "adaptation": "Root-selected context-mask adaptation; literal user offsets exclude "
+                "role/system tokens; all chosen variants qualified before optimization",
+            }
+            if context
+            else PROVENANCE
+        ),
     }
