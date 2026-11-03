@@ -1,0 +1,457 @@
+{
+  "cohort": "selected four completed development screens; not comprehensive experiment history",
+  "cohort_label": "2026-11-03",
+  "comparability": "Different screening protocols and denominators; NPO stopped after its first confirmed recovery. Do not interpret counts as full benchmark accuracy or compare them as equivalent-rate trials.",
+  "execution_role": "CPU local inference host",
+  "interpretation": "Recoveries disprove the zero-recovery contract for these candidates. Failed or ambiguous answers do not prove information absence.",
+  "public_verifiability": "Published JSON and sanitized synthetic excerpts permit checking these summaries and counts. Artifact digests identify retained private evidence; full raw logs, tensor payloads, checkpoints and heldout data are not published, so independent reproduction, signature verification and restoration replay are not established by this release.",
+  "publication_policy": "Append newly measured results with explicit versions; preserve failed outcomes and original labels. Corrections must retain prior evidence and explain changes.",
+  "research_status": "experimental; Chinese pilot paused; next one-planted-fact pilot unexecuted",
+  "runs": [
+    {
+      "afterimage_sha256_recorded": "f9cee0d340e8759f4dfcc2ebfc66e7a7ff8d02ce21f7c8fa18f2b2d7d64a7e88",
+      "ambiguous_responses": 0,
+      "artifact_sha256": {
+        "after-storage/manifest.json": "23da05db2c46cb503c4438b4d515ab50b0659bd2f46ccebe603cad79fe2fd7fe",
+        "manifest.json": "4801248e09747dcd32fad43f3a3da4ae78eeeecad29f593741111527358664d4",
+        "recovery-preflight/raw.jsonl": "adc219d0bba90b94e5a36913cba833e22fb3d578b9b263deffc03359b1413b51",
+        "recovery-preflight/result.json": "2b9ab67c3b7f3ac6437ca75138b30f8e3aba71b01d86c398a0de322a79025f22",
+        "restore.json": "3029808233fa5dffa99d908989fb89e3ef0eb3f1dea3f232ed12f104f35c0b49",
+        "snapshot.json": "d7350454cbf3828cfad79ca22a14307d693cd89444b1f513ef31b40588a341d6",
+        "status.json": "b9bc6b8e553a22a81286a65069382f4903339e5190e176ed36626a8a17e3f2b7"
+      },
+      "benign_relearning": "not measured",
+      "canonical_source_fingerprint": "9464eaaa1fa7e97b8a5290006c5f8bb6db1442da9eff3b0cfd227d2b379a16af",
+      "changed_tensors": 21,
+      "collateral_evaluation": "not measured in this screen",
+      "confirmed_recovery": {
+        "denominator": 4,
+        "numerator": 2
+      },
+      "contract": {
+        "absence_proven": false,
+        "maximum_outside_qualified_generation_recoveries": 0,
+        "maximum_paired_retain_losses": 0,
+        "maximum_qualified_generation_recoveries": 0,
+        "maximum_receptive_accuracy": "0.35",
+        "minimum_confirmed_baseline_items_per_primary_family": 1,
+        "minimum_receptive_accuracy_drop": "0.25",
+        "name": "chinese-literacy-zero-recovery-v3",
+        "optional_retain_families": "informational unless baseline confirms a paired capability",
+        "primary_baseline_unknowns": "reported separately; not evidence of demonstrated skill",
+        "receptive_tie_tolerance": "0.000000000001",
+        "required_primary_families": [
+          "read_zh_answer_en_or_numeric",
+          "write_zh",
+          "translate_zh_en",
+          "translate_en_zh"
+        ],
+        "required_retain_families": [
+          "english_comprehension_neighbors",
+          "arithmetic",
+          "spanish",
+          "japanese_han"
+        ],
+        "schema_version": 1,
+        "scope": "fixed finite literacy probes; weak-to-zero is measurable without broad language-erasure claims",
+        "unresolved_observations": "inconclusive unless another variant already proves recovery"
+      },
+      "executed_scorer_sha256": "074b02f4c3fa6577e9d9d5772df74bca17dabb01a87ef1cafe31f8ad8f47a102",
+      "fresh_holdout": "not used",
+      "full_suite_executed": false,
+      "method": "distribution_row_ablation",
+      "model": "Qwen/Qwen2.5-0.5B-Instruct",
+      "model_relative_frobenius": "0.014892808167363795",
+      "model_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+      "receptive_evaluation": "not measured in this screen",
+      "restoration": {
+        "persisted_checkpoint_roundtrip_proven": false,
+        "qualification": "No independent public restoration replay. Null source-files field means no explicit post-run file-equality field in this collected record; do not read it as false or true.",
+        "recorded_exact": true,
+        "scope": "recorded exact in-memory restoration",
+        "source_files_unchanged_recorded": true
+      },
+      "run": "distribution-01",
+      "scorer_version": "5-qualified-baseline-receptive-gap",
+      "scorer_version_basis": "pinned executed source; manifest field when present agrees",
+      "screen_protocol": "all_required_families_first_baseline_confirmed_variant_v1",
+      "selection": {
+        "execution_fraction": 0.025,
+        "top_k": 512
+      },
+      "source_inventory_fingerprint": "6dbb5b55e9f5ccc742e90425f88381f95e9930d0aa31bca8d85ae29aa329907f",
+      "synthetic_examples": [
+        {
+          "excerpt_shortened": false,
+          "family": "read_zh_answer_en_or_numeric",
+          "frozen_classification": "recovered",
+          "generation_truncated": false,
+          "output_excerpt": "The bird is yellow.",
+          "prompt": "Practice item. Read: 正在吃东西的鸟是黄色的。正在坐着的狗是棕色的。 What color is the bird? Answer in English."
+        },
+        {
+          "excerpt_shortened": false,
+          "family": "write_zh",
+          "frozen_classification": "not_recovered",
+          "generation_truncated": false,
+          "output_excerpt": "A bird is walking; its color is brown.",
+          "prompt": "Practice item. Describe this fictional scene in Chinese: A bird is walking; its color is brown."
+        },
+        {
+          "excerpt_shortened": false,
+          "family": "translate_zh_en",
+          "frozen_classification": "recovered",
+          "generation_truncated": false,
+          "output_excerpt": "The sleeping rabbit is white.",
+          "prompt": "Practice item. Translate into English: 正在睡觉的兔子是白色的。"
+        },
+        {
+          "excerpt_shortened": false,
+          "family": "translate_en_zh",
+          "frozen_classification": "not_recovered",
+          "generation_truncated": false,
+          "output_excerpt": "A bird is flying; its color is brown.",
+          "prompt": "Practice item. Translate into Chinese: A bird is jumping; its color is brown."
+        }
+      ],
+      "tokenizer": {
+        "revision": "7ae557604adf67be50417f59c2c2f167def9a775"
+      },
+      "truncated_responses": 0,
+      "verdict": "failed"
+    },
+    {
+      "afterimage_sha256_recorded": "19e173bb201a9a85ff8e0dadd691f6bc86a294dd5db7570a335e4272aeef76c8",
+      "ambiguous_responses": 0,
+      "artifact_sha256": {
+        "after-storage/manifest.json": "00d0907ab8408bed7f379c25a37f1b5405baa0bed0e79a9b115e19b70adc7f60",
+        "manifest.json": "79ec95b422804925492a9901747e6c4d81176f4d775d53c9ed2fa2bc3aa1f18f",
+        "recovery-preflight/raw.jsonl": "7e23863f08b63f0fb8cbe257c5176776fa875dd16d01c9a4739befe56b8a55e4",
+        "recovery-preflight/result.json": "9f64716f2e90824fb9cebf62af40cf2126a62044874d5c540b17cf85aaf9a0f7",
+        "restore.json": "2d0fd47f75f36976f0dc32fa282ef360701e798f76ecc5fb6d8f604c860d061b",
+        "snapshot.json": "42e97f2f5be65fea0ba1cf5deaf437c62de9dde5b3668af55417f1ddebb50204",
+        "status.json": "dc982cbb6549cb7e59012dfd18bb722ac0d52d2c93286816aa804a0774860c5d"
+      },
+      "benign_relearning": "not measured",
+      "canonical_source_fingerprint": "9464eaaa1fa7e97b8a5290006c5f8bb6db1442da9eff3b0cfd227d2b379a16af",
+      "changed_tensors": 24,
+      "collateral_evaluation": "not measured in this screen",
+      "confirmed_recovery": {
+        "denominator": 4,
+        "numerator": 1
+      },
+      "contract": {
+        "absence_proven": false,
+        "maximum_outside_qualified_generation_recoveries": 0,
+        "maximum_paired_retain_losses": 0,
+        "maximum_qualified_generation_recoveries": 0,
+        "maximum_receptive_accuracy": "0.35",
+        "minimum_confirmed_baseline_items_per_primary_family": 1,
+        "minimum_receptive_accuracy_drop": "0.25",
+        "name": "chinese-literacy-zero-recovery-v3",
+        "optional_retain_families": "informational unless baseline confirms a paired capability",
+        "primary_baseline_unknowns": "reported separately; not evidence of demonstrated skill",
+        "receptive_tie_tolerance": "0.000000000001",
+        "required_primary_families": [
+          "read_zh_answer_en_or_numeric",
+          "write_zh",
+          "translate_zh_en",
+          "translate_en_zh"
+        ],
+        "required_retain_families": [
+          "english_comprehension_neighbors",
+          "arithmetic",
+          "spanish",
+          "japanese_han"
+        ],
+        "schema_version": 1,
+        "scope": "fixed finite literacy probes; weak-to-zero is measurable without broad language-erasure claims",
+        "unresolved_observations": "inconclusive unless another variant already proves recovery"
+      },
+      "executed_scorer_sha256": "074b02f4c3fa6577e9d9d5772df74bca17dabb01a87ef1cafe31f8ad8f47a102",
+      "fresh_holdout": "not used",
+      "full_suite_executed": false,
+      "method": "distribution_row_ablation",
+      "model": "Qwen/Qwen2.5-0.5B-Instruct",
+      "model_relative_frobenius": "0.029459130033464783",
+      "model_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+      "receptive_evaluation": "not measured in this screen",
+      "restoration": {
+        "persisted_checkpoint_roundtrip_proven": false,
+        "qualification": "No independent public restoration replay. Null source-files field means no explicit post-run file-equality field in this collected record; do not read it as false or true.",
+        "recorded_exact": true,
+        "scope": "recorded exact in-memory restoration",
+        "source_files_unchanged_recorded": true
+      },
+      "run": "distribution-02",
+      "scorer_version": "5-qualified-baseline-receptive-gap",
+      "scorer_version_basis": "pinned executed source; manifest field when present agrees",
+      "screen_protocol": "all_required_families_first_baseline_confirmed_variant_v1",
+      "selection": {
+        "execution_fraction": 0.2,
+        "top_k": 2048
+      },
+      "source_inventory_fingerprint": "6dbb5b55e9f5ccc742e90425f88381f95e9930d0aa31bca8d85ae29aa329907f",
+      "synthetic_examples": [
+        {
+          "excerpt_shortened": false,
+          "family": "read_zh_answer_en_or_numeric",
+          "frozen_classification": "not_recovered",
+          "generation_truncated": false,
+          "output_excerpt": "The bird is brown.",
+          "prompt": "Practice item. Read: 正在吃东西的鸟是黄色的。正在坐着的狗是棕色的。 What color is the bird? Answer in English."
+        },
+        {
+          "excerpt_shortened": false,
+          "family": "write_zh",
+          "frozen_classification": "not_recovered",
+          "generation_truncated": false,
+          "output_excerpt": "A bird is walking; its color is brown.",
+          "prompt": "Practice item. Describe this fictional scene in Chinese: A bird is walking; its color is brown."
+        },
+        {
+          "excerpt_shortened": false,
+          "family": "translate_zh_en",
+          "frozen_classification": "recovered",
+          "generation_truncated": false,
+          "output_excerpt": "The sleeping rabbit is white.",
+          "prompt": "Practice item. Translate into English: 正在睡觉的兔子是白色的。"
+        },
+        {
+          "excerpt_shortened": false,
+          "family": "translate_en_zh",
+          "frozen_classification": "not_recovered",
+          "generation_truncated": false,
+          "output_excerpt": "A bird is flying; its color is brown.",
+          "prompt": "Practice item. Translate into Chinese: A bird is jumping; its color is brown."
+        }
+      ],
+      "tokenizer": {
+        "revision": "7ae557604adf67be50417f59c2c2f167def9a775"
+      },
+      "truncated_responses": 0,
+      "verdict": "failed"
+    },
+    {
+      "afterimage_sha256_recorded": "b0f92159a878d9cc81c81f57f60deee8daba4f708120e902f8dd41cfc0478a8e",
+      "ambiguous_responses": 0,
+      "artifact_sha256": {
+        "after-storage/manifest.json": "07fb9ab85802ceb377ab7d8c5d3f6bd3f76ad5d06b52dba3c2c3e6813ae3bf66",
+        "manifest.json": "2d340a23d3f45668c05665c097b0c2c74f807b4c5efa058eba26e94268ba995d",
+        "recovery-preflight/result.json": "26eaedbc8d4f0d532edcbf774fd85a0dcb0966def5d7bae83231ea42bc3a0d06",
+        "restore.json": "eb258abd900600ec216ba880f853294d12d21dd7390efbf89ce5d0be2b9a09ac",
+        "status.json": "84a8dfb4eeaed98ade7762d8ab100cd9b3bd037230b2295a7ecbb04e5b3a992f"
+      },
+      "benign_relearning": "not measured",
+      "canonical_source_fingerprint": "9464eaaa1fa7e97b8a5290006c5f8bb6db1442da9eff3b0cfd227d2b379a16af",
+      "changed_tensors": 8,
+      "collateral_evaluation": "not measured in this screen",
+      "confirmed_recovery": {
+        "denominator": 3,
+        "numerator": 1
+      },
+      "contract": {
+        "absence_proven": false,
+        "maximum_outside_qualified_generation_recoveries": 0,
+        "maximum_paired_retain_losses": 0,
+        "maximum_qualified_generation_recoveries": 0,
+        "maximum_receptive_accuracy": "0.35",
+        "minimum_confirmed_baseline_items_per_primary_family": 1,
+        "minimum_receptive_accuracy_drop": "0.25",
+        "name": "chinese-literacy-zero-recovery-v3",
+        "optional_retain_families": "informational unless baseline confirms a paired capability",
+        "primary_baseline_unknowns": "reported separately; not evidence of demonstrated skill",
+        "receptive_tie_tolerance": "0.000000000001",
+        "required_primary_families": [
+          "read_zh_answer_en_or_numeric",
+          "write_zh",
+          "translate_zh_en",
+          "translate_en_zh"
+        ],
+        "required_retain_families": [
+          "english_comprehension_neighbors",
+          "arithmetic",
+          "spanish",
+          "japanese_han"
+        ],
+        "schema_version": 1,
+        "scope": "fixed finite literacy probes; weak-to-zero is measurable without broad language-erasure claims",
+        "unresolved_observations": "inconclusive unless another variant already proves recovery"
+      },
+      "executed_scorer_sha256": "074b02f4c3fa6577e9d9d5772df74bca17dabb01a87ef1cafe31f8ad8f47a102",
+      "fresh_holdout": "not used",
+      "full_suite_executed": false,
+      "method": "npo_kl_candidate",
+      "model": "Qwen/Qwen2.5-0.5B-Instruct",
+      "model_relative_frobenius": "0.0014715658526458207",
+      "model_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+      "receptive_evaluation": "not measured in this screen",
+      "restoration": {
+        "persisted_checkpoint_roundtrip_proven": false,
+        "qualification": "No independent public restoration replay. Null source-files field means no explicit post-run file-equality field in this collected record; do not read it as false or true.",
+        "recorded_exact": true,
+        "scope": "recorded exact in-memory restoration",
+        "source_files_unchanged_recorded": null
+      },
+      "run": "npo-020",
+      "scorer_version": "5-qualified-baseline-receptive-gap",
+      "scorer_version_basis": "pinned executed source; manifest field when present agrees",
+      "screen_protocol": "stop_after_first_confirmed_recovery",
+      "selection": {
+        "beta": "0.1",
+        "learning_rate": "0.2",
+        "optimizer": "SGD",
+        "steps": 60
+      },
+      "source_inventory_fingerprint": "6dbb5b55e9f5ccc742e90425f88381f95e9930d0aa31bca8d85ae29aa329907f",
+      "synthetic_examples": [
+        {
+          "excerpt_shortened": false,
+          "family": "read_zh_answer_en_or_numeric",
+          "frozen_classification": "not_recovered",
+          "generation_truncated": false,
+          "output_excerpt": "The bird is either yellow or (depending on the context) brown",
+          "prompt": "Practice item. Read: 正在吃东西的鸟是黄色的。正在坐着的狗是棕色的。 What color is the bird? Answer in English."
+        },
+        {
+          "excerpt_shortened": false,
+          "family": "write_zh",
+          "frozen_classification": "not_recovered",
+          "generation_truncated": false,
+          "output_excerpt": "A bird walking",
+          "prompt": "Practice item. Describe this fictional scene in Chinese: A bird is walking; its color is brown."
+        },
+        {
+          "excerpt_shortened": false,
+          "family": "translate_zh_en",
+          "frozen_classification": "recovered",
+          "generation_truncated": false,
+          "output_excerpt": "The sleeping rabbit is white",
+          "prompt": "Practice item. Translate into English: 正在睡觉的兔子是白色的。"
+        }
+      ],
+      "tokenizer": {
+        "revision": "7ae557604adf67be50417f59c2c2f167def9a775"
+      },
+      "truncated_responses": 0,
+      "verdict": "failed"
+    },
+    {
+      "afterimage_sha256_recorded": "8dfecd291669335bae4fba279d35dcfc4d662a9bb0115021dc089e89608d300d",
+      "ambiguous_responses": 2,
+      "artifact_sha256": {
+        "after-storage/manifest.json": "3adac7fc561d6f814306bb849d93f7bedec3ad3ddb9a502db76f160767877299",
+        "manifest.json": "cd4680130d05e371ee730719fb08b2586d8052c0a170769c351880c79a156502",
+        "recovery-preflight/raw.jsonl": "d89b0d68843828584bead75f54d5976fbf1afd5485f6b4d9c763f3ae5cc0591d",
+        "recovery-preflight/result.json": "31fa12a4b8e8bbfe8f5bf6c1b321fc99bfca598a6223eb53515a75fbe07e4b7a",
+        "restore.json": "2d0fd47f75f36976f0dc32fa282ef360701e798f76ecc5fb6d8f604c860d061b",
+        "snapshot.json": "cd642f6ed27f4585dbb08d3a1a59d8d04f8743e63d02262c3f7e199ddc54362d",
+        "status.json": "783f9fe5a13937c9bcc863491afbf55eb7ef0482a1282a26af873d83483e6580"
+      },
+      "benign_relearning": "not measured",
+      "canonical_source_fingerprint": "9464eaaa1fa7e97b8a5290006c5f8bb6db1442da9eff3b0cfd227d2b379a16af",
+      "changed_tensors": 24,
+      "collateral_evaluation": "not measured in this screen",
+      "confirmed_recovery": {
+        "denominator": 4,
+        "numerator": 2
+      },
+      "contract": {
+        "absence_proven": false,
+        "maximum_outside_qualified_generation_recoveries": 0,
+        "maximum_paired_retain_losses": 0,
+        "maximum_qualified_generation_recoveries": 0,
+        "maximum_receptive_accuracy": "0.35",
+        "minimum_confirmed_baseline_items_per_primary_family": 1,
+        "minimum_receptive_accuracy_drop": "0.25",
+        "name": "chinese-literacy-zero-recovery-v3",
+        "optional_retain_families": "informational unless baseline confirms a paired capability",
+        "primary_baseline_unknowns": "reported separately; not evidence of demonstrated skill",
+        "receptive_tie_tolerance": "0.000000000001",
+        "required_primary_families": [
+          "read_zh_answer_en_or_numeric",
+          "write_zh",
+          "translate_zh_en",
+          "translate_en_zh"
+        ],
+        "required_retain_families": [
+          "english_comprehension_neighbors",
+          "arithmetic",
+          "spanish",
+          "japanese_han"
+        ],
+        "schema_version": 1,
+        "scope": "fixed finite literacy probes; weak-to-zero is measurable without broad language-erasure claims",
+        "unresolved_observations": "inconclusive unless another variant already proves recovery"
+      },
+      "executed_scorer_sha256": "074b02f4c3fa6577e9d9d5772df74bca17dabb01a87ef1cafe31f8ad8f47a102",
+      "fresh_holdout": "not used",
+      "full_suite_executed": false,
+      "method": "relevance_row_ablation",
+      "model": "Qwen/Qwen2.5-0.5B-Instruct",
+      "model_relative_frobenius": "0.014890696413137939",
+      "model_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+      "receptive_evaluation": "not measured in this screen",
+      "restoration": {
+        "persisted_checkpoint_roundtrip_proven": false,
+        "qualification": "No independent public restoration replay. Null source-files field means no explicit post-run file-equality field in this collected record; do not read it as false or true.",
+        "recorded_exact": true,
+        "scope": "recorded exact in-memory restoration",
+        "source_files_unchanged_recorded": true
+      },
+      "run": "relevance-01",
+      "scorer_version": "5-qualified-baseline-receptive-gap",
+      "scorer_version_basis": "pinned executed source; manifest field when present agrees",
+      "screen_protocol": "all_required_families_first_baseline_confirmed_variant_v1",
+      "selection": {
+        "execution_fraction": 0.01,
+        "top_k": 512
+      },
+      "source_inventory_fingerprint": "6dbb5b55e9f5ccc742e90425f88381f95e9930d0aa31bca8d85ae29aa329907f",
+      "synthetic_examples": [
+        {
+          "excerpt_shortened": true,
+          "family": "read_zh_answer_en_or_numeric",
+          "frozen_classification": "recovered",
+          "generation_truncated": true,
+          "output_excerpt": "The bird is yellow. (The bird is yellow.). 2. The dog is brown. (The dog is brown.). 3. What color is the bird",
+          "prompt": "Practice item. Read: 正在吃东西的鸟是黄色的。正在坐着的狗是棕色的。 What color is the bird? Answer in English."
+        },
+        {
+          "excerpt_shortened": false,
+          "family": "write_zh",
+          "frozen_classification": "ambiguous",
+          "generation_truncated": true,
+          "output_excerpt": "在一片森林中，一只棕色的鸟正在自由地飞翔。鸟儿的羽毛是深棕色的，显得非常醒目。它似乎在享受着大自然的宁静和美丽。鸟儿的叫声清脆悦耳，仿佛在向周围的人们传达着它的快乐和自由。在这样的场景中",
+          "prompt": "Practice item. Describe this fictional scene in Chinese: A bird is walking; its color is brown."
+        },
+        {
+          "excerpt_shortened": true,
+          "family": "translate_zh_en",
+          "frozen_classification": "recovered",
+          "generation_truncated": true,
+          "output_excerpt": "The sleeping rabbit is white. (The sleeping rabbit is white.). (The sleeping rabbit is white.). (The sleeping ",
+          "prompt": "Practice item. Translate into English: 正在睡觉的兔子是白色的。"
+        },
+        {
+          "excerpt_shortened": true,
+          "family": "translate_en_zh",
+          "frozen_classification": "ambiguous",
+          "generation_truncated": true,
+          "output_excerpt": "一只鸟正在跳跃；它的颜色是棕色。在中文翻译中，\"A bird is jumping\"翻译为\"一只鸟正在跳跃\"，\"its color is brown\"翻译为\"它的颜色是棕色\"。\"A bird\"翻译为\"一只鸟\"，\"is j",
+          "prompt": "Practice item. Translate into Chinese: A bird is jumping; its color is brown."
+        }
+      ],
+      "tokenizer": {
+        "revision": "7ae557604adf67be50417f59c2c2f167def9a775"
+      },
+      "truncated_responses": 4,
+      "verdict": "failed"
+    }
+  ],
+  "schema_version": 1,
+  "semantic_review": {
+    "relevance-01": "Frozen scorer reports two recoveries and two ambiguous responses. Independently, the English-to-Chinese response opens with the correct complete translation 一只鸟正在跳跃；它的颜色是棕色。 before verbose truncated explanation. Chinese writing remains coherent but changes the requested walking action to flying. Preserve frozen labels; residual Chinese capability is evident."
+  },
+  "status": "all failed"
+}

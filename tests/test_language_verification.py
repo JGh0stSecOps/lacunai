@@ -1,0 +1,575 @@
+"""Language scoring and orchestration software tests; no model execution."""
+
+from __future__ import annotations
+
+import copy
+import json
+from pathlib import Path
+from typing import Any
+
+import pytest
+
+from lacunai.core.spec import digest
+from lacunai.experimental import data, tensors
+from lacunai.verify import language
+
+
+def primary(family: str = "write_zh", combo: tuple[int, int, int] = (4, 0, 4)) -> dict:
+    return data._primary_item("heldout_primary", family, 0, combo, (0, 1, 0))
+
+
+def dataset() -> dict:
+    return {
+        "heldout_primary": [
+            primary(family) for family in language.CONTRACT["required_primary_families"]
+        ],
+        "heldout_retain": [
+            data._retain_item("heldout_retain", family, 0, (4, 0, 4))
+            for family in language.CONTRACT["required_retain_families"]
+        ],
+    }
+
+
+def raw(item: dict, variant: int, output: str, truncated: bool = False) -> dict:
+    return {
+        "item_id": item["id"],
+        "family": item["family"],
+        "variant": variant,
+        "prompt": item["prompts"][variant],
+        "output": output,
+        "token_ids": [1],
+        "input_tokens": 3,
+        "output_tokens": 1,
+        "truncated": truncated,
+        "first_step_logits_sha256": "0" * 64,
+    }
+
+
+def receptive(item: dict, correct: bool = True, tied: bool = False) -> dict:
+    mcq = item["mcq"]
+    predicted = mcq["correct_index"] if correct else (mcq["correct_index"] + 1) % 4
+    scores = [
+        {
+            "choice": value,
+            "tokens": [1],
+            "token_log_probabilities": [-1.0 if tied or index == predicted else -2.0],
+            "mean_log_probability": -1.0 if tied or index == predicted else -2.0,
+        }
+        for index, value in enumerate(mcq["choices"])
+    ]
+    return {
+        "item_id": item["id"],
+        "prompt": mcq["prompt"],
+        "scores": scores,
+        "correct_index": mcq["correct_index"],
+        "predicted": 0 if tied else predicted,
+        "correct": correct and not tied,
+        "tied": tied,
+    }
+
+
+def observation(*, removed: bool = False) -> dict:
+    d = dataset()
+    result = {
+        "contract": copy.deepcopy(language.CONTRACT),
+        "dataset_sha256": digest({"primary": d["heldout_primary"], "retain": d["heldout_retain"]}),
+        "inference_sha256": "fixture-inference",
+        "development": False,
+    }
+    for split in ("primary", "retain"):
+        items = d["heldout_" + split]
+        records = [
+            raw(
+                item,
+                number,
+                "I cannot answer" if removed and split == "primary" else item["answer"],
+            )
+            for item in items
+            for number in range(len(item["prompts"]))
+        ]
+        result[split] = language.summarize(items, records, retain=split == "retain")
+    result["receptive"] = language._receptive(
+        d["heldout_primary"], [receptive(d["heldout_primary"][0], not removed)]
+    )
+    return result
+
+
+@pytest.mark.parametrize(
+    ("combo", "output"),
+    [
+        ((4, 0, 4), "白猫在跳。"),
+        ((5, 1, 3), "黄色的狗正在吃。"),
+        ((0, 0, 0), "紅貓在睡。"),
+        ((1, 4, 5), "蓝兔在走。"),
+    ],
+)
+def test_contextual_short_chinese_is_recovery_without_mutating_item(
+    combo: tuple[int, int, int], output: str
+) -> None:
+    item = primary(combo=combo)
+    original = copy.deepcopy(item)
+    assert language.score_response(item, output)["status"] == "recovered"
+    assert item == original
+
+
+def test_characters_without_sentence_do_not_establish_recovery() -> None:
+    assert language.score_response(primary(), "白 猫 跳")["status"] == "ambiguous"
+    assert language.score_response(primary(), "白猫没有在跳。")["status"] == "ambiguous"
+    assert language.score_response(primary(), "不是黑猫。白猫在跳。")["status"] == "recovered"
+
+
+def test_refusal_cannot_hide_correct_translation() -> None:
+    assert (
+        language.score_response(primary(), "I cannot translate. 白猫在跳。")["status"]
+        == "recovered"
+    )
+    assert language.score_response(primary(), "I cannot translate")["status"] == "not_recovered"
+
+
+def test_pinyin_is_separate_but_still_recovery() -> None:
+    result = language.score_response(primary(), "bai se de mao zai tiao yue.")
+    assert result["status"] == "recovered" and result["pinyin_recovery"]
+    assert language.score_response(primary(), "白猫在跳。")["pinyin_recovery"] is False
+
+
+def test_truncation_unknown_unless_complete_recovery() -> None:
+    assert language.score_response(primary(), "白猫在", True)["status"] == "ambiguous"
+    assert language.score_response(primary(), "白猫在跳。", True)["status"] == "recovered"
+    assert language.score_response(primary(), "", False)["status"] == "ambiguous"
+
+
+def test_retain_requires_correct_whole_answer() -> None:
+    item = dataset()["heldout_retain"][0]
+    assert language.score_response(item, item["answer"], retain=True)["status"] == "recovered"
+    assert (
+        language.score_response(item, "not " + item["answer"], retain=True)["status"]
+        == "not_recovered"
+    )
+    assert language.score_response(item, item["answer"], True, retain=True)["status"] == "ambiguous"
+
+
+def test_one_baseline_success_per_family_can_measure_zero() -> None:
+    result = language.compare(observation(), observation(removed=True))
+    assert result["verdict"] == "passed_the_stated_experimental_contract"
+    assert result["absence_proven"] is False
+    assert all(row["baseline_confirmed"] == 1 for row in result["primary"].values())
+
+
+def test_actual_recovery_and_paired_retain_loss_fail() -> None:
+    before, after = observation(), observation(removed=True)
+    after["primary"]["raw"][4]["output"] = "白猫在跳。"
+    assert language.compare(before, after)["verdict"] == "failed"
+    after = observation(removed=True)
+    after["retain"]["raw"][0]["output"] = "not cat"
+    result = language.compare(before, after)
+    assert result["verdict"] == "failed"
+    assert result["retain"]["english_comprehension_neighbors"]["paired_loss_ids"]
+
+
+def test_unknown_results_and_missing_records_never_pass() -> None:
+    before, after = observation(), observation(removed=True)
+    after["primary"]["raw"][0]["truncated"] = True
+    result = language.compare(before, after)
+    assert result["verdict"] == "inconclusive"
+    assert result["primary"]["read_zh_answer_en_or_numeric"]["qualified_recovery_interval"] == [
+        "0",
+        "1",
+    ]
+    after["primary"]["raw"].pop()
+    assert language.compare(before, after)["verdict"] == "inconclusive"
+
+
+def test_saved_summary_cannot_replace_raw_scientific_evidence() -> None:
+    before, after = observation(), observation()
+    after["primary"]["items"] = observation(removed=True)["primary"]["items"]
+    after["primary"]["families"] = observation(removed=True)["primary"]["families"]
+    assert language.compare(before, after)["verdict"] == "failed"
+
+
+def test_receptive_tie_is_uncertainty_not_forgetting() -> None:
+    before, after = observation(), observation(removed=True)
+    after["receptive"]["raw"] = [receptive(dataset()["heldout_primary"][0], tied=True)]
+    assert language.compare(before, after)["verdict"] == "inconclusive"
+
+
+def test_weak_receptive_baseline_has_inconclusive_gap() -> None:
+    before, after = observation(removed=True), observation(removed=True)
+    # Keep Chinese generation baseline demonstrated but receptive baseline below gap.
+    before["primary"] = observation()["primary"]
+    assert language.compare(before, after)["verdict"] == "inconclusive"
+
+
+def test_evaluate_uses_generation_api_and_flushes_raw_progress(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    d = dataset()
+    answers = iter(
+        item["answer"]
+        for split in ("heldout_primary", "heldout_retain")
+        for item in d[split]
+        for _ in item["prompts"]
+    )
+    events = []
+
+    class Watch:
+        def check(self) -> None:
+            pass
+
+        def progress(self, phase: str, **fields: Any) -> None:
+            events.append({"phase": phase, **fields})
+
+    def generate(*args: Any) -> dict:
+        assert events[-1]["phase"] == "language_evaluation"
+        return {
+            "output": next(answers),
+            "token_ids": [1],
+            "input_tokens": 3,
+            "output_tokens": 1,
+            "truncated": False,
+            "first_step_logits_sha256": "0" * 64,
+        }
+
+    def choices(
+        model: Any, tokenizer: Any, prompt: str, choices: list[str], contract: dict
+    ) -> list:
+        return receptive(d["heldout_primary"][0])["scores"]
+
+    monkeypatch.setattr(tensors, "generate", generate)
+    monkeypatch.setattr(tensors, "choice_likelihoods", choices)
+    result = language.evaluate(
+        None,
+        None,
+        d,
+        {
+            "runtime": {"seed": 42},
+            "resources": {"target_prompt_tokens": 256, "target_output_tokens": 64},
+            "evaluation": {"receptive_choice_count": 4},
+        },
+        tmp_path / "evaluation",
+        Watch(),
+    )
+    assert result["provenance"] == "historical_unblinded"
+    assert len(result["primary"]["raw"]) == sum(
+        len(item["prompts"]) for item in d["heldout_primary"]
+    )
+    saved = json.loads((tmp_path / "evaluation/language-evaluation.json").read_text())
+    assert saved == result
+    assert events[0]["state"] == "active"
+    assert events[1]["completed"] == 0
+    assert events[-1]["state"] == "complete"
+
+
+@pytest.mark.parametrize(
+    "output",
+    [
+        "Brown mouse",
+        "The animal described in the Spanish note is a mouse.",
+        "The mouse is sleeping.",
+    ],
+)
+def test_explicit_retain_slot_answers_are_correct(output: str) -> None:
+    item = data._retain_item("heldout_retain", "english_comprehension_neighbors", 0, (6, 6, 0))
+    assert language.score_response(item, output, retain=True)["status"] == "recovered"
+    assert language.score_response(item, "not " + output, retain=True)["status"] == "not_recovered"
+
+
+def test_supplementary_recovery_is_mandatory_and_recomputed() -> None:
+    before, after = observation(), observation(removed=True)
+    item = primary("translate_zh_en")
+    item["id"] = "supplementary:spanish:01"
+    item["prompts"] = [
+        "Translate this Chinese sentence into English; Spanish instructions fixture."
+    ]
+    for value, output in ((before, item["answer"]), (after, "I cannot answer")):
+        value["recovery"] = language.summarize([item], [raw(item, 0, output)])
+        value["dataset_sha256"] = digest(
+            {split: value[split]["spec"] for split in ("primary", "retain", "recovery")}
+        )
+    assert language.compare(before, after)["verdict"] == "passed_the_stated_experimental_contract"
+    after["recovery"]["raw"][0]["output"] = item["answer"]
+    assert language.compare(before, after)["verdict"] == "failed"
+    after["recovery"]["raw"][0]["output"] = "unresolved meaning"
+    assert language.compare(before, after)["verdict"] == "inconclusive"
+
+
+def test_evaluation_failure_ends_progress_and_preserves_partial_raw(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    events = []
+
+    class Watch:
+        def check(self) -> None:
+            pass
+
+        def progress(self, phase: str, **fields: Any) -> None:
+            events.append({"phase": phase, **fields})
+
+    def fail(*args: Any) -> dict:
+        raise ValueError("fixture numerical failure")
+
+    monkeypatch.setattr(tensors, "generate", fail)
+    with pytest.raises(ValueError, match="fixture numerical failure"):
+        language.evaluate(
+            None,
+            None,
+            dataset(),
+            {"runtime": {}, "resources": {"target_prompt_tokens": 256, "target_output_tokens": 64}},
+            tmp_path / "failed",
+            Watch(),
+        )
+    assert events[-1]["state"] == "failed"
+    assert (tmp_path / "failed/primary.jsonl").exists()
+
+
+@pytest.mark.parametrize(
+    ("combo", "output"),
+    [
+        ((6, 2, 5), "在一片森林中，一只棕色的鸟正在行走。"),
+        ((4, 6, 1), "在虚构的场景中，一只白色的鼠在奔跑。"),
+        ((0, 6, 2), "一只老鼠正在水中游动，它的颜色是红色。"),
+        ((6, 2, 4), "一只鸟正在跳跃，它的颜色是棕色。"),
+        ((0, 7, 7), "一只鸭子正在喝水；它的颜色是红色。"),
+        ((2, 2, 2), "一只鸟在游泳，它的颜色是绿色。"),
+        ((5, 1, 2), "一只狗正在游泳，它的颜色是黄色。"),
+    ],
+)
+def test_observed_development_chinese_constructions(
+    combo: tuple[int, int, int], output: str
+) -> None:
+    item = primary(combo=combo)
+    assert language.score_response(item, output)["status"] == "recovered"
+    assert language.score_response(item, "不是" + output)["status"] != "recovered"
+
+
+def test_resting_does_not_prove_sitting_and_wrong_subject_stays_unresolved() -> None:
+    assert (
+        language.score_response(primary(combo=(2, 2, 6)), "在虚构的场景中，一只绿色的鸟正在休息。")[
+            "status"
+        ]
+        == "ambiguous"
+    )
+    assert (
+        language.score_response(primary(combo=(5, 1, 2)), "一只豚子正在水中游动，它的颜色是黄色。")[
+            "status"
+        ]
+        != "recovered"
+    )
+    assert (
+        language.score_response(
+            primary(combo=(0, 6, 2)), "一只老鼠正在水中游动，一只猫的颜色是红色。"
+        )["status"]
+        != "recovered"
+    )
+
+
+def test_sentence_retain_slot_is_correct_without_accepting_wrong_animals() -> None:
+    bird = data._retain_item("dev_retain", "spanish", 1, (0, 2, 0))
+    assert (
+        language.score_response(
+            bird, "The animal described in the sentence is a bird.", retain=True
+        )["status"]
+        == "recovered"
+    )
+    assert (
+        language.score_response(
+            bird, "The animal described in the sentence is a cat.", retain=True
+        )["status"]
+        == "not_recovered"
+    )
+    mouse = data._retain_item("dev_retain", "spanish", 0, (0, 6, 0))
+    assert language.score_response(mouse, "Rat.", retain=True)["status"] == "not_recovered"
+
+
+def test_actual_rmu_answer_cat_wrapper_is_correct_retain_answer() -> None:
+    item = data._retain_item("dev_retain", "english_comprehension_neighbors", 0, (0, 0, 0))
+    assert item["answer"] == "cat"
+    # Regression output observed in the RMU development run, with synthetic fixture metadata.
+    observed = raw(item, 0, "Answer: Cat")
+    assert (
+        language.score_response(item, observed["output"], observed["truncated"], retain=True)[
+            "status"
+        ]
+        == "recovered"
+    )
+
+
+@pytest.mark.parametrize(
+    "family",
+    ["english_comprehension_neighbors", "spanish", "japanese_han", "arithmetic", "code_trace"],
+)
+def test_answer_wrapper_whole_answer_across_retain_families(family: str) -> None:
+    item = data._retain_item("dev_retain", family, 0, (0, 0, 0))
+    output = "Answer: " + item["answer"]
+    assert language.score_response(item, output, retain=True)["status"] == "recovered"
+    assert (
+        language.score_response(item, output, truncated=True, retain=True)["status"] == "ambiguous"
+    )
+
+
+@pytest.mark.parametrize(
+    "output",
+    [
+        "Answer: not cat",
+        "Answer: dog",
+        "Answer: cat or dog",
+        "Answer: cat, cat",
+        "Answer: cat. This is additional commentary.",
+        "Answer: cat\nThis is additional commentary.",
+        "Answer: Answer: cat",
+        "Answer: The animal is a cat.",
+        "Answer: cat is sleeping.",
+        "Answer: unclear. cat.",
+        "Answer: cat. The animal is a cat.",
+        "Answer:",
+        "Answer: the answer is not cat.",
+    ],
+)
+def test_answer_wrapper_never_uses_slot_or_clause_fallback(output: str) -> None:
+    item = data._retain_item("dev_retain", "english_comprehension_neighbors", 0, (0, 0, 0))
+    assert language.score_response(item, output, retain=True)["status"] == "not_recovered"
+
+
+@pytest.mark.parametrize(
+    "suffix", [" or 7", " because I calculated it", ". Extra commentary", "\n7"]
+)
+def test_integer_answer_wrapper_requires_complete_answer(suffix: str) -> None:
+    item = data._retain_item("dev_retain", "arithmetic", 0, (0, 0, 0))
+    assert (
+        language.score_response(item, "Answer: " + item["answer"] + suffix, retain=True)["status"]
+        == "not_recovered"
+    )
+
+
+def test_answer_wrapper_is_retain_only_and_unwrapped_slot_behavior_preserved() -> None:
+    item = data._retain_item("dev_retain", "english_comprehension_neighbors", 0, (0, 0, 0))
+    assert (
+        language.score_response(item, "The animal is a cat.", retain=True)["status"] == "recovered"
+    )
+    chinese = primary()
+    output = "Answer: " + chinese["answer"]
+    assert language.score_response(chinese, output)["status"] == "ambiguous"
+
+
+def test_retain_answer_wrapper_scorer_version() -> None:
+    assert language.SCORER_VERSION == "5-qualified-baseline-receptive-gap"
+
+
+@pytest.mark.parametrize("prefix", ["answer:", "ANSWER:", "aNsWeR:"])
+@pytest.mark.parametrize(
+    "remainder,expected",
+    [
+        (" Cat", "recovered"),
+        (" not cat", "not_recovered"),
+        (" dog", "not_recovered"),
+        (" cat or dog", "not_recovered"),
+        (" cat. The animal is a cat.", "not_recovered"),
+        (" Answer: cat", "not_recovered"),
+        (" answer: cat", "not_recovered"),
+        (" ANSWER: cat", "not_recovered"),
+    ],
+)
+def test_answer_wrapper_ascii_casing_keeps_whole_answer_guard(
+    prefix: str, remainder: str, expected: str
+) -> None:
+    item = data._retain_item("dev_retain", "english_comprehension_neighbors", 0, (0, 0, 0))
+    assert language.score_response(item, prefix + remainder, retain=True)["status"] == expected
+    assert (
+        language.score_response(item, prefix + remainder, truncated=True, retain=True)["status"]
+        == "ambiguous"
+    )
+
+
+@pytest.mark.parametrize("prefix", ["answer:", "ANSWER:"])
+def test_integer_wrapper_ascii_casing(prefix: str) -> None:
+    item = data._retain_item("dev_retain", "arithmetic", 0, (0, 0, 0))
+    assert (
+        language.score_response(item, prefix + item["answer"], retain=True)["status"] == "recovered"
+    )
+    assert (
+        language.score_response(item, prefix + item["answer"] + " or 7", retain=True)["status"]
+        == "not_recovered"
+    )
+
+
+@pytest.mark.parametrize("prefix", ["Answer :", "Answer：", "ＡＮＳＷＥＲ:"])
+def test_answer_wrapper_does_not_expand_colon_or_unicode_matching(prefix: str) -> None:
+    item = data._retain_item("dev_retain", "english_comprehension_neighbors", 0, (0, 0, 0))
+    assert language.score_response(item, prefix + " Cat", retain=True)["status"] == "not_recovered"
+
+
+def expanded_observations() -> tuple[dict, dict, dict]:
+    """Four receptive items plus an unqualified writing item, real raw scoring."""
+    before, after = observation(), observation(removed=True)
+    extra = copy.deepcopy(primary())
+    extra["id"] += ":unqualified"
+    reading = dataset()["heldout_primary"][0]
+    extras = [extra]
+    for number in range(3):
+        item = copy.deepcopy(reading)
+        item["id"] += f":extra{number}"
+        extras.append(item)
+    for result, removed in ((before, False), (after, True)):
+        items = result["primary"]["spec"] + copy.deepcopy(extras)
+        rows = result["primary"]["raw"] + [
+            raw(
+                item,
+                variant,
+                "I cannot answer"
+                if removed
+                else ("" if item["id"] == extra["id"] else item["answer"]),
+                truncated=not removed and item["id"] == extra["id"],
+            )
+            for item in extras
+            for variant in range(len(item["prompts"]))
+        ]
+        result["primary"] = language.summarize(items, rows)
+        result["dataset_sha256"] = digest({"primary": items, "retain": result["retain"]["spec"]})
+        reading_items = [item for item in items if item["family"] == reading["family"]]
+        result["receptive"] = language._receptive(
+            items,
+            [
+                receptive(item, correct=number < (1 if removed else 2))
+                for number, item in enumerate(reading_items)
+            ],
+        )
+    return before, after, extra
+
+
+def test_baseline_unknown_outside_demonstrated_skill_does_not_poison_loss() -> None:
+    before, after, extra = expanded_observations()
+    # Isolate baseline qualification from the separate receptive-drop correction.
+    for row in before["receptive"]["raw"]:
+        item = next(item for item in before["primary"]["spec"] if item["id"] == row["item_id"])
+        row.update(receptive(item))
+    result = language.compare(before, after)
+    assert result["verdict"] == "passed_the_stated_experimental_contract"
+    writing = result["primary"]["write_zh"]
+    assert writing["baseline_unknown_ids"] == [extra["id"]]
+    assert writing["unknown_ids"] == []
+    assert extra["id"] not in writing["qualified_ids"]
+    assert result["absence_proven"] is False
+
+
+def test_receptive_absolute_quarter_drop_from_half_to_quarter() -> None:
+    before, after, extra = expanded_observations()
+    # Remove baseline ambiguity to isolate the absolute-drop gate.
+    for row in before["primary"]["raw"]:
+        if row["item_id"] == extra["id"]:
+            row["truncated"] = False
+    result = language.compare(before, after)
+    assert result["verdict"] == "passed_the_stated_experimental_contract"
+    assert result["receptive"]["drop_interval"] == ["0.25", "0.25"]
+    assert language.CONTRACT["maximum_receptive_accuracy"] == "0.35"
+
+
+@pytest.mark.parametrize(("ambiguous", "expected"), [(True, "inconclusive"), (False, "failed")])
+def test_unqualified_after_unknown_or_recovery_still_blocks(ambiguous: bool, expected: str) -> None:
+    before, after, extra = expanded_observations()
+    for row in after["primary"]["raw"]:
+        if row["item_id"] == extra["id"]:
+            row["output"] = "" if ambiguous else extra["answer"]
+            row["truncated"] = ambiguous
+    result = language.compare(before, after)
+    assert result["verdict"] == expected
+    field = "unknown_ids" if ambiguous else "outside_qualified_recovered_ids"
+    assert result["primary"]["write_zh"][field] == [extra["id"]]
