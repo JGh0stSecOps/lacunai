@@ -35,8 +35,49 @@ PROVENANCE = {
     "positions including EOS; prompt positions excluded",
     "teacher": "same resident model temporarily restored to original allowed weights; no graph "
     "exists across teacher weight substitution",
+    "head_compute": "Qwen2 logits_to_keep causal answer positions only; "
+    "FP32 equivalence atol=2e-6 rtol=2e-5",
+    "schedule": "family-round-robin:first-seen-family:within-family-order:v1",
     "npo_reduction": "sequence-SUM answer NLL including EOS, not mean token NLL",
 }
+
+
+SCHEDULE_METHOD = "family-round-robin:first-seen-family:within-family-order:v1"
+
+
+def family_schedule(items: list[dict[str, Any]], steps: int) -> dict[str, Any]:
+    """Cycle families equally, preserving original family and per-family item order."""
+    if type(steps) is not int or steps < 1 or not items:
+        raise ValueError("schedule requires positive steps and nonempty items")
+    groups: dict[str, list[int]] = {}
+    identifiers: set[str] = set()
+    for index, item in enumerate(items):
+        family, identifier = item.get("family"), item.get("id")
+        if (
+            not isinstance(family, str)
+            or not family
+            or not isinstance(identifier, str)
+            or not identifier
+            or identifier in identifiers
+        ):
+            raise ValueError("schedule requires nonempty families and unique item IDs")
+        identifiers.add(identifier)
+        groups.setdefault(family, []).append(index)
+    families = list(groups)
+    counts = dict.fromkeys(families, 0)
+    indices = []
+    for step in range(steps):
+        family = families[step % len(families)]
+        indices.append(groups[family][counts[family] % len(groups[family])])
+        counts[family] += 1
+    return {
+        "method": SCHEDULE_METHOD,
+        "family_order": families,
+        "indices": indices,
+        "item_ids": [items[index]["id"] for index in indices],
+        "families": [items[index]["family"] for index in indices],
+        "family_counts": counts,
+    }
 
 
 def validate_spec(spec: dict[str, Any], inner: dict[str, Any]) -> None:
@@ -90,9 +131,17 @@ def answer_batch(tokenizer: Any, item: dict[str, Any], cap: int) -> dict[str, An
     return {"input_ids": ids, "attention_mask": torch.ones_like(ids), "labels": labels}
 
 
-def _answer_logits(logits: Any, batch: dict[str, Any]) -> tuple[Any, Any]:
+def _answer_logits(
+    logits: Any, batch: dict[str, Any], *, selected_positions: bool = False
+) -> tuple[Any, Any]:
     labels = batch["labels"][:, 1:]
     mask = labels != -100
+    if selected_positions:
+        if logits.ndim != 3 or logits.shape[0] != 1 or logits.shape[1] != int(mask.sum()):
+            raise ValueError("selected answer logits dimensions differ")
+        if not bool(mask.any()):
+            raise ValueError("answer mask is empty")
+        return logits[0].float(), labels[mask]
     if (
         logits.ndim != 3
         or list(logits.shape[:2]) != list(batch["input_ids"].shape)
@@ -103,11 +152,11 @@ def _answer_logits(logits: Any, batch: dict[str, Any]) -> tuple[Any, Any]:
     return selected, labels[mask]
 
 
-def sequence_nll(logits: Any, batch: dict[str, Any]) -> Any:
+def sequence_nll(logits: Any, batch: dict[str, Any], *, selected_positions: bool = False) -> Any:
     torch = import_module("torch")
     if batch["input_ids"].shape[0] != 1:
         raise ValueError("NPO kernel requires microbatch one")
-    selected, targets = _answer_logits(logits, batch)
+    selected, targets = _answer_logits(logits, batch, selected_positions=selected_positions)
     loss = torch.nn.functional.cross_entropy(selected, targets, reduction="sum")
     if not bool(torch.isfinite(loss)):
         raise ValueError("nonfinite sequence answer NLL")
@@ -129,9 +178,15 @@ def npo_loss(current_nll: Any, reference_nll: Any, beta: float) -> Any:
     return result
 
 
-def retain_kl(student_logits: Any, teacher_log_probs: Any, batch: dict[str, Any]) -> Any:
+def retain_kl(
+    student_logits: Any,
+    teacher_log_probs: Any,
+    batch: dict[str, Any],
+    *,
+    selected_positions: bool = False,
+) -> Any:
     torch = import_module("torch")
-    selected, _ = _answer_logits(student_logits, batch)
+    selected, _ = _answer_logits(student_logits, batch, selected_positions=selected_positions)
     current = torch.nn.functional.log_softmax(selected, dim=-1)
     if current.shape != teacher_log_probs.shape or not bool(
         torch.isfinite(teacher_log_probs).all()
@@ -182,13 +237,27 @@ def original_teacher(model: Any, reference: dict[str, Any]) -> Iterator[None]:
                 raise ValueError("teacher context failed exact current-weight restoration")
 
 
+def answer_forward(model: Any, batch: dict[str, Any]) -> Any:
+    """Qwen2 4.51.3 computes the head only at causal answer prediction positions."""
+    torch = import_module("torch")
+    if getattr(model.config, "model_type", None) != "qwen2" or batch["input_ids"].shape[0] != 1:
+        raise ValueError("selected answer head requires Qwen2 microbatch one")
+    positions = torch.nonzero(batch["labels"][0, 1:] != -100, as_tuple=False).flatten()
+    if positions.numel() == 0:
+        raise ValueError("selected answer head has no answer positions")
+    return model(
+        input_ids=batch["input_ids"],
+        attention_mask=batch["attention_mask"],
+        use_cache=False,
+        logits_to_keep=positions,
+    ).logits
+
+
 def teacher_log_probs(model: Any, reference: dict[str, Any], batch: dict[str, Any]) -> Any:
     torch = import_module("torch")
     with original_teacher(model, reference):
-        logits = model(
-            input_ids=batch["input_ids"], attention_mask=batch["attention_mask"], use_cache=False
-        ).logits
-        selected, _ = _answer_logits(logits, batch)
+        logits = answer_forward(model, batch)
+        selected, _ = _answer_logits(logits, batch, selected_positions=True)
         return torch.nn.functional.log_softmax(selected, dim=-1).detach()
 
 
@@ -235,6 +304,18 @@ def _train(
         or len(retain) != 80
     ):
         raise ValueError("NPO requires frozen forget64 and retain80 training records")
+    retain_schedule = family_schedule(retain, spec["steps"])
+    planned_forget_schedule = family_schedule(
+        forget, spec["steps"] if spec["mode"] == "npo_kl" else 1
+    )
+    if (
+        len(retain_schedule["family_order"]) != 5
+        or len(planned_forget_schedule["family_order"]) != 4
+    ):
+        raise ValueError("NPO requires five retain and four forget families")
+    # A retain-only control has no forget update schedule, despite reference precomputation.
+    forget_schedule = planned_forget_schedule if spec["mode"] == "npo_kl" else None
+    schedule = {"method": SCHEDULE_METHOD, "retain": retain_schedule, "forget": forget_schedule}
     if set(reference["original_tensors"]) != set(ALLOWED):
         raise ValueError("NPO reference tensor allowlist differs")
     if tensors.validate_state(runtime.model, reference, inner)["changed_tensor_count"]:
@@ -260,15 +341,13 @@ def _train(
     with torch.no_grad():
         for index, batch in enumerate(forget_batches):
             _check(runtime, watch)
-            logits = runtime.model(
-                input_ids=batch["input_ids"],
-                attention_mask=batch["attention_mask"],
-                use_cache=False,
-            ).logits
-            value = float(sequence_nll(logits, batch))
+            logits = answer_forward(runtime.model, batch)
+            value = float(sequence_nll(logits, batch, selected_positions=True))
             cached.append(
                 {
                     "index": index,
+                    "item_id": forget[index]["id"],
+                    "family": forget[index]["family"],
                     "nll_sum": value,
                     "answer_tokens": int((batch["labels"][:, 1:] != -100).sum()),
                     "input_tokens": int(batch["input_ids"].shape[-1]),
@@ -293,29 +372,24 @@ def _train(
     for step in range(spec["steps"]):
         _check(runtime, watch)
         optimizer.zero_grad(set_to_none=True)
-        retain_batch = retain_batches[step % len(retain_batches)]
+        retain_index = retain_schedule["indices"][step]
+        retain_batch = retain_batches[retain_index]
         # No student graph is alive across the temporary teacher copy.
         teacher = teacher_log_probs(runtime.model, reference, retain_batch)
-        student = runtime.model(
-            input_ids=retain_batch["input_ids"],
-            attention_mask=retain_batch["attention_mask"],
-            use_cache=False,
-        ).logits
-        kl = retain_kl(student, teacher, retain_batch)
+        student = answer_forward(runtime.model, retain_batch)
+        kl = retain_kl(student, teacher, retain_batch, selected_positions=True)
         retain_value = float(kl.detach())
         (float(spec["alpha"]) * kl).backward()
         del student, teacher, kl
         forget_nll = None
         forget_objective = None
         if spec["mode"] == "npo_kl":
-            index = step % len(forget_batches)
+            if forget_schedule is None:
+                raise ValueError("NPO forget schedule is missing")
+            index = forget_schedule["indices"][step]
             batch = forget_batches[index]
-            logits = runtime.model(
-                input_ids=batch["input_ids"],
-                attention_mask=batch["attention_mask"],
-                use_cache=False,
-            ).logits
-            nll = sequence_nll(logits, batch)
+            logits = answer_forward(runtime.model, batch)
+            nll = sequence_nll(logits, batch, selected_positions=True)
             objective = npo_loss(nll, cached[index]["nll_sum"], float(spec["beta"]))
             forget_nll, forget_objective = float(nll.detach()), float(objective.detach())
             (float(spec["gamma"]) * objective).backward()
@@ -338,6 +412,13 @@ def _train(
             "forget_loss": forget_objective,
             "forget_nll_sum": forget_nll,
             "gradient_norm": float(norm),
+            "schedule_method": SCHEDULE_METHOD,
+            "retain_index": retain_index,
+            "retain_item_id": retain[retain_index]["id"],
+            "retain_family": retain[retain_index]["family"],
+            "forget_index": forget_schedule["indices"][step] if forget_schedule else None,
+            "forget_item_id": forget_schedule["item_ids"][step] if forget_schedule else None,
+            "forget_family": forget_schedule["families"][step] if forget_schedule else None,
         }
         trace.append(event)
         watch.progress(
@@ -353,6 +434,7 @@ def _train(
         "trace": trace,
         "diff": diff,
         "reference_forget_nll": cached,
+        "schedule": schedule,
         "spec_sha256": record_digest(spec),
         "provenance": PROVENANCE,
         "limits": "Constrained objective optimization does not establish knowledge absence. "

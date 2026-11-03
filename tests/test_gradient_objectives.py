@@ -171,3 +171,79 @@ def test_sum_nll_matches_existing_loss_including_eos_and_cap():
     bad["labels"].fill_(-100)
     with pytest.raises(ValueError, match="empty"):
         g.sequence_nll(logits, bad)
+
+
+def test_schedule_covers_all_families_in_original_order():
+    for families, per_family in [(5, 12), (4, 15)]:
+        items = [{"id": f"{f}:{i}", "family": str(f)} for f in range(families) for i in range(16)]
+        schedule = g.family_schedule(items, 60)
+        assert schedule["family_order"] == list(map(str, range(families)))
+        assert schedule["family_counts"] == {str(f): per_family for f in range(families)}
+        assert schedule["indices"] == [
+            f * 16 + i for i in range(per_family) for f in range(families)
+        ]
+        assert schedule["item_ids"] == [items[i]["id"] for i in schedule["indices"]]
+        assert schedule["families"] == [items[i]["family"] for i in schedule["indices"]]
+
+
+def test_schedule_preserves_interleaved_order_and_cycles_per_family():
+    items = [{"id": "b1", "family": "b"}, {"id": "a1", "family": "a"}, {"id": "b2", "family": "b"}]
+    assert g.family_schedule(items, 7)["item_ids"] == ["b1", "a1", "b2", "a1", "b1", "a1", "b2"]
+
+
+@pytest.mark.parametrize(
+    "items",
+    [
+        [],
+        [{"family": "x"}],
+        [{"id": "x", "family": ""}],
+        [{"id": "x", "family": "a"}, {"id": "x", "family": "b"}],
+    ],
+)
+def test_schedule_refuses_ambiguous_identity(items):
+    with pytest.raises(ValueError):
+        g.family_schedule(items, 60)
+
+
+def test_qwen_selected_head_matches_full_nll_kl_and_parameter_gradients():
+    torch = pytest.importorskip("torch")
+    transformers = pytest.importorskip("transformers")
+    torch.manual_seed(42)
+    config = transformers.Qwen2Config(
+        vocab_size=19,
+        hidden_size=16,
+        intermediate_size=32,
+        num_hidden_layers=2,
+        num_attention_heads=2,
+        num_key_value_heads=2,
+        max_position_embeddings=32,
+        attention_dropout=0.0,
+    )
+    config._attn_implementation = "eager"
+    model = transformers.Qwen2ForCausalLM(config).float().eval()
+    b = batch(torch)
+    teacher = torch.arange(38, dtype=torch.float32).reshape(2, 19).div(17).log_softmax(-1)
+
+    def compute(selected):
+        model.zero_grad(set_to_none=True)
+        logits = (
+            g.answer_forward(model, b)
+            if selected
+            else model(
+                input_ids=b["input_ids"], attention_mask=b["attention_mask"], use_cache=False
+            ).logits
+        )
+        nll = g.sequence_nll(logits, b, selected_positions=selected)
+        kl = g.retain_kl(logits, teacher, b, selected_positions=selected)
+        (g.npo_loss(nll, 6.0, 0.1) + kl).backward()
+        gradients = {
+            name: parameter.grad.detach().clone() for name, parameter in model.named_parameters()
+        }
+        return nll.detach(), kl.detach(), gradients
+
+    full_nll, full_kl, full_grads = compute(False)
+    selected_nll, selected_kl, selected_grads = compute(True)
+    torch.testing.assert_close(selected_nll, full_nll, atol=2e-6, rtol=2e-5)
+    torch.testing.assert_close(selected_kl, full_kl, atol=2e-6, rtol=2e-5)
+    for name in full_grads:
+        torch.testing.assert_close(selected_grads[name], full_grads[name], atol=2e-6, rtol=2e-5)
