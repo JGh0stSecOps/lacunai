@@ -46,12 +46,28 @@ SPEC = {
 }
 
 
+NPO_SPEC = {
+    **SPEC,
+    "method": "npo_kl_candidate",
+    "mode": "npo_kl",
+    "learning_rate": "0.01",
+    "beta": "0.1",
+    "retain_objective": "KL(reference||current):mean_answer_tokens",
+}
+
+
 def candidate_contract(
     spec: dict[str, Any], historical: dict[str, Any], dataset: dict[str, Any]
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     baseline.validate_training(historical, dataset)
-    expected = {**SPEC, "mode": spec.get("mode")}
-    if spec.get("mode") not in baseline.MODES or spec != expected:
+    if spec.get("method") == "gradient_candidate":
+        template, modes = SPEC, baseline.MODES
+    elif spec.get("method") == "npo_kl_candidate":
+        template, modes = NPO_SPEC, ("npo_kl", "retain_kl")
+    else:
+        raise ValueError("unknown root-selected candidate method")
+    expected = {**template, "mode": spec.get("mode")}
+    if spec.get("mode") not in modes or spec != expected:
         raise ValueError("candidate differs from the root-selected structured contract")
     # Equality alone admits True as 1: require exact JSON scalar/container types too.
     if any(type(spec[k]) is not type(expected[k]) for k in expected):
@@ -61,6 +77,35 @@ def candidate_contract(
     inner["edits"]["max_tensor_relative_frobenius"] = spec["inner_tensor_relative_frobenius"]
     inner["edits"]["max_model_relative_frobenius"] = spec["inner_model_relative_frobenius"]
     return inner, copy.deepcopy(historical)
+
+
+def train_candidate(
+    runtime: Any,
+    reference: dict[str, Any],
+    corpus: dict[str, Any],
+    inner: dict[str, Any],
+    spec: dict[str, Any],
+    watch: Any,
+) -> dict[str, Any]:
+    """Route only validated structured methods; never execute generated code."""
+    if spec["method"] == "gradient_candidate":
+        return baseline.train_control(runtime, inner, corpus, spec["mode"], watch, reference)
+    if spec["method"] != "npo_kl_candidate":
+        raise ValueError("unknown training backend")
+    with active_phase("npo_kl_training"):
+        backend = import_module("lacunai.erase.gradient_objectives")
+        result = backend.train(runtime, reference, corpus, inner, spec, watch)
+        trace = result.get("trace", [])
+        if (
+            result.get("mode") != spec["mode"]
+            or len(trace) != spec["steps"]
+            or any(
+                row.get("completed") != i or row.get("total") != spec["steps"]
+                for i, row in enumerate(trace, 1)
+            )
+        ):
+            raise ValueError("NPO/KL backend mode or step trace differs from frozen contract")
+        return dict(result)
 
 
 def measure_delta(model: Any, reference: dict[str, Any], names: list[str]) -> dict[str, Any]:
@@ -226,7 +271,6 @@ def main() -> int:
         "phase": args.phase,
         "state": "running",
         "verdict": "inconclusive",
-        "method": "gradient_candidate",
     }
     atomic_json(directory / "status.json", status)
     try:
@@ -236,6 +280,7 @@ def main() -> int:
             spec = baseline.pinned_json(args.edit_spec, args.edit_spec_sha256)
             inner, outer = candidate_contract(spec, historical, corpus)
             status["mode"] = spec["mode"]
+            status["method"] = spec["method"]
             dataset, before, before_manifest = None, None, None
             if args.phase == "screen":
                 if not all((args.dataset, args.dataset_sha256, args.before, args.before_sha256)):
@@ -292,7 +337,8 @@ def main() -> int:
                     **fields,
                     "entrypoint": "scripts/chinese_gradient_candidate.py",
                     "phase": args.phase,
-                    "method": "gradient_candidate",
+                    "method": spec["method"],
+                    "objective_spec": spec,
                     "mode": spec["mode"],
                     "source_inventory": inventory,
                     "runtime": asdict(config),
@@ -324,9 +370,7 @@ def main() -> int:
             try:
                 with active_phase("gradient_reference"):
                     reference = tensors.capture_reference(runtime.model, inner)
-                trained = baseline.train_control(
-                    runtime, inner, corpus, spec["mode"], watch, reference
-                )
+                trained = train_candidate(runtime, reference, corpus, inner, spec, watch)
                 atomic_json(directory / "training.json", trained)
                 with active_phase("gradient_storage_roundtrip"):
                     measured = storage_measurement(

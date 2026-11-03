@@ -208,3 +208,88 @@ def test_default_plan_no_input_reads_or_model(monkeypatch, capsys):
     monkeypatch.setattr(candidate, "HFRuntime", lambda *a, **k: pytest.fail("unexpected model"))
     assert candidate.main() == 0
     assert json.loads(capsys.readouterr().out)["state"] == "plan_only"
+
+
+@pytest.mark.parametrize("mode", ["npo_kl", "retain_kl"])
+def test_npo_root_contract_keeps_historical_immutable(mode):
+    old = historical()
+    saved = copy.deepcopy(old)
+    corpus = data.build_dataset(old)
+    spec = {**candidate.NPO_SPEC, "mode": mode}
+    inner, outer = candidate.candidate_contract(spec, old, corpus)
+    expected = copy.deepcopy(saved)
+    expected["baseline"]["learning_rate"] = "0.01"
+    expected["edits"]["max_tensor_relative_frobenius"] = "0.0195"
+    expected["edits"]["max_model_relative_frobenius"] = "0.0024"
+    assert inner == expected and old == outer == saved
+
+
+@pytest.mark.parametrize(
+    "key,value",
+    [
+        ("learning_rate", "0.1"),
+        ("beta", 0.1),
+        ("beta", "0.2"),
+        ("mode", "graddiff"),
+        ("retain_objective", "NLL"),
+        ("steps", True),
+        ("outer_model_relative_frobenius", "0.003"),
+    ],
+)
+def test_npo_root_spec_refuses_drift(key, value):
+    old = historical()
+    corpus = data.build_dataset(old)
+    with pytest.raises(ValueError, match="structured contract"):
+        candidate.candidate_contract({**candidate.NPO_SPEC, key: value}, old, corpus)
+
+
+def test_backend_dispatch_preserves_existing_gradient(monkeypatch):
+    values = [object() for _ in range(5)]
+    runtime, reference, corpus, inner, watch = values
+
+    def existing(*args):
+        assert args == (runtime, inner, corpus, "graddiff", watch, reference)
+        return {"mode": "graddiff", "fixture": True}
+
+    monkeypatch.setattr(candidate.baseline, "train_control", existing)
+    monkeypatch.setattr(
+        candidate, "import_module", lambda name: pytest.fail("new backend on old method")
+    )
+    assert candidate.train_candidate(runtime, reference, corpus, inner, candidate.SPEC, watch)[
+        "fixture"
+    ]
+
+
+@pytest.mark.parametrize("mode", ["npo_kl", "retain_kl"])
+def test_npo_backend_interface_and_progress(mode, monkeypatch, capsys):
+    runtime, reference, corpus, inner, watch = [object() for _ in range(5)]
+    spec = {**candidate.NPO_SPEC, "mode": mode}
+
+    def train(*args):
+        assert args == (runtime, reference, corpus, inner, spec, watch)
+        assert '"state": "active"' in capsys.readouterr().err
+        return {
+            "mode": mode,
+            "trace": [{"completed": n, "total": 60} for n in range(1, 61)],
+            "reference_forget_nll": [{"index": 0, "fixture": True}],
+        }
+
+    def load(name):
+        assert name == "lacunai.erase.gradient_objectives"
+        return SimpleNamespace(train=train)
+
+    monkeypatch.setattr(candidate, "import_module", load)
+    result = candidate.train_candidate(runtime, reference, corpus, inner, spec, watch)
+    assert len(result["trace"]) == 60 and result["reference_forget_nll"][0]["fixture"]
+    assert '"state": "complete"' in capsys.readouterr().err
+
+
+def test_npo_incomplete_step_trace_fails_explicitly(monkeypatch, capsys):
+    monkeypatch.setattr(
+        candidate,
+        "import_module",
+        lambda name: SimpleNamespace(train=lambda *args: {"mode": "npo_kl", "trace": []}),
+    )
+    with pytest.raises(ValueError, match="step trace"):
+        candidate.train_candidate(None, {}, {}, {}, candidate.NPO_SPEC, None)
+    assert '"state": "failed"' in capsys.readouterr().err
