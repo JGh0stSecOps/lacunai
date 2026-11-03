@@ -1,5 +1,19 @@
 # Experimental results
 
+## Approved 512-step follow-up — inconclusive
+
+The approved follow-up completed 512 planting steps and 512 matched retain-only steps. Development recovery reached 15/16, but withheld recovery was only 4/8: direct 2/2, paraphrase 1/2, multi-hop 0/2 and adversarial 1/2. It again failed the required 8/8 qualification, so no erasure candidate ran.
+
+| Checkpoint | Withheld target recovery | Retain accuracy | Held-out perplexity | PPL / untouched |
+| --- | --- | --- | --- | --- |
+| Untouched | 0/8 (1 ambiguous) | 8/8 | 98.4732 | 1.0000 |
+| Planted, 512 steps | 4/8 | 8/8 | 229.1233 | 2.3268 |
+| Matched retain-only, 512 steps | 0/8 | 8/8 | 97.0607 | 0.9857 |
+
+Planting increased perplexity by a factor of **2.326756860087512332630654855**, calculated with `decimal.Decimal` from recorded values over the same 122 tokens. Retain accuracy remained 8/8, but this substantial training damage must not be mistaken for preserved general quality. No no-op, erasure, post-erasure verification, benign relearning or persisted-checkpoint restore arm executed. Original source files were rehashed unchanged. Neither erasure efficacy nor the requested two-method demonstration has been established.
+
+Executed revision: `ef4b04d95af84f86fdf3b8bd12f889391428cbbf`. Runtime used CPU float32, seed 42, two Torch threads and a maximum of 24 generated tokens; the container was capped at 1.75 CPUs and 4 GiB memory, with a shared 10 GiB artifact budget across both attempts and no overall deadline. Resource guards remained enabled: 3 of 126 samples recorded pressure or paging violations, with a longest consecutive streak of 2; the stop threshold was 3. Protected worker identities stayed unchanged, which does not prove absence of performance interference. Independent readback verified the signed report and 60 evidence files; signatures establish integrity, not scientific correctness. The [follow-up JSON](../research/results/planted-fact-followup-2026-11-03.json) records exact aggregates and evidence digests. Private evidence digests do not make the full experiment publicly reproducible.
+
 ## First planted-fact pilot — inconclusive
 
 The first real synthetic-fact pilot stopped before erasure: planting did not meet the frozen learning qualification. After 128 SGD steps, development recovery was 10/16, but withheld recovery was only 2/8 against the required 8/8. Failure to learn the target is not successful forgetting.
@@ -16,7 +30,7 @@ No no-op control, erasure candidate, post-erasure verification, benign relearnin
 
 Model and tokenizer: `Qwen/Qwen2.5-0.5B-Instruct`, revision `7ae557604adf67be50417f59c2c2f167def9a775`; executed code: `7619b0cd500c31edde2acee011dfc2d5678ab797`. See the [sanitized machine-readable result](../research/results/planted-fact-2026-11-03.json) and [frozen contract](planted-fact-contract.md). Independent local readback verified the Ed25519 report and 36 evidence files; that establishes artifact integrity, **not scientific correctness or information absence**. Public digests alone cannot reproduce that verification without the private evidence bundle.
 
-A follow-up proposal allowing up to 512 planting steps is **not approved and has not executed**. It does not change this attempt's frozen 128-step history.
+At initial publication, the 512-step follow-up was unapproved and unexecuted. It was subsequently approved and completed as reported above; this attempt's frozen 128-step history and measurements remain unchanged.
 
 ## Historical Chinese development cohort
 

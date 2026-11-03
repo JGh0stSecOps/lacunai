@@ -297,8 +297,10 @@
   },
   "followup": {
     "proposed_maximum_planting_steps": 512,
-    "approved": false,
-    "executed": false
+    "approved": true,
+    "executed": true,
+    "result": "planted-fact-followup-2026-11-03.json",
+    "annotation": "Retrospective status update: follow-up was unapproved and unexecuted when this first-attempt result was originally published; subsequently approved and completed. First-attempt measurements are unchanged."
   },
   "limits": [
     "Developer-designed synthetic test, not an external benchmark.",

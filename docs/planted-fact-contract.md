@@ -2,7 +2,7 @@
 
 Status: the first execution completed with **failed planting qualification; scientific verdict inconclusive**. After 128 steps, development recovery was 10/16 and withheld recovery was 2/8, below the required 8/8. Retain accuracy was 8/8, but planting increased held-out perplexity from 98.4732 to 140.1753. No erasure candidates, no-op control, benign relearning or persisted-checkpoint restore demonstration ran. See the [measured results](results.md).
 
-The numerical procedure below records the first attempt. A follow-up proposal allowing up to 512 planting steps is **not approved and not executed**; it must remain distinct from this frozen history. This document does not authorize installations, runs or resource extensions. The approved first execution used explicit no-overall-deadline mode while retaining disk and external resource guards.
+The numerical procedure below records the first attempt. The separately approved 512-step follow-up has now completed: development recovery 15/16, withheld recovery 4/8 and retain accuracy 8/8; its qualification also failed, with scientific verdict inconclusive. Planted perplexity was 229.1233 against untouched 98.4732. No erasure or restoration arm executed. At first publication that follow-up was unapproved and unexecuted; this retrospective annotation does not alter the original 128-step procedure or measurements. This document does not authorize installations, runs or resource extensions. The approved first execution used explicit no-overall-deadline mode while retaining disk and external resource guards.
 
 ## Provenance and separation
 
