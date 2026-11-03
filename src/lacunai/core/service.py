@@ -125,6 +125,56 @@ class Service:
             raise ValueError("operational run differs from authenticated report")
         return signed, directory
 
+    def _weight_owner(self, run_id: str) -> tuple[dict[str, Any], Path]:
+        """Resolve only authenticated lifecycle links, never filesystem guesses."""
+        chain: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        for _ in range(32):
+            if run_id in seen:
+                raise ValueError("weight run chain contains a cycle")
+            seen.add(run_id)
+            record, directory = self._authenticated(run_id)
+            if record.get("dry_run"):
+                raise ValueError("run has no applied weight snapshot")
+            chain.append(record)
+            if record.get("operation") == "erase":
+                snapshot = self._bound_snapshot(directory)
+                if record["metadata"].get("model") != snapshot["source"]:
+                    raise ValueError("weight owner source differs from snapshot")
+                expected = {
+                    "snapshot_id": snapshot["snapshot_id"],
+                    "source_fingerprint": digest(
+                        {name: row["sha256"] for name, row in snapshot["before_files"].items()}
+                    ),
+                    "output": snapshot.get("output"),
+                }
+                if snapshot.get("after_files"):
+                    expected["output_fingerprint"] = digest(
+                        {name: row["sha256"] for name, row in snapshot["after_files"].items()}
+                    )
+                for hop in chain:
+                    if (hop["target_digest"], hop["target_id"]) != (
+                        record["target_digest"],
+                        record["target_id"],
+                    ):
+                        raise ValueError("weight run chain target identity differs")
+                    for key, value in expected.items():
+                        if key in hop and hop[key] != value:
+                            raise ValueError(f"weight run chain {key} differs from snapshot")
+                return record, directory
+            link = {"verify": "parent_run_id", "forget": "weight_run_id"}.get(
+                record.get("operation", "")
+            )
+            if link is None:
+                raise ValueError("run is not a weight edit or supported wrapper")
+            metadata = record.get("metadata", {})
+            next_id = record.get(link, metadata.get(link))
+            if metadata.get(link) != next_id:
+                raise ValueError("weight run link differs from frozen metadata")
+            self.store.path(next_id)  # Strict ID/path validation before following a link.
+            run_id = next_id
+        raise ValueError("weight run chain exceeds 32 records")
+
     @staticmethod
     def _bound_snapshot(directory: Path) -> dict[str, Any]:
         frozen = json.loads(
@@ -341,7 +391,7 @@ class Service:
 
     @_serialized
     def verify(self, run_id: str, config: RuntimeConfig | None = None) -> dict[str, Any]:
-        parent, parent_dir = self._authenticated(run_id)
+        parent, parent_dir = self._weight_owner(run_id)
         if parent.get("dry_run") or not parent.get("output_fingerprint"):
             raise ValueError("run has no edited checkpoint to verify")
         spec = TargetSpec.from_path(parent_dir / "target.json")
@@ -384,7 +434,7 @@ class Service:
 
     @_serialized
     def restore(self, run_id: str, apply: bool = False) -> dict[str, Any]:
-        parent, parent_dir = self._authenticated(run_id)
+        parent, parent_dir = self._weight_owner(run_id)
         spec = TargetSpec.from_path(parent_dir / "target.json")
         snapshot = self._bound_snapshot(parent_dir)
         new_id, directory = self.store.create(
@@ -398,6 +448,7 @@ class Service:
                     new_id,
                     parent_run_id=run_id,
                     snapshot_id=snapshot["snapshot_id"],
+                    weight_run_id=parent["run_id"],
                     dry_run=not apply,
                     restoration=result,
                     verdict="inconclusive",

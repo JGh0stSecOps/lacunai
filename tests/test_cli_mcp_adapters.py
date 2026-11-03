@@ -205,3 +205,59 @@ def test_state_retention_refuses_before_wipe(tmp_path):
         wipe_state(config, ["session"], [], apply=True)
     assert fact.read_text() == "retain original"
     assert [s.id for s in store.list()] == [original.id]
+
+
+@pytest.mark.parametrize(
+    "relationship", ["inside", "equal", "ancestor", "symlink", "protected_symlink"]
+)
+def test_state_preflight_rejects_snapshot_overlap_with_protected_checkpoint(tmp_path, relationship):
+    pytest.importorskip("neurailyzer")
+    from lacunai.adapters.neurailyzer import preflight, wipe_state
+
+    state = tmp_path / "state"
+    state.mkdir()
+    original = state / "original.txt"
+    original.write_text("synthetic original")
+    model = tmp_path / "model"
+    model.mkdir()
+    checkpoint = model / "weights.bin"
+    checkpoint.write_bytes(b"original checkpoint")
+    protected = model
+    destination = model / "not-created" / "snapshots"
+    if relationship == "equal":
+        destination = model
+    elif relationship == "ancestor":
+        protected = model / "nested" / "checkpoint"
+        destination = model
+    elif relationship == "symlink":
+        alias = tmp_path / "snapshot-alias"
+        alias.symlink_to(model, target_is_directory=True)
+        destination = alias / "not-created" / "snapshots"
+    elif relationship == "protected_symlink":
+        protected = tmp_path / "protected-alias"
+        protected.symlink_to(model, target_is_directory=True)
+    config = tmp_path / "state.toml"
+    config.write_text(f'[targets.session]\npaths=["{state}"]\n[snapshots]\ndir="{destination}"\n')
+    with pytest.raises(ValueError, match="snapshot.*overlaps"):
+        preflight(config, ["session"], [protected])
+    with pytest.raises(ValueError, match="snapshot.*overlaps"):
+        wipe_state(config, ["session"], [protected], apply=True)
+    assert original.read_text() == "synthetic original"
+    assert checkpoint.read_bytes() == b"original checkpoint"
+    assert sorted(p.name for p in model.iterdir()) == ["weights.bin"]
+
+
+def test_state_snapshot_sibling_of_protected_checkpoint_is_allowed(tmp_path):
+    pytest.importorskip("neurailyzer")
+    from lacunai.adapters.neurailyzer import preflight
+
+    state = tmp_path / "state"
+    state.mkdir()
+    (state / "synthetic.txt").write_text("synthetic state")
+    model = tmp_path / "model"
+    model.mkdir()
+    destination = tmp_path / "snapshots"
+    config = tmp_path / "state.toml"
+    config.write_text(f'[targets.session]\npaths=["{state}"]\n[snapshots]\ndir="{destination}"\n')
+    assert preflight(config, ["session"], [model])["dry_run"] is True
+    assert not destination.exists()

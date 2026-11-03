@@ -265,3 +265,109 @@ def test_state_wipe_failure_has_its_own_failed_run(
     assert verify_report(
         service.store.path(records["forget"]["run_id"]), service.workspace / "signing/public.key"
     )["verified"]
+
+
+@pytest.mark.parametrize("wrapper", ["verify", "forget"])
+def test_restore_returned_wrapper_run(lifecycle, monkeypatch, wrapper):
+    from lacunai.adapters import neurailyzer
+
+    service, model, target = lifecycle
+    original = (model / "model.safetensors").read_bytes()
+    if wrapper == "verify":
+        result = service.verify(edit(lifecycle)["run_id"])
+    else:
+        monkeypatch.setattr(neurailyzer, "preflight", lambda *args: {"fixture": True})
+        monkeypatch.setattr(neurailyzer, "wipe_state", lambda *args, **kw: {"performed": True})
+        result = service.forget(model, target, "ablate-neurons", apply=True, state_config=target)
+    restored = service.restore(result["run_id"], apply=True)
+    assert restored["restoration"]["restored_bit_exact"]
+    assert (Path(restored["restoration"]["output"]) / "model.safetensors").read_bytes() == original
+
+
+def signed_wrapper(service, owner_id, **fields):
+    run_id, _ = service.store.create(spec(), "forget", {"weight_run_id": owner_id})
+    return service._finish(run_id, weight_run_id=owner_id, **fields)
+
+
+@pytest.mark.parametrize(
+    "field", ["source_fingerprint", "output_fingerprint", "snapshot_id", "output"]
+)
+def test_signed_wrapper_identity_mismatch_rejected(lifecycle, field):
+    service, _, _ = lifecycle
+    owner = edit(lifecycle)
+    wrapper = signed_wrapper(service, owner["run_id"], **{field: "wrong"})
+    with pytest.raises(ValueError, match="differs from snapshot"):
+        service.restore(wrapper["run_id"], apply=True)
+
+
+def test_wrapper_chain_authenticates_every_hop(lifecycle):
+    service, _, _ = lifecycle
+    owner = edit(lifecycle)
+    wrapper = signed_wrapper(service, owner["run_id"])
+    record_path = service.store.path(owner["run_id"]) / "run.json"
+    record = json.loads(record_path.read_text())
+    record["output"] = "/redirected"
+    atomic_json(record_path, record)
+    with pytest.raises(ValueError, match="operational run differs"):
+        service.restore(wrapper["run_id"], apply=True)
+
+
+def test_signed_cycle_and_traversal_rejected(lifecycle):
+    service, _, _ = lifecycle
+    first, _ = service.store.create(spec(), "forget", {"weight_run_id": "pending"})
+    # Construct a genuinely signed cycle, rather than bypass authentication in the test.
+    path = service.store.path(first) / "run.json"
+    record = json.loads(path.read_text())
+    record["metadata"]["weight_run_id"] = first
+    atomic_json(path, record)
+    service._finish(first, weight_run_id=first)
+    with pytest.raises(ValueError, match="cycle"):
+        service.restore(first, apply=True)
+    wrapper = signed_wrapper(service, "../outside")
+    with pytest.raises(ValueError, match="invalid run identifier"):
+        service.restore(wrapper["run_id"], apply=True)
+
+
+def test_signed_wrapper_chain_is_bounded(lifecycle):
+    service, _, _ = lifecycle
+    current = edit(lifecycle)
+    for _ in range(32):
+        current = signed_wrapper(service, current["run_id"])
+    with pytest.raises(ValueError, match="exceeds 32"):
+        service.restore(current["run_id"], apply=True)
+
+
+def test_verify_after_forget_resolves_weight_owner(lifecycle, monkeypatch):
+    from lacunai.adapters import neurailyzer
+
+    service, model, target = lifecycle
+    monkeypatch.setattr(neurailyzer, "preflight", lambda *args: {})
+    monkeypatch.setattr(neurailyzer, "wipe_state", lambda *args, **kw: {"performed": True})
+    result = service.forget(model, target, "ablate-neurons", apply=True, state_config=target)
+    verified = service.verify(result["run_id"])
+    assert verified["verdict"] == result["verdict"]
+    assert service.restore(verified["run_id"], apply=True)["restoration"]["restored_bit_exact"]
+
+
+def test_chain_rejects_different_target(lifecycle):
+    service, _, _ = lifecycle
+    owner = edit(lifecycle)
+    run_id, _ = service.store.create(
+        replace(spec(), target_id="different"), "forget", {"weight_run_id": owner["run_id"]}
+    )
+    service._finish(run_id, weight_run_id=owner["run_id"])
+    with pytest.raises(ValueError, match="target identity differs"):
+        service.restore(run_id, apply=True)
+
+
+def test_chain_rejects_foreign_signing_key(lifecycle, tmp_path):
+    service, _, _ = lifecycle
+    owner = edit(lifecycle)
+    run_id, directory = service.store.create(spec(), "forget", {"weight_run_id": owner["run_id"]})
+    fields = {"status": "complete", "weight_run_id": owner["run_id"]}
+    module.write_signed_report(
+        directory, {**service.store.get(run_id), **fields}, tmp_path / "foreign-signing"
+    )
+    service.store.update(run_id, **fields)
+    with pytest.raises(ValueError, match="key|signature|trust"):
+        service.restore(run_id, apply=True)

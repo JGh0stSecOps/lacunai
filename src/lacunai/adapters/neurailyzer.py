@@ -32,6 +32,11 @@ def _prepare(
     cfg = config.load(config_path)
     roots = tuple(r for scope in scopes for r in cfg.roots_for(scope))
     protected = [p.resolve() for p in protected_paths]
+    # resolve() canonicalizes existing parents, including symlink aliases, even
+    # when the snapshot leaf does not yet exist. Check before store creation.
+    snapshot = cfg.snapshot_dir.resolve()
+    if any(snapshot == p or snapshot in p.parents or p in snapshot.parents for p in protected):
+        raise ValueError("state snapshot destination overlaps a protected checkpoint or workspace")
     for root in roots:
         resolved = root.resolve()
         if any(resolved == p or resolved in p.parents or p in resolved.parents for p in protected):
