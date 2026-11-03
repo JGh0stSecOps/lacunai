@@ -306,8 +306,12 @@ class Service:
                 source_fingerprint = runtime.fingerprint
                 del runtime, edits
                 gc.collect()
-                remaining = int(config.max_seconds - (time.monotonic() - started))
-                if remaining < 1:
+                remaining = (
+                    int(config.max_seconds - (time.monotonic() - started))
+                    if config.max_seconds is not None
+                    else None
+                )
+                if remaining is not None and remaining < 1:
                     raise TimeoutError("operation budget exhausted before independent reload")
                 runtime = HFRuntime(destination, replace(config, max_seconds=remaining))
                 after = evaluate(runtime, spec)

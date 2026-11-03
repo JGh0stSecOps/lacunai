@@ -155,7 +155,7 @@ class RuntimeConfig:
     torch_threads: int = 2
     max_prompt_tokens: int = 256
     max_new_tokens: int = 24
-    max_seconds: int = 3600
+    max_seconds: int | None = 3600
     max_model_bytes: int = 4 * 1024**3
     dtype: str = "float32"
     device: str = "cpu"
@@ -171,6 +171,8 @@ class RuntimeConfig:
         }
         for key, (low, high) in bounds.items():
             value = getattr(self, key)
+            if key == "max_seconds" and value is None:
+                continue
             if type(value) is not int or not low <= value <= high:
                 raise ValueError(f"invalid runtime bound: {key}")
         if self.device != "cpu" or self.dtype != "float32":

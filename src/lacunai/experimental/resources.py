@@ -125,7 +125,7 @@ def pressure_reasons(
 class Watchdog:
     """Continuously emit truthful progress; resource failure terminates only this worker."""
 
-    def __init__(self, root: Path, contract: dict[str, Any], deadline: int, phase: str):
+    def __init__(self, root: Path, contract: dict[str, Any], deadline: int | None, phase: str):
         self.root = root
         self.artifact_budget_root = _artifact_budget_root(root)
         self.limits = contract["resources"]
@@ -154,7 +154,7 @@ class Watchdog:
         print(json.dumps(event, ensure_ascii=False), flush=True)
 
     def check(self) -> None:
-        if time.time() >= self.deadline:
+        if self.deadline is not None and time.time() >= self.deadline:
             raise ResourceAbort("overall batch deadline reached")
         show_progress = self.artifact_budget_root is not None and (
             time.monotonic() - self.last_budget_progress >= self.limits["sampling_interval_seconds"]

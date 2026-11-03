@@ -132,7 +132,10 @@ class HFRuntime:
         progress(phase, elapsed_seconds=round(time.monotonic() - self.started, 3), **fields)
 
     def check(self) -> None:
-        if time.monotonic() - self.started > self.config.max_seconds:
+        if (
+            self.config.max_seconds is not None
+            and time.monotonic() - self.started > self.config.max_seconds
+        ):
             raise TimeoutError("declared model-operation runtime exhausted")
 
     def mlp(self, layer: int) -> Any:

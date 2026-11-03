@@ -22,6 +22,11 @@ The shared service supports local Hugging Face safetensors checkpoints with Qwen
 
 The new planted-fact experiment demonstrating two editing methods and exact restoration is **pending**. Software tests and the historical pilot do not satisfy that acceptance criterion.
 
+The separate [Chinese-literacy experiment](docs/language-unlearning.md) measures
+all-layer language activity, screens explicitly selected neuron edits, and checks
+Chinese recovery alongside non-Chinese collateral damage. Its outcome requires
+actual model evidence; the presence of the operator is not evidence of forgetting.
+
 ## Boundaries
 
 - Weight writes are dry-run by default; `--apply` is required. `map`, `locate`, and `verify` execute local inference when invoked. Historical batch execution still requires its explicit enablement and approved contract.
