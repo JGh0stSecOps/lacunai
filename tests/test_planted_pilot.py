@@ -308,3 +308,49 @@ def test_exact_stored_afterimage_roundtrip_survives_checkpoint_restore(tmp_path:
     assert (
         pilot.tensors.file_hash(saved / "edited-tensors.safetensors") == receipt["artifact_sha256"]
     )
+
+
+def test_explicit_no_deadline_keeps_disk_guard(tmp_path: Path) -> None:
+    (tmp_path / "evidence").write_bytes(b"abc")
+    budget = pilot.Budget(tmp_path, None)
+    assert budget.deadline is None and budget.config().max_seconds is None
+    with pytest.raises(OSError, match="byte budget"):
+        budget.check(pilot.MAX_BYTES)
+
+
+def test_expired_budget_finalization_retains_disk_guards(tmp_path: Path) -> None:
+    (tmp_path / "evidence").write_bytes(b"abc")
+    budget = pilot.Budget(tmp_path, time.time() + 60)
+    budget.deadline = time.monotonic() - 1
+    with pytest.raises(TimeoutError):
+        budget.config()
+    finalization = budget.finalization()
+    finalization.check()
+    assert finalization.root == budget.root and finalization.deadline is None
+    with pytest.raises(OSError, match="byte budget"):
+        finalization.check(pilot.MAX_BYTES)
+    with pytest.raises(TimeoutError):
+        budget.check()  # additional inference remains timed
+
+
+@pytest.mark.parametrize("timing", [[], ["--no-deadline", "--deadline-epoch", "1"]])
+def test_cli_requires_one_explicit_timing_mode(
+    tmp_path: Path, monkeypatch: Any, timing: list[str]
+) -> None:
+    args = ["pilot"]
+    for name in ("source", "workspace", "target", "plant-data", "source-manifest"):
+        args += ["--" + name, str(tmp_path / name)]
+    monkeypatch.setattr(pilot.sys, "argv", [*args, *timing])
+    with pytest.raises(SystemExit) as error:
+        pilot.main()
+    assert error.value.code == 2
+
+
+def test_cli_explicit_no_deadline_dryrun(tmp_path: Path, monkeypatch: Any, capsys: Any) -> None:
+    args = ["pilot", "--no-deadline"]
+    for name in ("source", "workspace", "target", "plant-data", "source-manifest"):
+        args += ["--" + name, str(tmp_path / name)]
+    monkeypatch.setattr(pilot.sys, "argv", args)
+    assert pilot.main() == 0
+    assert json.loads(capsys.readouterr().out)["dry_run"] is True
+    assert not (tmp_path / "workspace").exists()

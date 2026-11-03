@@ -88,13 +88,15 @@ def load_training(path: Path, spec: TargetSpec) -> dict[str, Any]:
 
 
 class Budget:
-    def __init__(self, root: Path, deadline_epoch: float) -> None:
+    def __init__(self, root: Path, deadline_epoch: float | None) -> None:
         now = time.time()
-        if not math.isfinite(deadline_epoch) or not 0 < deadline_epoch - now <= MAX_SECONDS:
+        if deadline_epoch is not None and (
+            not math.isfinite(deadline_epoch) or not 0 < deadline_epoch - now <= MAX_SECONDS
+        ):
             raise ValueError("deadline must be future and within the frozen global runtime")
         self.root = root
         self.started = time.monotonic()
-        self.deadline = self.started + (deadline_epoch - now)
+        self.deadline = None if deadline_epoch is None else self.started + (deadline_epoch - now)
 
     def used(self) -> int:
         total = 0
@@ -106,7 +108,7 @@ class Budget:
         return total
 
     def check(self, reserve: int = 0) -> None:
-        if time.monotonic() >= self.deadline:
+        if self.deadline is not None and time.monotonic() >= self.deadline:
             raise TimeoutError("global pilot runtime exhausted")
         used = self.used()
         if used + reserve > MAX_BYTES:
@@ -114,8 +116,16 @@ class Budget:
         if shutil.disk_usage(self.root).free < reserve + 256 * 1024**2:
             raise OSError("insufficient free disk for next bounded operation")
 
+    def finalization(self) -> Budget:
+        """Keep disk guards while allowing checkpoint restoration after a time cutoff."""
+        result = Budget(self.root, None)
+        result.check()
+        return result
+
     def config(self) -> RuntimeConfig:
         self.check()
+        if self.deadline is None:
+            return RuntimeConfig(seed=42, torch_threads=2, max_seconds=None)
         remaining = int(self.deadline - time.monotonic())
         if remaining < 1:
             raise TimeoutError("global pilot runtime exhausted")
@@ -613,7 +623,7 @@ def run(
     target: Path,
     plant_data: Path,
     source_manifest: Path,
-    deadline_epoch: float,
+    deadline_epoch: float | None,
     *,
     apply: bool = False,
 ) -> dict[str, Any]:
@@ -675,7 +685,7 @@ def run(
                     str(p.relative_to(code_root)): tensors.file_hash(p) for p in code_files
                 },
                 "limits": {
-                    "seconds": MAX_SECONDS,
+                    "seconds": MAX_SECONDS if deadline_epoch is not None else None,
                     "deadline_epoch": deadline_epoch,
                     "artifact_bytes": MAX_BYTES,
                     "candidate_attempts": len(EDITS),
@@ -820,18 +830,20 @@ def run(
                                 record["recovered_failed_run_for_restore"] = True
                 if result is not None:
                     try:
-                        budget.check()
+                        finalization_budget = budget.finalization()
                         if "afterimages" not in record:
                             snapshot = json.loads(
                                 bounded_file(service.store.path(result["run_id"]) / "snapshot.json")
                             )
                             record["afterimages"] = persist_afterimages(
-                                output, snapshot, candidate_dir, budget
+                                output, snapshot, candidate_dir, finalization_budget
                             )
                         restored = service.restore(result["run_id"], apply=True)
                         atomic_json(candidate_dir / "restore.json", restored)
                         if checkpoint_inventory(output, 4 * 1024**3) != planted_inventory:
                             raise ValueError("restored checkpoint is not bit-exact planted source")
+                        record["restored_bit_exact"] = True
+                        atomic_json(workspace / "summary.json", summary)
                         restored_eval = score_checkpoint(
                             output, spec, budget, candidate_dir / "restored-evaluation.json"
                         )
@@ -891,7 +903,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     for argument in ("source", "workspace", "target", "plant-data", "source-manifest"):
         parser.add_argument("--" + argument, required=True, type=Path)
-    parser.add_argument("--deadline-epoch", required=True, type=float)
+    timing = parser.add_mutually_exclusive_group(required=True)
+    timing.add_argument("--deadline-epoch", type=float)
+    timing.add_argument(
+        "--no-deadline",
+        action="store_true",
+        help="explicitly disable the overall time cutoff; disk and host guards remain",
+    )
     parser.add_argument("--apply", action="store_true", help="authorize the frozen numerical batch")
     args = parser.parse_args()
     with active_phase("planted_fact_pilot"):

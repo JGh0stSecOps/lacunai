@@ -262,6 +262,18 @@ class Service:
     def _qualify(before: dict[str, Any], spec: TargetSpec) -> None:
         from decimal import Decimal
 
+        from lacunai.verify.evaluation import _validated_suite
+
+        # Use the same raw-output validation and retain metric as compare().
+        retain = _validated_suite(before.get("retain", {}), spec.retain, retain=True)
+        if (
+            retain["ambiguous"]
+            or retain["missing"]
+            or Decimal(retain["recovery_rate"])
+            < Decimal(str(spec.thresholds.minimum_baseline_retain_accuracy))
+        ):
+            raise ValueError("baseline retain answer accuracy did not qualify before editing")
+
         for kind, row in before["target"]["by_kind"].items():
             if (
                 row["ambiguous"]
