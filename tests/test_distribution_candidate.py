@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from lacunai.experimental import data
+from lacunai.map import language_distribution
 
 spec = importlib.util.spec_from_file_location(
     "distribution_candidate",
@@ -102,7 +103,14 @@ def fixture(tmp_path):
         "screen-01",
     ]
     for key, value in [
-        ("diagnosis", {"checkpoint_fingerprint": "a" * 64}),
+        (
+            "diagnosis",
+            {
+                "checkpoint_fingerprint": "a" * 64,
+                "schema_version": language_distribution.VERSION,
+                "provenance": language_distribution.PROVENANCE,
+            },
+        ),
         ("edit-spec", SPEC),
         ("dataset", dataset),
         ("before", before),
@@ -248,7 +256,9 @@ def test_main_screen_failure_restores_and_checks_original_files(
     args[args.index("--source-fingerprint") + 1] = fingerprint
     for key in ("diagnosis",):
         path = Path(args[args.index("--" + key) + 1])
-        path.write_text(json.dumps({"checkpoint_fingerprint": fingerprint}))
+        value = json.loads(path.read_text())
+        value["checkpoint_fingerprint"] = fingerprint
+        path.write_text(json.dumps(value))
         args[args.index("--" + key + "-sha256") + 1] = hashlib.sha256(path.read_bytes()).hexdigest()
     (tmp_path / "before" / "manifest.json").write_text(
         json.dumps({"checkpoint_fingerprint": fingerprint})
@@ -284,6 +294,8 @@ def test_main_screen_failure_restores_and_checks_original_files(
         runner,
         "import_module",
         lambda name: SimpleNamespace(
+            VERSION=language_distribution.VERSION,
+            PROVENANCE=language_distribution.PROVENANCE,
             load_file=lambda *a, **kw: {},
             to_proposal=lambda *a, **kw: {"source": {"norm_squared": 1}},
         ),
@@ -322,3 +334,100 @@ def test_main_screen_failure_restores_and_checks_original_files(
     assert json.loads((directory / "restore.json").read_text())["canonical_source_hashes_verified"]
     assert json.loads((directory / "status.json").read_text())["state"] == "failed"
     assert value.current == "original"
+
+
+@pytest.mark.parametrize("method", list(runner.BACKENDS))
+def test_fixed_dispatch_validates_matching_diagnosis_and_rejects_other(method):
+    from importlib import import_module
+
+    spec = {**SPEC, "method": method}
+    mapper = import_module(runner.BACKENDS[method])
+    metadata = {"schema_version": mapper.VERSION, "provenance": mapper.PROVENANCE}
+    assert runner.validate_diagnosis(spec, metadata) is mapper
+    other = next(m for m in runner.BACKENDS if m != method)
+    foreign = import_module(runner.BACKENDS[other])
+    with pytest.raises(ValueError, match="backend"):
+        runner.validate_diagnosis(spec, {**metadata, "provenance": foreign.PROVENANCE})
+    with pytest.raises(ValueError, match="backend"):
+        runner.validate_diagnosis(spec, {**metadata, "schema_version": 999})
+
+
+@pytest.mark.parametrize(
+    "method", ["os", "lacunai.map.language_relevance", "__import__('os')", {}, None]
+)
+def test_arbitrary_module_injection_refused(method):
+    with pytest.raises(ValueError, match="root-selected"):
+        runner.validate_spec({**SPEC, "method": method})
+
+
+def test_relevance_alias_dryrun(tmp_path, monkeypatch, capsys):
+    from lacunai.map import language_relevance
+
+    args, _, _ = fixture(tmp_path)
+    for key, update in [
+        ("edit-spec", {"method": "relevance_row_ablation"}),
+        (
+            "diagnosis",
+            {
+                "schema_version": language_relevance.VERSION,
+                "provenance": language_relevance.PROVENANCE,
+            },
+        ),
+    ]:
+        path = Path(args[args.index("--" + key) + 1])
+        value = json.loads(path.read_text())
+        value.update(update)
+        path.write_text(json.dumps(value))
+        args[args.index("--" + key + "-sha256") + 1] = hashlib.sha256(path.read_bytes()).hexdigest()
+    args[args.index("--histograms")] = "--payload"
+    args[args.index("--histograms-sha256")] = "--payload-sha256"
+    monkeypatch.setattr(sys, "argv", ["runner", *args])
+    monkeypatch.setattr(runner, "HFRuntime", lambda *a: pytest.fail("dryrun loaded model"))
+    assert runner.main() == 0
+    assert "plan_only" in capsys.readouterr().err
+    assert not (tmp_path / "runs").exists()
+
+
+def test_real_relevance_dispatch_snapshot_apply_restore(tmp_path):
+    torch = pytest.importorskip("torch")
+    from lacunai.map import language_relevance as relevance
+    from tests.test_language_edit import numerical_runtime
+
+    runtime = numerical_runtime(tmp_path)
+    payload = {
+        "family_counts": torch.full((7,), 16, dtype=torch.int64),
+        "family_nll_sum": torch.ones(7, dtype=torch.float64),
+    }
+    for layer in runtime.layer_ids:
+        signed = torch.zeros((7, 100), dtype=torch.float64)
+        signed[:2, 0] = -16
+        payload[f"layer.{layer}.signed_sum"] = signed
+        payload[f"layer.{layer}.absolute_sum"] = signed.abs()
+    payload.update(relevance.derive(payload, runtime.layer_ids))
+    metadata = {
+        "schema_version": relevance.VERSION,
+        "provenance": relevance.PROVENANCE,
+        "families": list(relevance.FAMILIES),
+        "layers": runtime.layer_ids,
+        "checkpoint_fingerprint": runtime.fingerprint,
+        "source": runner.operator._inventory(runtime),
+        "payload": {
+            k: {"shape": list(v.shape), "dtype": str(v.dtype), "sha256": relevance.payload_hash(v)}
+            for k, v in payload.items()
+        },
+    }
+    spec = {**SPEC, "method": "relevance_row_ablation"}
+    mapper = runner.validate_diagnosis(spec, metadata)
+    proposal = mapper.to_proposal(runtime, metadata, payload, top_k=1, execution_fraction=0.01)
+    assert proposal["relevance_selection"]["ranked_ids"] == [[0, 0]]
+    names = runner.operator.touched_tensors(runtime, proposal)
+    original = runner.reference_without_copies(runtime, proposal)["hashes"]
+    snapshot = runner.prepare_snapshot(runtime.path, tmp_path / "snapshot", names)
+    state = runner.operator.apply(runtime, proposal, snapshot)
+    assert any(
+        runner.tensors.tensor_hash(runtime.model.state_dict()[n]) != original[n] for n in names
+    )
+    assert runner.operator.restore(runtime, state)["restored_bit_exact"]
+    assert {
+        n: runner.tensors.tensor_hash(v) for n, v in runtime.model.state_dict().items()
+    } == original

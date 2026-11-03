@@ -239,3 +239,110 @@ def test_tiny_negative_absolute_sum_refused():
     payload["layer.0.absolute_sum"][0, 0] = -1e-14
     with pytest.raises(ValueError, match="conservation"):
         relevance.derive(payload, [0])
+
+
+def proposal_fixture():
+    torch, runtime, _ = toy()
+    runtime.storage_dtypes = {name: "F32" for name, _ in runtime.model.named_parameters()}
+    with torch.no_grad():
+        for layer in runtime.layer_ids:
+            runtime.mlp(layer).up_proj.weight.fill_(1)
+            runtime.mlp(layer).up_proj.weight[:4].fill_(0.01)
+    payload = {
+        "family_counts": torch.full((7,), 16, dtype=torch.int64),
+        "family_nll_sum": torch.ones(7, dtype=torch.float64),
+    }
+    for layer in runtime.layer_ids:
+        signed = torch.zeros((7, 12), dtype=torch.float64)
+        signed[:2, :4] = -16 * torch.tensor([5.0, 4.0, 3.0, 2.0], dtype=torch.float64) / (layer + 1)
+        payload[f"layer.{layer}.signed_sum"] = signed
+        payload[f"layer.{layer}.absolute_sum"] = signed.abs()
+    payload.update(relevance.derive(payload, runtime.layer_ids))
+    metadata = {
+        "schema_version": 1,
+        "layers": runtime.layer_ids.copy(),
+        "families": list(relevance.FAMILIES),
+        "provenance": relevance.PROVENANCE.copy(),
+        "checkpoint_fingerprint": runtime.fingerprint,
+        "source": relevance.language._inventory(runtime),
+    }
+    repin(metadata, payload)
+    return torch, runtime, metadata, payload
+
+
+def test_proposal_exact_positive_selection_and_immutable_source():
+    torch, runtime, metadata, payload = proposal_fixture()
+    before = {k: v.clone() for k, v in runtime.model.state_dict().items()}
+    pin = relevance.record_digest(metadata)
+    payload_before = {k: v.clone() for k, v in payload.items()}
+    proposal = relevance.to_proposal(runtime, metadata, payload, top_k=2, execution_fraction=0.10)
+    assert proposal["relevance_selection"]["ranked_ids"] == [[0, 0], [0, 1]]
+    assert proposal["selected"][0]["rows"] == [0, 1]
+    name = "model.layers.0.mlp.up_proj.weight"
+    expected = relevance.tensors._square_norm(runtime.mlp(0).up_proj.weight[[0, 1]])
+    assert proposal["tensor_diffs"][name]["delta_norm_squared"] == expected
+    assert proposal["operation"] == "zero_language_up_projection_rows"
+    assert relevance.record_digest(metadata) == pin
+    assert all(torch.equal(v, before[k]) for k, v in runtime.model.state_dict().items())
+    assert all(torch.equal(v, payload_before[k]) for k, v in payload.items())
+
+
+@pytest.mark.parametrize(
+    "top_k,fraction,match",
+    [
+        (True, 0.1, "positive integer"),
+        (0, 0.1, "positive integer"),
+        (2, 0.03, "allowlist"),
+        (3, 0.1, "cap"),
+        (9, 0.2, "positive-score"),
+    ],
+)
+def test_proposal_refuses_selection_limits(top_k, fraction, match):
+    _, runtime, metadata, payload = proposal_fixture()
+    with pytest.raises(ValueError, match=match):
+        relevance.to_proposal(runtime, metadata, payload, top_k=top_k, execution_fraction=fraction)
+
+
+def test_proposal_rehashed_rank_tamper_and_source_drift():
+    torch, runtime, metadata, payload = proposal_fixture()
+    saved = payload["ranking"].clone()
+    payload["ranking"][0] = saved[1]
+    repin(metadata, payload)
+    with pytest.raises(ValueError, match="derived"):
+        relevance.to_proposal(runtime, metadata, payload, top_k=1, execution_fraction=0.1)
+    payload["ranking"] = saved
+    repin(metadata, payload)
+    with torch.no_grad():
+        runtime.mlp(0).up_proj.weight[0, 0] += 0.01
+    with pytest.raises(ValueError, match="source parameter changed"):
+        relevance.to_proposal(runtime, metadata, payload, top_k=1, execution_fraction=0.1)
+
+
+def test_proposal_runtime_width_and_noop_refused():
+    torch, runtime, metadata, payload = proposal_fixture()
+    for key in ("signed_sum", "absolute_sum"):
+        payload["layer.0." + key] = payload["layer.0." + key][:, :11].clone()
+    payload.update(relevance.derive(payload, [0, 1]))
+    repin(metadata, payload)
+    with pytest.raises(ValueError, match="width"):
+        relevance.to_proposal(runtime, metadata, payload, top_k=1, execution_fraction=0.1)
+    torch, runtime, metadata, payload = proposal_fixture()
+    with torch.no_grad():
+        runtime.mlp(0).up_proj.weight[0].zero_()
+    metadata["source"] = relevance.language._inventory(runtime)
+    with pytest.raises(ValueError, match="no-op"):
+        relevance.to_proposal(runtime, metadata, payload, top_k=1, execution_fraction=0.1)
+
+
+def test_proposal_rejects_invalid_options_before_source_access():
+    for top_k, fraction in [(True, 0.1), (0, 0.1), (1, float("nan")), (1, 0.03)]:
+        with pytest.raises(ValueError):
+            relevance.to_proposal(None, {}, {}, top_k=top_k, execution_fraction=fraction)
+
+
+def test_rehashed_derived_dtype_refused():
+    torch, metadata, payload = payload_fixture()
+    payload["ranking"] = payload["ranking"].to(torch.float64)
+    repin(metadata, payload)
+    with pytest.raises(ValueError, match="derived"):
+        relevance.validate_payload(metadata, payload)

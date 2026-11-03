@@ -1,4 +1,4 @@
-"""Screen one root-selected distribution row ablation; no automatic candidate search."""
+"""Screen one root-selected diagnostic row ablation; no automatic candidate search."""
 
 from __future__ import annotations
 
@@ -28,20 +28,42 @@ from lacunai.experimental.resources import Watchdog, host_sample, tree_bytes  # 
 from lacunai.restore.checkpoints import prepare_snapshot  # noqa: E402
 from lacunai.verify import language as evaluation  # noqa: E402
 
+BACKENDS = {
+    "distribution_row_ablation": "lacunai.map.language_distribution",
+    "relevance_row_ablation": "lacunai.map.language_relevance",
+}
+PAYLOAD_KINDS = {
+    "distribution_row_ablation": "histograms",
+    "relevance_row_ablation": "sensitivities",
+}
+
+
+def validate_diagnosis(spec: dict[str, Any], diagnosis: dict[str, Any]) -> Any:
+    validate_spec(spec)
+    mapper = import_module(BACKENDS[spec["method"]])
+    if (
+        type(diagnosis.get("schema_version")) is not int
+        or diagnosis.get("schema_version") != mapper.VERSION
+        or diagnosis.get("provenance") != mapper.PROVENANCE
+    ):
+        raise ValueError("diagnosis schema/provenance does not match selected backend")
+    return mapper
+
 
 def validate_spec(spec: dict[str, Any]) -> None:
     if (
         set(spec) != {"schema_version", "method", "top_k", "execution_fraction"}
         or type(spec["schema_version"]) is not int
         or spec["schema_version"] != 1
-        or spec["method"] != "distribution_row_ablation"
+        or type(spec["method"]) is not str
+        or spec["method"] not in BACKENDS
         or type(spec["top_k"]) is not int
         or spec["top_k"] < 1
         or type(spec["execution_fraction"]) not in (int, float)
         or not math.isfinite(spec["execution_fraction"])
         or spec["execution_fraction"] not in operator.FRACTIONS
     ):
-        raise ValueError("invalid root-selected distribution edit specification")
+        raise ValueError("invalid root-selected row edit specification")
 
 
 def pinned_payload(path: Path, pin: str) -> None:
@@ -131,12 +153,15 @@ def budgeted_snapshot(
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("phase", choices=["screen"])
-    for name in ("root", "source", "diagnosis", "histograms", "edit-spec", "dataset", "before"):
+    for name in ("root", "source", "diagnosis", "edit-spec", "dataset", "before"):
         parser.add_argument("--" + name, type=Path, required=True)
+    parser.add_argument("--histograms", "--payload", dest="histograms", type=Path, required=True)
+    parser.add_argument(
+        "--histograms-sha256", "--payload-sha256", dest="histograms_sha256", required=True
+    )
     for name in (
         "source-fingerprint",
         "diagnosis-sha256",
-        "histograms-sha256",
         "edit-spec-sha256",
         "dataset-sha256",
         "before-sha256",
@@ -145,11 +170,11 @@ def main() -> int:
         parser.add_argument("--" + name, required=True)
     parser.add_argument("--apply", action="store_true")
     args = parser.parse_args()
-    progress("distribution_screen", state="active")
+    progress("row_screen", state="active")
     directory = None
     status: dict[str, Any] = {
         "phase": "screen",
-        "method": "distribution_row_ablation",
+        "method": None,
         "state": "running",
         "verdict": "inconclusive",
     }
@@ -160,7 +185,13 @@ def main() -> int:
             raise ValueError("invalid run name or source fingerprint")
         spec = baseline.pinned_json(args.edit_spec, args.edit_spec_sha256)
         validate_spec(spec)
+        status.update(
+            method=spec["method"],
+            mapper=BACKENDS[spec["method"]],
+            payload_kind=PAYLOAD_KINDS[spec["method"]],
+        )
         diagnosis = baseline.pinned_json(args.diagnosis, args.diagnosis_sha256)
+        mapper = validate_diagnosis(spec, diagnosis)
         if diagnosis.get("checkpoint_fingerprint") != args.source_fingerprint:
             raise ValueError("diagnosis source fingerprint differs")
         pinned_payload(args.histograms, args.histograms_sha256)
@@ -171,7 +202,7 @@ def main() -> int:
         before_manifest = baseline.verify_before_source(args.before, args.source_fingerprint)
         before = rescore_before(original_before, dataset)
         if not args.apply:
-            progress("distribution_screen", state="plan_only", launch=False)
+            progress("row_screen", state="plan_only", launch=False)
             return 0
         root, source = args.root.absolute(), args.source.absolute()
         if (
@@ -190,7 +221,7 @@ def main() -> int:
         if not (root / "host-before.json").exists():
             atomic_json(root / "host-before.json", host_sample(root))
         with Watchdog(root, {"resources": iteration.LIMITS}, None, args.name) as watch:
-            with active_phase("distribution_candidate_load"):
+            with active_phase("row_candidate_load"):
                 inventory = checkpoint_inventory(source, config.max_model_bytes)
                 if digest(inventory) != args.source_fingerprint:
                     raise ValueError("original source fingerprint differs")
@@ -231,6 +262,8 @@ def main() -> int:
                 "entrypoint": "scripts/chinese_distribution_candidate.py",
                 "phase": "screen",
                 "method": spec["method"],
+                "mapper": BACKENDS[spec["method"]],
+                "payload_kind": PAYLOAD_KINDS[spec["method"]],
                 "objective_spec": spec,
                 "source_inventory": inventory,
                 "runtime": asdict(config),
@@ -259,12 +292,11 @@ def main() -> int:
             atomic_json(directory / "manifest.json", manifest)
             atomic_json(directory / "before-rescored.json", before)
             atomic_json(directory / "edit-spec.json", spec)
-            with active_phase("distribution_proposal"):
+            with active_phase("row_proposal"):
                 pinned_payload(args.histograms, args.histograms_sha256)
                 payload = import_module("safetensors.torch").load_file(
                     str(args.histograms), device="cpu"
                 )
-                mapper = import_module("lacunai.map.language_distribution")
                 proposal = mapper.to_proposal(
                     runtime,
                     diagnosis,
@@ -276,12 +308,12 @@ def main() -> int:
                 atomic_json(directory / "proposal.json", proposal)
                 names = operator.touched_tensors(runtime, proposal)
             state = None
-            with active_phase("distribution_durable_snapshot"):
+            with active_phase("row_durable_snapshot"):
                 snapshot = budgeted_snapshot(runtime, directory, names, watch)
                 iteration.bind_snapshot(runtime, snapshot)
                 reference = reference_without_copies(runtime, proposal)
             try:
-                with active_phase("distribution_apply"):
+                with active_phase("row_apply"):
                     state = operator.apply(runtime, proposal, snapshot)
                 reference["original_tensors"] = state["before_images"]
                 shapes = {tuple(reference["shapes"][n]) for n in names}
@@ -297,7 +329,7 @@ def main() -> int:
                         "max_model_relative_frobenius": operator.MAX_MODEL_RELATIVE,
                     },
                 }
-                with active_phase("distribution_afterimage"):
+                with active_phase("row_afterimage"):
                     status["delta_manifest"] = gradient.save_after_image(
                         runtime, reference, contract, directory, root
                     )
@@ -305,7 +337,7 @@ def main() -> int:
                 status.update(rmu.screen(runtime, dataset, before, directory, watch))
             finally:
                 try:
-                    with active_phase("distribution_exact_restore"):
+                    with active_phase("row_exact_restore"):
                         receipt = operator.restore(runtime, state) if state is not None else {}
                         actual = {
                             n: tensors.tensor_hash(v) for n, v in runtime.model.state_dict().items()
@@ -325,9 +357,9 @@ def main() -> int:
         status.update(state="failed", error=f"{type(error).__name__}: {error}")
         if directory is not None:
             atomic_json(directory / "status.json", status)
-        progress("distribution_screen", state="failed", error=status["error"])
+        progress("row_screen", state="failed", error=status["error"])
         raise
-    progress("distribution_screen", state="complete", verdict=status["verdict"])
+    progress("row_screen", state="complete", verdict=status["verdict"])
     return 0 if status["verdict"] == "passed" else 2
 
 

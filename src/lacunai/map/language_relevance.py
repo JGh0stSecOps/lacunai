@@ -195,7 +195,7 @@ def validate_payload(metadata: dict[str, Any], payload: dict[str, Any]) -> None:
         ):
             raise ValueError("relevance payload hash/shape/dtype differs: " + name)
     for name, value in derive(payload, layers).items():
-        if not torch.equal(value, payload[name]):
+        if value.dtype != payload[name].dtype or not torch.equal(value, payload[name]):
             raise ValueError("relevance derived statistics/ranking differ: " + name)
 
 
@@ -309,3 +309,105 @@ def diagnose(runtime: Any, corpus: dict[str, Any]) -> tuple[dict[str, Any], dict
         "language_relevance", state="complete", completed=112, total=112, unit="examples"
     )
     return metadata, payload
+
+
+def to_proposal(
+    runtime: Any,
+    metadata: dict[str, Any],
+    payload: dict[str, Any],
+    *,
+    top_k: int,
+    execution_fraction: float,
+) -> dict[str, Any]:
+    """Bind an explicit positive-score top-k choice to the existing zero-row operator."""
+    import math
+
+    if type(top_k) is not int or top_k < 1:
+        raise ValueError("top_k must be a positive integer")
+    if (
+        type(execution_fraction) not in (int, float)
+        or not math.isfinite(execution_fraction)
+        or execution_fraction not in language.FRACTIONS
+    ):
+        raise ValueError("execution fraction is outside existing language edit allowlist")
+    language._identity(runtime, metadata)
+    validate_payload(metadata, payload)
+    if metadata.get("provenance") != PROVENANCE:
+        raise ValueError("relevance method provenance differs")
+    names = language._names(runtime)
+    parameters = dict(runtime.model.named_parameters())
+    if metadata["layers"] != sorted(names):
+        raise ValueError("relevance runtime layer inventory differs")
+    for layer, layer_names in names.items():
+        width = parameters[layer_names[0]].shape[0]
+        if payload[f"layer.{layer}.signed_sum"].shape != (len(FAMILIES), width):
+            raise ValueError("relevance runtime feature width differs")
+    # validate_payload independently rebuilds every score and the exact global ranking.
+    ranking = payload["ranking"]
+    positive = sum(int((payload[f"layer.{layer}.score"] > 0).sum()) for layer in names)
+    if top_k > positive:
+        raise ValueError("top_k exceeds positive-score neuron count")
+    selected_ids = ranking[:top_k].tolist()
+    rows_by_layer: dict[int, list[int]] = {layer: [] for layer in names}
+    for layer, neuron in selected_ids:
+        if float(payload[f"layer.{layer}.score"][neuron]) <= 0:
+            raise ValueError("selected relevance score must be strictly positive")
+        rows_by_layer[layer].append(neuron)
+    selected, diffs = [], {}
+    scores: list[float] = []
+    for layer in names:
+        layer_names = names[layer]
+        width = parameters[layer_names[0]].shape[0]
+        rows = rows_by_layer[layer]
+        if len(rows) > math.ceil(width * execution_fraction):
+            raise ValueError("exact top_k exceeds per-layer execution cap; no rows trimmed")
+        selected.append({"layer": layer, "width": width, "rows": rows})
+        scores.extend(float(payload[f"layer.{layer}.score"][neuron]) for neuron in rows)
+        for name in layer_names if rows else []:
+            delta = tensors._square_norm(parameters[name][rows])
+            base = metadata["source"]["parameters"][name]["norm_squared"]
+            relative = math.sqrt(delta / base) if base else 0.0
+            if (
+                not math.isfinite(delta)
+                or not math.isfinite(relative)
+                or relative > language.MAX_TENSOR_RELATIVE + 1e-9
+            ):
+                raise ValueError("relevance proposal exceeds existing tensor change bound")
+            diffs[name] = {"delta_norm_squared": delta, "relative_frobenius": relative}
+    total = math.fsum(row["delta_norm_squared"] for row in diffs.values())
+    relative = math.sqrt(total / metadata["source"]["norm_squared"])
+    if not math.isfinite(relative) or total <= 0 or relative > language.MAX_MODEL_RELATIVE + 1e-9:
+        raise ValueError("relevance proposal is no-op or exceeds existing model change bound")
+    if sum(len(row["rows"]) for row in selected) != top_k:
+        raise ValueError("exact top_k row selection was not preserved")
+    diagnosis_pin = record_digest(metadata)
+    proposal = {
+        "schema_version": 1,
+        "checkpoint_fingerprint": runtime.fingerprint,
+        "source": metadata["source"],
+        "diagnosis_sha256": diagnosis_pin,
+        "fraction": execution_fraction,
+        "strength": 1.0,
+        "selected": selected,
+        "tensor_diffs": diffs,
+        "model_relative_frobenius": relative,
+        "max_tensor_relative": language.MAX_TENSOR_RELATIVE,
+        "max_model_relative": language.MAX_MODEL_RELATIVE,
+        "operation": "zero_language_up_projection_rows",
+        "selection_method": PROVENANCE["method"],
+        "relevance_selection": {
+            "method": PROVENANCE["method"],
+            "top_k": top_k,
+            "ranked_ids": selected_ids,
+            "positive_score_count": positive,
+            "diagnosis_sha256": diagnosis_pin,
+            "payload_manifest_sha256": record_digest(metadata["payload"]),
+            "score_min": min(scores),
+            "score_max": max(scores),
+            "score_is_calibrated_confidence": False,
+        },
+        "storage_roundtrip": "zero exactly representable in source dtype",
+        "execution_fraction_role": "per-layer safety ceiling; not a selection fraction",
+    }
+    language.touched_tensors(runtime, proposal)
+    return proposal
