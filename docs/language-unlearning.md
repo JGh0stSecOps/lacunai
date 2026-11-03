@@ -110,6 +110,20 @@ retain losses. Non-Chinese token-weighted perplexity is checked separately by th
 iteration script. Fresh held-out commitments remain outside the editor's
 development data; historical examples are explicitly unblinded.
 
+Scorer `4-retain-answer-wrapper` corrects a retain-only normalization error: a
+single leading `Answer:` label may precede an otherwise complete correct answer.
+The remainder must match a whole answer; the wrapper cannot admit extra prose,
+negation, competing answers, or nested labels. Chinese recovery rules and
+acceptance thresholds are unchanged. Historical signed reports retain their
+original scorer version. Separate rescoring reports expose changed judgments;
+missing observations remain missing.
+
+`scripts/chinese_replay_candidate.py` re-evaluates the explicitly pinned, signed
+stored RMU candidate without retraining. It writes a new snapshot, validates the
+actual loaded tensor hashes and outer perturbation bounds, runs the complete
+development suite, and restores the original tensors. This supports evaluation
+repairs without silently changing the candidate or overwriting earlier evidence.
+
 `scripts/chinese_iteration.py` provides diagnosis, development baseline, candidate
 screening, checkpoint persistence, and independent evaluation phases. It defaults
 to a plan unless `--apply` is present. Runtime settings and source/data/code hashes

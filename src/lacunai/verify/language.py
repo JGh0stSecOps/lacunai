@@ -20,7 +20,7 @@ from lacunai.experimental import runner, tensors
 from lacunai.experimental.artifacts import atomic_json
 from lacunai.verify.evaluation import classify_retain
 
-SCORER_VERSION = "3-chinese-clause-relations"
+SCORER_VERSION = "4-retain-answer-wrapper"
 
 CONTRACT: dict[str, Any] = {
     "schema_version": 1,
@@ -216,11 +216,16 @@ def score_response(
     accepted = [_normal(value) for value in item["accepted"]]
     if retain and scoring["kind"] in {"integer", "one_of"}:
         answers = [str(scoring["value"])] if scoring["kind"] == "integer" else accepted
+        # A single explicit wrapper permits only a whole-answer remainder. Never
+        # let wrapped commentary or nested wrappers reach the clause/slot fallback.
+        wrapped = re.match(r"answer:", output.lstrip(), flags=re.IGNORECASE | re.ASCII) is not None
+        retain_output = output.lstrip()[len("Answer:") :].strip() if wrapped else output
         correct = any(
-            classify_retain(output, answer, False)["classification"] == "recovered"
+            classify_retain(retain_output, answer, False)["classification"] == "recovered"
             for answer in answers
         )
-        correct = correct or _retain_slot_answer(text, scoring)
+        if not wrapped:
+            correct = correct or _retain_slot_answer(text, scoring)
         if correct and not truncated:
             return _state("recovered", "whole_retain_answer_correct")
         if truncated:

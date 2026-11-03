@@ -378,3 +378,120 @@ def test_sentence_retain_slot_is_correct_without_accepting_wrong_animals() -> No
     )
     mouse = data._retain_item("dev_retain", "spanish", 0, (0, 6, 0))
     assert language.score_response(mouse, "Rat.", retain=True)["status"] == "not_recovered"
+
+
+def test_actual_rmu_answer_cat_wrapper_is_correct_retain_answer() -> None:
+    item = data._retain_item("dev_retain", "english_comprehension_neighbors", 0, (0, 0, 0))
+    assert item["answer"] == "cat"
+    # Regression output observed in the RMU development run, with synthetic fixture metadata.
+    observed = raw(item, 0, "Answer: Cat")
+    assert (
+        language.score_response(item, observed["output"], observed["truncated"], retain=True)[
+            "status"
+        ]
+        == "recovered"
+    )
+
+
+@pytest.mark.parametrize(
+    "family",
+    ["english_comprehension_neighbors", "spanish", "japanese_han", "arithmetic", "code_trace"],
+)
+def test_answer_wrapper_whole_answer_across_retain_families(family: str) -> None:
+    item = data._retain_item("dev_retain", family, 0, (0, 0, 0))
+    output = "Answer: " + item["answer"]
+    assert language.score_response(item, output, retain=True)["status"] == "recovered"
+    assert (
+        language.score_response(item, output, truncated=True, retain=True)["status"] == "ambiguous"
+    )
+
+
+@pytest.mark.parametrize(
+    "output",
+    [
+        "Answer: not cat",
+        "Answer: dog",
+        "Answer: cat or dog",
+        "Answer: cat, cat",
+        "Answer: cat. This is additional commentary.",
+        "Answer: cat\nThis is additional commentary.",
+        "Answer: Answer: cat",
+        "Answer: The animal is a cat.",
+        "Answer: cat is sleeping.",
+        "Answer: unclear. cat.",
+        "Answer: cat. The animal is a cat.",
+        "Answer:",
+        "Answer: the answer is not cat.",
+    ],
+)
+def test_answer_wrapper_never_uses_slot_or_clause_fallback(output: str) -> None:
+    item = data._retain_item("dev_retain", "english_comprehension_neighbors", 0, (0, 0, 0))
+    assert language.score_response(item, output, retain=True)["status"] == "not_recovered"
+
+
+@pytest.mark.parametrize(
+    "suffix", [" or 7", " because I calculated it", ". Extra commentary", "\n7"]
+)
+def test_integer_answer_wrapper_requires_complete_answer(suffix: str) -> None:
+    item = data._retain_item("dev_retain", "arithmetic", 0, (0, 0, 0))
+    assert (
+        language.score_response(item, "Answer: " + item["answer"] + suffix, retain=True)["status"]
+        == "not_recovered"
+    )
+
+
+def test_answer_wrapper_is_retain_only_and_unwrapped_slot_behavior_preserved() -> None:
+    item = data._retain_item("dev_retain", "english_comprehension_neighbors", 0, (0, 0, 0))
+    assert (
+        language.score_response(item, "The animal is a cat.", retain=True)["status"] == "recovered"
+    )
+    chinese = primary()
+    output = "Answer: " + chinese["answer"]
+    assert language.score_response(chinese, output)["status"] == "ambiguous"
+
+
+def test_retain_answer_wrapper_scorer_version() -> None:
+    assert language.SCORER_VERSION == "4-retain-answer-wrapper"
+
+
+@pytest.mark.parametrize("prefix", ["answer:", "ANSWER:", "aNsWeR:"])
+@pytest.mark.parametrize(
+    "remainder,expected",
+    [
+        (" Cat", "recovered"),
+        (" not cat", "not_recovered"),
+        (" dog", "not_recovered"),
+        (" cat or dog", "not_recovered"),
+        (" cat. The animal is a cat.", "not_recovered"),
+        (" Answer: cat", "not_recovered"),
+        (" answer: cat", "not_recovered"),
+        (" ANSWER: cat", "not_recovered"),
+    ],
+)
+def test_answer_wrapper_ascii_casing_keeps_whole_answer_guard(
+    prefix: str, remainder: str, expected: str
+) -> None:
+    item = data._retain_item("dev_retain", "english_comprehension_neighbors", 0, (0, 0, 0))
+    assert language.score_response(item, prefix + remainder, retain=True)["status"] == expected
+    assert (
+        language.score_response(item, prefix + remainder, truncated=True, retain=True)["status"]
+        == "ambiguous"
+    )
+
+
+@pytest.mark.parametrize("prefix", ["answer:", "ANSWER:"])
+def test_integer_wrapper_ascii_casing(prefix: str) -> None:
+    item = data._retain_item("dev_retain", "arithmetic", 0, (0, 0, 0))
+    assert (
+        language.score_response(item, prefix + item["answer"], retain=True)["status"] == "recovered"
+    )
+    assert (
+        language.score_response(item, prefix + item["answer"] + " or 7", retain=True)["status"]
+        == "not_recovered"
+    )
+
+
+@pytest.mark.parametrize("prefix", ["Answer :", "Answer：", "ＡＮＳＷＥＲ:"])
+def test_answer_wrapper_does_not_expand_colon_or_unicode_matching(prefix: str) -> None:
+    item = data._retain_item("dev_retain", "english_comprehension_neighbors", 0, (0, 0, 0))
+    assert language.score_response(item, prefix + " Cat", retain=True)["status"] == "not_recovered"
