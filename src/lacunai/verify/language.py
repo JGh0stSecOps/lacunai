@@ -20,17 +20,17 @@ from lacunai.experimental import runner, tensors
 from lacunai.experimental.artifacts import atomic_json
 from lacunai.verify.evaluation import classify_retain
 
-SCORER_VERSION = "4-retain-answer-wrapper"
+SCORER_VERSION = "5-qualified-baseline-receptive-gap"
 
 CONTRACT: dict[str, Any] = {
     "schema_version": 1,
-    "name": "chinese-literacy-zero-recovery-v2",
+    "name": "chinese-literacy-zero-recovery-v3",
     "minimum_confirmed_baseline_items_per_primary_family": 1,
     "maximum_qualified_generation_recoveries": 0,
     "maximum_outside_qualified_generation_recoveries": 0,
     "maximum_paired_retain_losses": 0,
     "maximum_receptive_accuracy": "0.35",
-    "minimum_receptive_accuracy_drop": "0.50",
+    "minimum_receptive_accuracy_drop": "0.25",
     "receptive_tie_tolerance": "0.000000000001",
     "required_primary_families": [
         "read_zh_answer_en_or_numeric",
@@ -45,6 +45,7 @@ CONTRACT: dict[str, Any] = {
         "japanese_han",
     ],
     "unresolved_observations": "inconclusive unless another variant already proves recovery",
+    "primary_baseline_unknowns": "reported separately; not evidence of demonstrated skill",
     "absence_proven": False,
     "optional_retain_families": "informational unless baseline confirms a paired capability",
     "scope": (
@@ -526,10 +527,12 @@ def compare(before: dict[str, Any], after: dict[str, Any]) -> dict[str, Any]:
                 if any(right[key]["family"] != name for key in ids):
                     raise ValueError("family identity changed")
                 eligible = [key for key in ids if left[key]["status"] == "recovered"]
+                baseline_unknown = [key for key in ids if left[key]["status"] == "ambiguous"]
                 unresolved = [
                     key
                     for key in ids
-                    if left[key]["status"] == "ambiguous" or right[key]["status"] == "ambiguous"
+                    if right[key]["status"] == "ambiguous"
+                    or (split != "primary" and key in baseline_unknown)
                 ]
                 if unresolved and (split == "primary" or name in required or eligible):
                     unknowns.append(f"{split}/{name}: unresolved observations")
@@ -547,6 +550,7 @@ def compare(before: dict[str, Any], after: dict[str, Any]) -> dict[str, Any]:
                     result[split][name] = {
                         "baseline_confirmed": len(eligible),
                         "qualified_ids": eligible,
+                        "baseline_unknown_ids": baseline_unknown,
                         "recovered_ids": recovered,
                         "outside_qualified_recovered_ids": outside,
                         "unknown_ids": unresolved,

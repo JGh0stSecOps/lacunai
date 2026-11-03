@@ -22,6 +22,36 @@ globally by entropy. Its
 impairment and steering, not information absence. Shared language features make
 collateral damage a measured risk, particularly for Chinese and Japanese.
 
+## Full-range distribution mapping
+
+`map.language_distribution` streams two passes over the existing four-language
+development corpus. It records per-neuron ranges, then 64 shared histogram bins
+including negative activations. Counts use checked int32 accumulation; normalized
+probabilities and overlaps use float64. The Chinese contrast is one minus its
+largest distribution overlap with English, Spanish or Japanese. Stable ties use
+layer and neuron order. This is an association score, not calibrated confidence
+or causal localization.
+
+After inspecting the diagnosis, the editor may explicitly request `top_k` rows
+with `to_proposal`. Numerical code recomputes the ranking from saved counts and
+checks the existing per-layer, tensor and model bounds without trimming the
+selection. The proposal reuses the existing reversible up-projection operator;
+constructing it does not apply the edit.
+
+`scripts/chinese_distribution_diagnosis.py` requires explicit `--apply` for model
+execution. It preserves corpus and checkpoint identities, records numerical and
+resource settings, writes a bounded safetensors payload, and verifies unchanged
+source weights and exact artifact readback. It does not select or execute an edit.
+The method adapts [distribution-aware language-neuron research](https://arxiv.org/html/2609.10993v1)
+without reproducing its language-clustering procedure. Model outcomes require
+separate causal and behavioral tests.
+
+The [versioned evaluator correction](research.md#evaluator-migration-demonstrated-baseline-skills)
+separates uncertain baseline items from demonstrated skills and restores the
+original receptive percentage-point criterion. After-edit uncertainty and any
+confirmed recovery still prevent acceptance. Historical results retain their
+original contracts and signatures.
+
 ## Four-language LAPE mapping
 
 `map.language_entropy` implements an alternate diagnostic and proposal adapter.

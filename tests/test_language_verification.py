@@ -451,7 +451,7 @@ def test_answer_wrapper_is_retain_only_and_unwrapped_slot_behavior_preserved() -
 
 
 def test_retain_answer_wrapper_scorer_version() -> None:
-    assert language.SCORER_VERSION == "4-retain-answer-wrapper"
+    assert language.SCORER_VERSION == "5-qualified-baseline-receptive-gap"
 
 
 @pytest.mark.parametrize("prefix", ["answer:", "ANSWER:", "aNsWeR:"])
@@ -495,3 +495,81 @@ def test_integer_wrapper_ascii_casing(prefix: str) -> None:
 def test_answer_wrapper_does_not_expand_colon_or_unicode_matching(prefix: str) -> None:
     item = data._retain_item("dev_retain", "english_comprehension_neighbors", 0, (0, 0, 0))
     assert language.score_response(item, prefix + " Cat", retain=True)["status"] == "not_recovered"
+
+
+def expanded_observations() -> tuple[dict, dict, dict]:
+    """Four receptive items plus an unqualified writing item, real raw scoring."""
+    before, after = observation(), observation(removed=True)
+    extra = copy.deepcopy(primary())
+    extra["id"] += ":unqualified"
+    reading = dataset()["heldout_primary"][0]
+    extras = [extra]
+    for number in range(3):
+        item = copy.deepcopy(reading)
+        item["id"] += f":extra{number}"
+        extras.append(item)
+    for result, removed in ((before, False), (after, True)):
+        items = result["primary"]["spec"] + copy.deepcopy(extras)
+        rows = result["primary"]["raw"] + [
+            raw(
+                item,
+                variant,
+                "I cannot answer"
+                if removed
+                else ("" if item["id"] == extra["id"] else item["answer"]),
+                truncated=not removed and item["id"] == extra["id"],
+            )
+            for item in extras
+            for variant in range(len(item["prompts"]))
+        ]
+        result["primary"] = language.summarize(items, rows)
+        result["dataset_sha256"] = digest({"primary": items, "retain": result["retain"]["spec"]})
+        reading_items = [item for item in items if item["family"] == reading["family"]]
+        result["receptive"] = language._receptive(
+            items,
+            [
+                receptive(item, correct=number < (1 if removed else 2))
+                for number, item in enumerate(reading_items)
+            ],
+        )
+    return before, after, extra
+
+
+def test_baseline_unknown_outside_demonstrated_skill_does_not_poison_loss() -> None:
+    before, after, extra = expanded_observations()
+    # Isolate baseline qualification from the separate receptive-drop correction.
+    for row in before["receptive"]["raw"]:
+        item = next(item for item in before["primary"]["spec"] if item["id"] == row["item_id"])
+        row.update(receptive(item))
+    result = language.compare(before, after)
+    assert result["verdict"] == "passed_the_stated_experimental_contract"
+    writing = result["primary"]["write_zh"]
+    assert writing["baseline_unknown_ids"] == [extra["id"]]
+    assert writing["unknown_ids"] == []
+    assert extra["id"] not in writing["qualified_ids"]
+    assert result["absence_proven"] is False
+
+
+def test_receptive_absolute_quarter_drop_from_half_to_quarter() -> None:
+    before, after, extra = expanded_observations()
+    # Remove baseline ambiguity to isolate the absolute-drop gate.
+    for row in before["primary"]["raw"]:
+        if row["item_id"] == extra["id"]:
+            row["truncated"] = False
+    result = language.compare(before, after)
+    assert result["verdict"] == "passed_the_stated_experimental_contract"
+    assert result["receptive"]["drop_interval"] == ["0.25", "0.25"]
+    assert language.CONTRACT["maximum_receptive_accuracy"] == "0.35"
+
+
+@pytest.mark.parametrize(("ambiguous", "expected"), [(True, "inconclusive"), (False, "failed")])
+def test_unqualified_after_unknown_or_recovery_still_blocks(ambiguous: bool, expected: str) -> None:
+    before, after, extra = expanded_observations()
+    for row in after["primary"]["raw"]:
+        if row["item_id"] == extra["id"]:
+            row["output"] = "" if ambiguous else extra["answer"]
+            row["truncated"] = ambiguous
+    result = language.compare(before, after)
+    assert result["verdict"] == expected
+    field = "unknown_ids" if ambiguous else "outside_qualified_recovered_ids"
+    assert result["primary"]["write_zh"][field] == [extra["id"]]
