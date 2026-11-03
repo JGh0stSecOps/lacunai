@@ -354,3 +354,75 @@ def test_cli_explicit_no_deadline_dryrun(tmp_path: Path, monkeypatch: Any, capsy
     assert pilot.main() == 0
     assert json.loads(capsys.readouterr().out)["dry_run"] is True
     assert not (tmp_path / "workspace").exists()
+
+
+@pytest.mark.parametrize("value", [0, 129, 513, True, 128.0, "512", None])
+def test_plant_max_steps_invalid_before_files_or_models(tmp_path, monkeypatch, value):
+    def forbidden(*args, **kwargs):
+        pytest.fail("invalid planting budget reached model loading")
+
+    monkeypatch.setattr(pilot, "HFRuntime", forbidden)
+    with pytest.raises(ValueError, match="plant_max_steps"):
+        pilot.run(
+            *(tmp_path / name for name in ("source", "workspace", "target", "plant", "manifest")),
+            None,
+            apply=True,
+            plant_max_steps=value,
+        )
+    assert not (tmp_path / "workspace").exists()
+
+
+@pytest.mark.parametrize("choice", [None, 128, 512])
+def test_cli_plant_step_option_reaches_actual_dry_run(tmp_path, monkeypatch, capsys, choice):
+    args = ["pilot", "--no-deadline"]
+    for name in ("source", "workspace", "target", "plant-data", "source-manifest"):
+        args += ["--" + name, str(tmp_path / name)]
+    if choice is not None:
+        args += ["--plant-max-steps", str(choice)]
+    monkeypatch.setattr(pilot.sys, "argv", args)
+    assert pilot.main() == 0
+    result = json.loads(capsys.readouterr().out)
+    assert result["plant_max_steps"] == (128 if choice is None else choice)
+    assert result["dry_run"] and not (tmp_path / "workspace").exists()
+
+
+@pytest.mark.parametrize("maximum", [128, 512])
+def test_actual_run_passes_plant_limit_and_matches_completed_retain_steps(
+    tmp_path, monkeypatch, maximum
+):
+    from dataclasses import asdict
+
+    target = tmp_path / "target.json"
+    target.write_text(json.dumps(asdict(contract())))
+    data = tmp_path / "plant.json"
+    data.write_text(json.dumps(training()))
+    manifest = tmp_path / "source-manifest.json"
+    manifest.write_text(json.dumps({"model_revision": pilot.REVISION, "files": {}}))
+    monkeypatch.setattr(pilot, "checkpoint_inventory", lambda *args: {})
+    monkeypatch.setattr(pilot.importlib.metadata, "version", lambda name: "software-fixture")
+    monkeypatch.setattr(pilot, "score_checkpoint", lambda *args: {})
+    calls = []
+
+    def checkpoint(*args, **kwargs):
+        calls.append(kwargs)
+        if kwargs["retain_only"]:
+            raise ValueError("stop fixture after matched retain invocation")
+        return {"tensor": "fixture.weight", "rows": [0], "steps": 96}
+
+    monkeypatch.setattr(pilot, "trained_checkpoint", checkpoint)
+    result = pilot.run(
+        tmp_path / "source",
+        tmp_path / "workspace",
+        target,
+        data,
+        manifest,
+        None,
+        apply=True,
+        plant_max_steps=maximum,
+    )
+    assert calls[0]["steps"] == maximum and calls[0]["retain_only"] is False
+    assert calls[1]["steps"] == 96 and calls[1]["retain_only"] is True
+    assert calls[1]["selection"] == ("fixture.weight", [0])
+    saved = json.loads((tmp_path / "workspace/manifest.json").read_text())
+    assert saved["planting"]["max_steps"] == maximum
+    assert result["status"] == "failed" and "stop fixture" in result["error"]

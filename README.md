@@ -20,8 +20,11 @@ An editing model interprets the target and diagnostic evidence, then proposes a 
 ## Current experiment: one fact
 
 The first focused demonstration targets **one planted synthetic fact** in
-Qwen2.5-0.5B-Instruct: a fictional station and its invented access code. It is
-planned; successful removal has not been demonstrated.
+Qwen2.5-0.5B-Instruct: a fictional station and its invented access code. The first
+real run was **inconclusive**: after planting, the model recalled the fact on only
+2 of 8 withheld probes, so it did not qualify for editing. Retain accuracy stayed
+at 8/8, while planting increased held-out perplexity from 98.47 to 140.18. No erasure
+candidate was executed; successful removal has not been demonstrated.
 
 1. Plant the fact and verify that the model can recall it before editing.
 2. Map the relevant activations and apply bounded edits to isolated checkpoints.

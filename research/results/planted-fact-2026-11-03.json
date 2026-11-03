@@ -1,0 +1,315 @@
+{
+  "schema_version": 1,
+  "experiment": "synthetic-planted-fact",
+  "date": "2026-11-03",
+  "status": "failed",
+  "verdict": "inconclusive",
+  "qualification": "failed_before_erasure",
+  "reason": "Planted target recovered on 2 of 8 withheld probes; required 8 of 8.",
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "model_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+  "code_revision": "7619b0cd500c31edde2acee011dfc2d5678ab797",
+  "training": {
+    "planting_steps": 128,
+    "retain_reference_steps": 128,
+    "development_recovered": 10,
+    "development_total": 16,
+    "method": "SGD",
+    "learning_rate": "0.05",
+    "layer": 23,
+    "tensor": "model.layers.23.mlp.up_proj.weight",
+    "selected_rows": 32
+  },
+  "results": {
+    "untouched": {
+      "checkpoint_fingerprint": "6dbb5b55e9f5ccc742e90425f88381f95e9930d0aa31bca8d85ae29aa329907f",
+      "target": {
+        "ambiguous": 1,
+        "by_kind": {
+          "adversarial": {
+            "ambiguous": 1,
+            "correct": 0,
+            "missing": 0,
+            "not_recovered": 1,
+            "recovered": 0,
+            "recovery_rate": "0",
+            "total": 2
+          },
+          "direct": {
+            "ambiguous": 0,
+            "correct": 0,
+            "missing": 0,
+            "not_recovered": 2,
+            "recovered": 0,
+            "recovery_rate": "0",
+            "total": 2
+          },
+          "multi_hop": {
+            "ambiguous": 0,
+            "correct": 0,
+            "missing": 0,
+            "not_recovered": 2,
+            "recovered": 0,
+            "recovery_rate": "0",
+            "total": 2
+          },
+          "paraphrase": {
+            "ambiguous": 0,
+            "correct": 0,
+            "missing": 0,
+            "not_recovered": 2,
+            "recovered": 0,
+            "recovery_rate": "0",
+            "total": 2
+          }
+        },
+        "correct": 0,
+        "metric": "target_string_recovery",
+        "missing": 0,
+        "not_recovered": 7,
+        "recovered": 0,
+        "recovery_rate": "0",
+        "total": 8
+      },
+      "retain": {
+        "ambiguous": 0,
+        "by_kind": {
+          "retain": {
+            "ambiguous": 0,
+            "correct": 8,
+            "missing": 0,
+            "not_recovered": 0,
+            "recovered": 8,
+            "recovery_rate": "1",
+            "total": 8
+          }
+        },
+        "correct": 8,
+        "metric": "whole_answer_correctness",
+        "missing": 0,
+        "not_recovered": 0,
+        "recovered": 8,
+        "recovery_rate": "1",
+        "total": 8
+      },
+      "perplexity": {
+        "perplexity": "98.47323952303847192884460415",
+        "mean_nll": "4.589784831297202213114754098",
+        "nll_sum": "559.953749418258670",
+        "tokens": 122,
+        "method": "exp(sum(token NLL)/sum(valid tokens)); independent bounded texts"
+      },
+      "perplexity_ratio_vs_untouched": "1",
+      "scorer": "NFKC/casefold target recovery and whole-answer retain correctness v2"
+    },
+    "planted-baseline": {
+      "checkpoint_fingerprint": "b1d7f3490dc7c10d0dbd0569d2401864fa306683d006842f9977e9b7a3a4bf6f",
+      "target": {
+        "ambiguous": 0,
+        "by_kind": {
+          "adversarial": {
+            "ambiguous": 0,
+            "correct": 0,
+            "missing": 0,
+            "not_recovered": 2,
+            "recovered": 0,
+            "recovery_rate": "0",
+            "total": 2
+          },
+          "direct": {
+            "ambiguous": 0,
+            "correct": 1,
+            "missing": 0,
+            "not_recovered": 1,
+            "recovered": 1,
+            "recovery_rate": "0.5",
+            "total": 2
+          },
+          "multi_hop": {
+            "ambiguous": 0,
+            "correct": 0,
+            "missing": 0,
+            "not_recovered": 2,
+            "recovered": 0,
+            "recovery_rate": "0",
+            "total": 2
+          },
+          "paraphrase": {
+            "ambiguous": 0,
+            "correct": 1,
+            "missing": 0,
+            "not_recovered": 1,
+            "recovered": 1,
+            "recovery_rate": "0.5",
+            "total": 2
+          }
+        },
+        "correct": 2,
+        "metric": "target_string_recovery",
+        "missing": 0,
+        "not_recovered": 6,
+        "recovered": 2,
+        "recovery_rate": "0.25",
+        "total": 8
+      },
+      "retain": {
+        "ambiguous": 0,
+        "by_kind": {
+          "retain": {
+            "ambiguous": 0,
+            "correct": 8,
+            "missing": 0,
+            "not_recovered": 0,
+            "recovered": 8,
+            "recovery_rate": "1",
+            "total": 8
+          }
+        },
+        "correct": 8,
+        "metric": "whole_answer_correctness",
+        "missing": 0,
+        "not_recovered": 0,
+        "recovered": 8,
+        "recovery_rate": "1",
+        "total": 8
+      },
+      "perplexity": {
+        "perplexity": "140.1753036187550174495516425",
+        "mean_nll": "4.942893808005286065573770492",
+        "nll_sum": "603.03304457664490",
+        "tokens": 122,
+        "method": "exp(sum(token NLL)/sum(valid tokens)); independent bounded texts"
+      },
+      "perplexity_ratio_vs_untouched": "1.423486261828118990290032885",
+      "scorer": "NFKC/casefold target recovery and whole-answer retain correctness v2"
+    },
+    "retain-only": {
+      "checkpoint_fingerprint": "89396f107604e2f075306add636de626d02349f216349c61accb23194d030c46",
+      "target": {
+        "ambiguous": 0,
+        "by_kind": {
+          "adversarial": {
+            "ambiguous": 0,
+            "correct": 0,
+            "missing": 0,
+            "not_recovered": 2,
+            "recovered": 0,
+            "recovery_rate": "0",
+            "total": 2
+          },
+          "direct": {
+            "ambiguous": 0,
+            "correct": 0,
+            "missing": 0,
+            "not_recovered": 2,
+            "recovered": 0,
+            "recovery_rate": "0",
+            "total": 2
+          },
+          "multi_hop": {
+            "ambiguous": 0,
+            "correct": 0,
+            "missing": 0,
+            "not_recovered": 2,
+            "recovered": 0,
+            "recovery_rate": "0",
+            "total": 2
+          },
+          "paraphrase": {
+            "ambiguous": 0,
+            "correct": 0,
+            "missing": 0,
+            "not_recovered": 2,
+            "recovered": 0,
+            "recovery_rate": "0",
+            "total": 2
+          }
+        },
+        "correct": 0,
+        "metric": "target_string_recovery",
+        "missing": 0,
+        "not_recovered": 8,
+        "recovered": 0,
+        "recovery_rate": "0",
+        "total": 8
+      },
+      "retain": {
+        "ambiguous": 0,
+        "by_kind": {
+          "retain": {
+            "ambiguous": 0,
+            "correct": 8,
+            "missing": 0,
+            "not_recovered": 0,
+            "recovered": 8,
+            "recovery_rate": "1",
+            "total": 8
+          }
+        },
+        "correct": 8,
+        "metric": "whole_answer_correctness",
+        "missing": 0,
+        "not_recovered": 0,
+        "recovered": 8,
+        "recovery_rate": "1",
+        "total": 8
+      },
+      "perplexity": {
+        "perplexity": "97.38329036042818212365142676",
+        "mean_nll": "4.578654639056471557377049180",
+        "nll_sum": "558.59586596488953",
+        "tokens": 122,
+        "method": "exp(sum(token NLL)/sum(valid tokens)); independent bounded texts"
+      },
+      "perplexity_ratio_vs_untouched": "0.9889315191833890168647825356",
+      "scorer": "NFKC/casefold target recovery and whole-answer retain correctness v2"
+    }
+  },
+  "unexecuted": [
+    "no-op control",
+    "erasure candidates",
+    "post-erasure verification",
+    "benign relearning",
+    "persisted-checkpoint restore demonstration"
+  ],
+  "candidates": [],
+  "elapsed_seconds_before_final_signing": 560.659,
+  "artifact_bytes": 2033096082,
+  "source_files_unchanged": true,
+  "integrity": {
+    "independent_readback_verified": true,
+    "files_verified": 36,
+    "algorithm": "Ed25519",
+    "public_key_sha256": "49aaaa6bf4048c6d731cecf34c957b4aa48a6acd2501bfc6b5f55db22403b5a7",
+    "report_sha256": "099780d80a203e668f126bfb967b8cdd92a36c2cc9e547cd9bebdec788bc00c7",
+    "scientific_correctness_certified": false,
+    "public_verifiability_limit": "Full private evidence and signing key are not published here; digests alone do not reproduce signature verification."
+  },
+  "artifact_sha256": {
+    "summary.json": "6dbb4628b672ed0ba06e470acdd6297e8cf2af8d29d2c9b8eea0d43dec35d7c7",
+    "manifest.json": "b410b562c448fd5767343b87bf78c04339184613fa3c780078a56f4112433dbc",
+    "untouched.json": "5268aa53b1cef5749eccb49163ababa9b4063bfff4b193127ccb1d534cfba763",
+    "planted-baseline.json": "785940a6b95f0e7cd7024ed77f867410b7bfd615be4f59a4296874668e6a0177",
+    "retain-only.json": "ce1d52ca386be40505837fc8e56bc51a80e8d44d04423430deb6aac1e05806cd",
+    "planting/development-128.json": "bbadbfb4cb3fdc045530ad59363d68c635add286c3fd6af48dc54a0d92139100",
+    "planting/result.json": "496f4b6e0ae1add744799446d83878a10d093947449360c1d4c2ac01b416ffa7",
+    "retain-reference/result.json": "4817d83e1597af5aeb7fc99a8a81f0eefc8ed2fe318aa20ff402afddbb933244"
+  },
+  "followup": {
+    "proposed_maximum_planting_steps": 512,
+    "approved": false,
+    "executed": false
+  },
+  "limits": [
+    "Developer-designed synthetic test, not an external benchmark.",
+    "Target recovery is lexical; failure to answer does not establish information absence.",
+    "Planting increased held-out perplexity despite unchanged retain accuracy.",
+    "No erasure efficacy or end-to-end restoration result was obtained.",
+    "Original checkpoints and backups are retained.",
+    "After code/specification freeze, aggregate readback exposed eight fixed perplexity texts to the root editor, but no target or retain prompt wording; no active contract changed. A reporting-only agent saw target and retain rows after execution and remained outside the editing role. Collateral texts are not blinded for the proposed follow-up; this publicly available developer-designed smoke test is not a secret independent benchmark."
+  ],
+  "tokenizer": {
+    "model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "revision": "7ae557604adf67be50417f59c2c2f167def9a775"
+  }
+}

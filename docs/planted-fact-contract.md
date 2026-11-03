@@ -1,12 +1,8 @@
 # Frozen synthetic planted-fact contract
 
-Status: dataset and acceptance contract frozen; execution pending. This document does not authorize an installation, model run or resource extension. The execution batch must record its separately approved wall-time, memory, disk and host-pressure limits before starting.
+Status: the first execution completed with **failed planting qualification; scientific verdict inconclusive**. After 128 steps, development recovery was 10/16 and withheld recovery was 2/8, below the required 8/8. Retain accuracy was 8/8, but planting increased held-out perplexity from 98.4732 to 140.1753. No erasure candidates, no-op control, benign relearning or persisted-checkpoint restore demonstration ran. See the [measured results](results.md).
 
-This is the next research scope after pausing the broader Chinese-literacy
-experiment: one synthetic fact, with demonstrated baseline recall and matched
-controls. The narrower scope makes the claim testable; it does not guarantee that
-an edit will pass. Results will be added to the [public experiment log](results.md)
-with unsuccessful methods and missing robustness checks retained.
+The numerical procedure below records the first attempt. A follow-up proposal allowing up to 512 planting steps is **not approved and not executed**; it must remain distinct from this frozen history. This document does not authorize installations, runs or resource extensions. The approved first execution used explicit no-overall-deadline mode while retaining disk and external resource guards.
 
 ## Provenance and separation
 
@@ -15,6 +11,10 @@ The fact concerns a fictional station and an invented access code. All target/de
 `examples/planted-fact/plant-data.json` contains schema version 1, model revision `7ae557604adf67be50417f59c2c2f167def9a775`, 16 target-development prompts and 8 retain-development prompts. `target.json` contains 3 clean/corrupt mapping pairs drawn from target development, 8 held-out target probes (2 each: direct, paraphrase, multi-hop, adversarial), 8 disjoint retain paraphrases, 8 background texts, and 8 held-out perplexity texts. No held-out target prompt supplies its answer. All answer-bearing prompts request answer-only output. Generation remains bounded to 24 tokens.
 
 Training prompt strings are disjoint from held-out target prompts, held-out retain prompts and perplexity text after whitespace/case normalization. Mapping is intentionally a subset of training development. The multi-hop probes state their alias relation in the prompt; they test a simple stated relation plus recall, not arbitrary compositional reasoning. Background and perplexity texts are unrelated synthetic prose. This experiment makes no Chinese-language capability claim.
+
+## Evaluation exposure disclosure
+
+After the first run's code and edit specification were frozen, aggregate readback exposed the eight fixed perplexity texts to the root editor. It did not expose target or retain prompt wording to that editor, and no active contract changed. A reporting-only agent subsequently saw target and retain rows after execution and remained outside the editing role. The collateral texts are therefore not blinded for the proposed follow-up. This publicly available, developer-designed smoke test is not a secret independent benchmark.
 
 ## Frozen numerical procedure
 
@@ -46,4 +46,4 @@ The overall requested demonstration additionally requires at least two methods t
 | `plant-data.json` bytes | `f73afdfd9aa6ce5a4ab6a016d38fe8d653425cc1d49f36719d22c2edaf93e5ca` |
 | Parsed `TargetSpec` canonical digest | `2134a1572d6392b8bc59aa8cc1f8a59ff292d55ce94a098877cff8972b52b7b2` |
 
-Measured before execution: `TargetSpec.from_path` accepted the contract, expected dataset counts matched, and normalized training/evaluation prompt overlap was zero. Token alignment and baseline learnability remain unmeasured until the approved model execution.
+Measured before execution: `TargetSpec.from_path` accepted the contract, expected dataset counts matched, and normalized training/evaluation prompt overlap was zero. The first execution measured insufficient baseline learnability. Causal mapping and edit qualification did not proceed; token alignment for those later operations remains unverified.

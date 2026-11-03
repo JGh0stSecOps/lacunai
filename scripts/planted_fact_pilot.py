@@ -626,12 +626,16 @@ def run(
     deadline_epoch: float | None,
     *,
     apply: bool = False,
+    plant_max_steps: int = MAX_STEPS,
 ) -> dict[str, Any]:
+    if type(plant_max_steps) is not int or plant_max_steps not in (128, 512):
+        raise ValueError("plant_max_steps must be exactly 128 or 512")
     if not apply:
         return {
             "status": "planned",
             "verdict": "inconclusive",
             "dry_run": True,
+            "plant_max_steps": plant_max_steps,
             "candidates": list(EDITS),
             "claim": "plan only; pass --apply for numerical execution",
         }
@@ -691,7 +695,7 @@ def run(
                     "candidate_attempts": len(EDITS),
                 },
                 "planting": {
-                    "max_steps": MAX_STEPS,
+                    "max_steps": plant_max_steps,
                     "rows": ROW_COUNT,
                     "learning_rate": 0.05,
                     "gradient_clip": 1.0,
@@ -732,7 +736,14 @@ def run(
         score_checkpoint(source, spec, budget, workspace / "untouched.json")
         planted = workspace / "checkpoints" / "planted"
         planting = trained_checkpoint(
-            source, planted, workspace / "planting", data, spec, budget, retain_only=False
+            source,
+            planted,
+            workspace / "planting",
+            data,
+            spec,
+            budget,
+            retain_only=False,
+            steps=plant_max_steps,
         )
         summary["planting"] = planting
         atomic_json(workspace / "summary.json", summary)
@@ -911,6 +922,7 @@ def main() -> int:
         help="explicitly disable the overall time cutoff; disk and host guards remain",
     )
     parser.add_argument("--apply", action="store_true", help="authorize the frozen numerical batch")
+    parser.add_argument("--plant-max-steps", type=int, choices=(128, 512), default=MAX_STEPS)
     args = parser.parse_args()
     with active_phase("planted_fact_pilot"):
         result = run(
@@ -921,6 +933,7 @@ def main() -> int:
             args.source_manifest.absolute(),
             args.deadline_epoch,
             apply=args.apply,
+            plant_max_steps=args.plant_max_steps,
         )
     print(json.dumps(result, sort_keys=True, allow_nan=False), flush=True)
     return (
