@@ -57,10 +57,13 @@ def score(
             watch,
             development=development,
         )
-    # A fixed non-Chinese development corpus, never candidate-generated content.
-    texts = [item["prompts"][0] + "\n" + item["answer"] for item in dataset["dev_retain"]]
+    # Development screens and the untouched final holdout remain separate.
+    corpus_split = "dev_retain" if development else "heldout_retain"
+    texts = [item["prompts"][0] + "\n" + item["answer"] for item in dataset[corpus_split]]
     with active_phase("retain_perplexity"):
         result["perplexity"] = runtime.perplexity(texts)
+    result["perplexity"]["corpus_split"] = corpus_split
+    result["perplexity"]["corpus_sha256"] = digest(texts)
     atomic_json(path / "result.json", result)
     return result
 

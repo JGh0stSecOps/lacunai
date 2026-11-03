@@ -24,6 +24,30 @@ iteration = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(iteration)
 
 
+@pytest.mark.parametrize("development,expected", [(True, "development\nA"), (False, "withheld\nB")])
+def test_final_perplexity_uses_withheld_corpus(tmp_path, monkeypatch, development, expected):
+    dataset = {
+        "dev_retain": [{"prompts": ["development"], "answer": "A"}],
+        "heldout_retain": [{"prompts": ["withheld"], "answer": "B"}],
+    }
+    observed = []
+
+    def evaluate(*args, **kwargs):
+        args[4].mkdir()
+        return {"development": development}
+
+    monkeypatch.setattr(iteration.evaluation, "evaluate", evaluate)
+    runtime = SimpleNamespace(
+        model=None,
+        tokenizer=None,
+        contract={},
+        perplexity=lambda texts: observed.extend(texts) or {"tokens": 1, "perplexity": 2.0},
+    )
+    result = iteration.score(runtime, dataset, tmp_path / "evaluation", None, development)
+    assert observed == [expected]
+    assert result["perplexity"]["corpus_sha256"] == iteration.digest([expected])
+
+
 def test_snapshot_must_match_loaded_source_bytes():
     runtime = SimpleNamespace(inventory={"model.safetensors": "loaded-a"})
     iteration.bind_snapshot(
