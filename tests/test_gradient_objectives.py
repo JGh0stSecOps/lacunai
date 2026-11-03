@@ -22,9 +22,11 @@ def contract():
 
 
 @pytest.mark.parametrize("mode", ["npo_kl", "retain_kl"])
-def test_exact_contract(mode):
+@pytest.mark.parametrize("rate", ["0.01", "0.05", "0.1", "0.2"])
+def test_exact_contract(mode, rate):
     spec, inner = contract()
     spec["mode"] = mode
+    spec["learning_rate"] = rate
     g.validate_spec(spec, inner)
 
 
@@ -247,3 +249,37 @@ def test_qwen_selected_head_matches_full_nll_kl_and_parameter_gradients():
     torch.testing.assert_close(selected_kl, full_kl, atol=2e-6, rtol=2e-5)
     for name in full_grads:
         torch.testing.assert_close(selected_grads[name], full_grads[name], atol=2e-6, rtol=2e-5)
+
+
+@pytest.mark.parametrize(
+    "rate",
+    [
+        "0.3",
+        "1",
+        "0",
+        "-0.01",
+        "0.10",
+        "1e-1",
+        "NaN",
+        "Infinity",
+        "-Infinity",
+        "nan",
+        "inf",
+        "",
+        0.01,
+        0.05,
+        0.1,
+        0.2,
+        float("nan"),
+        float("inf"),
+        True,
+        None,
+        [],
+        {},
+    ],
+)
+def test_backend_learning_rate_enum_rejects_unapproved_values(rate):
+    spec, inner = contract()
+    spec["learning_rate"] = rate
+    with pytest.raises(ValueError, match="learning rate"):
+        g.validate_spec(spec, inner)

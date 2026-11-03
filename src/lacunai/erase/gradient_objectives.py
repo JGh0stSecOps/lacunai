@@ -11,6 +11,7 @@ from lacunai.experimental import tensors
 from lacunai.map.localize import record_digest
 
 ALLOWED = tuple(f"model.layers.{layer}.mlp.down_proj.weight" for layer in range(16, 24))
+LEARNING_RATES = ("0.01", "0.05", "0.1", "0.2")
 FIXED = {
     "schema_version": 1,
     "method": "npo_kl_candidate",
@@ -83,7 +84,10 @@ def family_schedule(items: list[dict[str, Any]], steps: int) -> dict[str, Any]:
 def validate_spec(spec: dict[str, Any], inner: dict[str, Any]) -> None:
     if set(spec) != set(FIXED) | {"mode", "allowed_tensors"}:
         raise ValueError("NPO specification fields differ from frozen contract")
-    for name, expected in FIXED.items():
+    learning_rate = spec["learning_rate"]
+    if type(learning_rate) is not str or learning_rate not in LEARNING_RATES:
+        raise ValueError("NPO learning rate differs from frozen contract enum")
+    for name, expected in {**FIXED, "learning_rate": learning_rate}.items():
         if type(spec[name]) is not type(expected) or spec[name] != expected:
             raise ValueError(f"NPO frozen specification differs: {name}")
     if spec["mode"] not in {"npo_kl", "retain_kl"} or spec["allowed_tensors"] != list(ALLOWED):

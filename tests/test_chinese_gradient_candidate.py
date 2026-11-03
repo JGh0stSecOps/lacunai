@@ -211,14 +211,15 @@ def test_default_plan_no_input_reads_or_model(monkeypatch, capsys):
 
 
 @pytest.mark.parametrize("mode", ["npo_kl", "retain_kl"])
-def test_npo_root_contract_keeps_historical_immutable(mode):
+@pytest.mark.parametrize("learning_rate", ["0.01", "0.05", "0.1", "0.2"])
+def test_npo_root_contract_keeps_historical_immutable(mode, learning_rate):
     old = historical()
     saved = copy.deepcopy(old)
     corpus = data.build_dataset(old)
-    spec = {**candidate.NPO_SPEC, "mode": mode}
+    spec = {**candidate.NPO_SPEC, "mode": mode, "learning_rate": learning_rate}
     inner, outer = candidate.candidate_contract(spec, old, corpus)
     expected = copy.deepcopy(saved)
-    expected["baseline"]["learning_rate"] = "0.01"
+    expected["baseline"]["learning_rate"] = learning_rate
     expected["edits"]["max_tensor_relative_frobenius"] = "0.0195"
     expected["edits"]["max_model_relative_frobenius"] = "0.0024"
     assert inner == expected and old == outer == saved
@@ -227,7 +228,7 @@ def test_npo_root_contract_keeps_historical_immutable(mode):
 @pytest.mark.parametrize(
     "key,value",
     [
-        ("learning_rate", "0.1"),
+        ("learning_rate", "0.3"),
         ("beta", 0.1),
         ("beta", "0.2"),
         ("mode", "graddiff"),
@@ -293,3 +294,59 @@ def test_npo_incomplete_step_trace_fails_explicitly(monkeypatch, capsys):
     with pytest.raises(ValueError, match="step trace"):
         candidate.train_candidate(None, {}, {}, {}, candidate.NPO_SPEC, None)
     assert '"state": "failed"' in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    "rate",
+    [
+        "0.3",
+        "1",
+        "0",
+        "-0.01",
+        "0.10",
+        "1e-1",
+        "NaN",
+        "Infinity",
+        "-Infinity",
+        "nan",
+        "inf",
+        "",
+        0.01,
+        0.05,
+        0.1,
+        0.2,
+        float("nan"),
+        float("inf"),
+        True,
+        None,
+        [],
+        {},
+    ],
+)
+def test_npo_learning_rate_enum_rejects_unapproved_values(rate):
+    old = historical()
+    corpus = data.build_dataset(old)
+    with pytest.raises(ValueError, match="structured contract"):
+        candidate.candidate_contract({**candidate.NPO_SPEC, "learning_rate": rate}, old, corpus)
+
+
+def test_npo_default_and_backend_enum_agree():
+    from lacunai.erase import gradient_objectives
+
+    assert (
+        candidate.NPO_SPEC["learning_rate"] == gradient_objectives.FIXED["learning_rate"] == "0.01"
+    )
+    assert (
+        candidate.NPO_LEARNING_RATES
+        == gradient_objectives.LEARNING_RATES
+        == ("0.01", "0.05", "0.1", "0.2")
+    )
+
+
+@pytest.mark.parametrize("rate", ["0.01", "0.05", "0.2"])
+def test_historical_graddiff_does_not_inherit_npo_enum(rate):
+    old = historical()
+    with pytest.raises(ValueError, match="structured contract"):
+        candidate.candidate_contract(
+            {**candidate.SPEC, "learning_rate": rate}, old, data.build_dataset(old)
+        )

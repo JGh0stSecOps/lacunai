@@ -46,6 +46,8 @@ SPEC = {
 }
 
 
+NPO_LEARNING_RATES = ("0.01", "0.05", "0.1", "0.2")
+
 NPO_SPEC = {
     **SPEC,
     "method": "npo_kl_candidate",
@@ -63,7 +65,10 @@ def candidate_contract(
     if spec.get("method") == "gradient_candidate":
         template, modes = SPEC, baseline.MODES
     elif spec.get("method") == "npo_kl_candidate":
-        template, modes = NPO_SPEC, ("npo_kl", "retain_kl")
+        learning_rate = spec.get("learning_rate")
+        if type(learning_rate) is not str or learning_rate not in NPO_LEARNING_RATES:
+            raise ValueError("NPO learning rate differs from the structured contract")
+        template, modes = {**NPO_SPEC, "learning_rate": learning_rate}, ("npo_kl", "retain_kl")
     else:
         raise ValueError("unknown root-selected candidate method")
     expected = {**template, "mode": spec.get("mode")}
