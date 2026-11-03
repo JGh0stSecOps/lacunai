@@ -86,7 +86,9 @@ def weighted_features(
     )
 
 
-def capture(runtime: Any, prompt: str, layers: list[int]) -> dict[int, Any]:
+def capture(
+    runtime: Any, prompt: str, layers: list[int], *, raw: bool = False, mean_only: bool = False
+) -> dict[int, Any]:
     """Capture only one prefill pass; every hook is removed on success or failure."""
     torch = import_module("torch")
     captured: dict[int, Any] = {}
@@ -101,11 +103,25 @@ def capture(runtime: Any, prompt: str, layers: list[int]) -> dict[int, Any]:
                     raise ValueError("expected one batch-one prefill activation per layer")
                 if not bool(torch.isfinite(value).all()):
                     raise ValueError("non-finite prefill activations")
-                captured[layer] = value.detach().to(device="cpu", dtype=torch.float32).clone()
+                if mean_only:
+                    captured[layer] = value.detach().to(dtype=torch.float64).mean(dim=(0, 1)).cpu()
+                else:
+                    captured[layer] = value.detach().to(device="cpu", dtype=torch.float32).clone()
 
             handles.append(runtime.mlp(layer).down_proj.register_forward_pre_hook(hook))
         runtime.check()
-        ids = runtime.encode(prompt)
+        if raw:
+            ids = runtime.tokenizer(prompt, add_special_tokens=True, return_tensors="pt")[
+                "input_ids"
+            ]
+            if (
+                ids.ndim != 2
+                or ids.shape[0] != 1
+                or not 1 <= ids.shape[-1] <= runtime.config.max_prompt_tokens
+            ):
+                raise ValueError("raw fingerprint text exceeds token bounds")
+        else:
+            ids = runtime.encode(prompt)
         with torch.inference_mode():
             runtime.model(input_ids=ids, attention_mask=torch.ones_like(ids), use_cache=False)
         if set(captured) != set(layers):

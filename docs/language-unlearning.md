@@ -116,6 +116,47 @@ are saved for every phase. An explicitly authorized open-ended run uses
 disk, workload identity, and pressure protections still apply. Existing frozen
 historical batches retain their original deadlines.
 
+## Constrained objective optimization
+
+`scripts/chinese_gradient_candidate.py` executes a hash-pinned edit specification,
+not editor-generated code. Its NPO adaptation follows the sequence-level objective
+in [OpenUnlearning](https://github.com/locuslab/open-unlearning/blob/main/src/trainer/unlearn/npo.py),
+with answer-position `KL(reference || current)` for retention. The reference uses
+the original allowed tensors in the same resident model; no student backward graph
+survives that temporary substitution. The runner records the reference NLL cache,
+per-step losses, actual example IDs, and source-precision weight changes.
+
+The NPO schedule cycles through every training family, preserving family and
+within-family order. Its retain-only control uses the identical retain schedule.
+Qwen computes output logits only at answer-prediction positions, including EOS;
+a tiny Qwen numerical test compares losses and parameter gradients against full
+logits. Historical gradient runs retain their original recorded schedules.
+Changing the objective, schedule, tensors, or settings creates a new experiment.
+
+## Retained-mean nullspace projection
+
+`scripts/chinese_subspace_candidate.py` separates diagnosis, development screening,
+and checkpoint persistence. Diagnosis collects signed prompt-mean MLP features on
+matched Chinese, English, Spanish, and Japanese development text. Uncentered FP64
+SVD identifies the sampled non-Chinese rowspace, then residual Chinese directions
+orthogonal to that rowspace. Binary basis artifacts, spectra, numerical ranks,
+boundary degeneracy, corpus hashes, and source hashes are recorded.
+
+The editor explicitly selects layers, direction count, and strength. Numerical
+code proposes `W' = W - strength * (W V) V^T` for allowed MLP down-projection
+weights. It validates orthogonality, sampled retained-mean leakage, source identity,
+and actual tensor/model change bounds after source-precision rounding. It snapshots
+before application, saves after-images, and restores the original tensors after
+screening. Persistence writes and reloads a separate checkpoint.
+
+This is an experimental adaptation, not a replication of a validated literacy
+erasure method. Preserving sampled original prompt means does not preserve every
+token activation or later-layer state. Rounding leakage is measured rather than
+assumed zero. Repeated storage rounding tests idempotence; projection-energy
+retention is measured separately. Degenerate SVD bases can differ across LAPACK
+implementations. A favorable map or numerical invariant cannot pass the behavioral
+contract by itself.
+
 Passing a finite contract means **reduced recoverability under those tests**.
 It does not prove that all Chinese information is absent. Originals, preimages,
 and backups retain the original information. No checkpoint is promoted by this
