@@ -8,6 +8,8 @@ LacunAI treats model-directed weight editing as a hypothesis to test. It does no
 - [Unlearning or Obfuscating? Jogging the Memory of Unlearned LLMs via Benign Relearning](https://arxiv.org/html/2406.13356v4) motivates testing recovery after bounded, related benign training and checking that the relearning data does not itself contain the withheld targets.
 - [Eight Methods to Evaluate Robust Unlearning in LLMs](https://arxiv.org/html/2402.16835v1) and [Prompt Attacks Reveal Superficial Knowledge Removal in Unlearning Methods](https://arxiv.org/html/2506.10236v2) motivate varied recovery attempts and collateral-capability measurements.
 
+The [fast-weight programmer research note](fast-weight-programmers.md) examines the original controller-and-memory architecture, its delta update rule, and a bounded future hypothesis. It distinguishes learned online memory writes from the current externally directed checkpoint edits.
+
 ## Pilot evaluation boundaries
 
 Chinese reading, writing and both translation directions are separate skills. Reading permits English or numeric answers so that suppressing Chinese-character output cannot masquerade as lost comprehension. Alternate prompts, mixed-language requests, receptive likelihoods, neighboring facts and non-Chinese tasks provide additional observations.

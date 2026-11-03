@@ -1,6 +1,6 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="brand/lacunai-horizontal-dark.svg">
-  <img src="brand/lacunai-horizontal-light.svg" alt="LacunAI" width="520">
+  <source media="(prefers-color-scheme: dark)" srcset="brand/lacunai-stacked-tagline-dark.svg">
+  <img src="brand/lacunai-stacked-tagline-light.svg" alt="LacunAI — For agents learning to forget." width="520">
 </picture>
 
 # LacunAI
@@ -46,7 +46,11 @@ The [historical Linux CPU dependency lock](requirements/pilot-linux-cpu.lock) re
 
 [SVG assets and usage](brand/README.md) · [Identity specimen](brand/specimen.html)
 
-The name and clinic-stationery direction take inspiration from Lacuna in *Eternal Sunshine of the Spotless Mind*. The LacunAI mark and lettering are original vector artwork.
+The name takes inspiration from Lacuna in *Eternal Sunshine of the Spotless Mind*. The supplied memory-clinic helmet is redrawn as vector geometry: ordered electrodes transition into an open mesh, with silver and ivory on navy and orange AI lettering. The wordmark uses original outlined serif capitals.
+
+**For agents learning to forget.** The line describes a research ambition; experimental results determine what the system actually achieves.
+
+See the [research basis and limits](docs/research.md), including [fast-weight programmers and their connection to LacunAI](docs/fast-weight-programmers.md).
 
 ## Development
 

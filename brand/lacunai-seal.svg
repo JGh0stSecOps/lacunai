@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
-<title id="title">LacunAI symbol</title><desc id="desc">An archival seal encloses three layered traces interrupted by a transparent vertical absence.</desc>
-<g fill="#382A20"><path fill-rule="evenodd" d="M64 10 A54 54 0 1 1 64 118 A54 54 0 1 1 64 10 Z M64 13 A51 51 0 1 0 64 115 A51 51 0 1 0 64 13 Z"/>
-<path fill-rule="evenodd" d="M64 18 A46 46 0 1 1 64 110 A46 46 0 1 1 64 18 Z M64 19.5 A44.5 44.5 0 1 0 64 108.5 A44.5 44.5 0 1 0 64 19.5 Z"/>
-<path d="M58 28 H70 V30 H58 Z"/><path d="M58 39 C42 40 32 45 32 51 C32 57 42 62 58 63 V58 C45 57 37 54 37 51 C37 48 45 45 58 44 Z M70 39 V44 C83 45 91 48 91 51 C91 54 83 57 70 58 V63 C86 62 96 57 96 51 C96 45 86 40 70 39 Z"/>
-<path d="M32 61 V67 C32 73 42 78 58 79 V74 C45 73 37 70 37 67 V64 Z M91 64 V67 C91 70 83 73 70 74 V79 C86 78 96 73 96 67 V61 Z"/>
-<path d="M32 77 V83 C32 89 42 94 58 95 V90 C45 89 37 86 37 83 V80 Z M91 80 V83 C91 86 83 89 70 90 V95 C86 94 96 89 96 83 V77 Z"/></g>
-</svg>

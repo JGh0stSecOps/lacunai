@@ -1,56 +1,56 @@
-# LacunAI identity
+# LacunAI helmet identity
 
-An original identity for a research tool exploring targeted language-model weight and memory manipulation. The supplied film stationery informs the warm ochre, brown ink, restrained serif lettering, typewriter-style specimen copy, and double-rule framing. The artwork does not reproduce the film’s logo, watermark, correspondence, or address. It does not promise memory erasure.
+The supplied helmet starter is the visual source for this identity: an arched memory-clinic helmet, paired mechanical couplers, concentric left-side electrodes, an open right-side mesh, silver/ivory on navy, and orange AI lettering. The artwork is redrawn as clean vector geometry. No pixels from the supplied image are embedded.
+
+The product name is **LacunAI**. The visual wordmark is **LACUNAI**, set in bespoke outlined serif capitals. The optional tagline is **For agents learning to forget.** It is an aspirational research line, not a claim of reliable deletion or erasure.
 
 ## Production assets
 
 | File | Use |
 | --- | --- |
-| `lacunai-horizontal-light.svg` | Brown-ink horizontal logo for warm light surfaces |
-| `lacunai-horizontal-dark.svg` | Ochre-paper horizontal logo for dark surfaces |
-| `lacunai-monochrome.svg` | Black horizontal logo for single-color reproduction |
-| `lacunai-icon.svg` | Brown-ink small-use symbol, transparent |
-| `lacunai-icon-dark.svg` | Ochre-paper small-use symbol, transparent |
-| `lacunai-icon-monochrome.svg` | Black small-use symbol, transparent |
-| `lacunai-seal.svg` | Full double-rule seal for larger applications and watermarks |
-| `specimen.html` | Self-contained responsive stationery specimen |
-| `build.py` | Deterministic source generator for the masters and specimen |
+| `lacunai-primary.svg` | Primary stacked lockup, tagline, and solid navy field |
+| `lacunai-stacked-dark.svg` | Transparent stacked artwork for dark surfaces, without tagline |
+| `lacunai-stacked-light.svg` | Transparent stacked artwork for light surfaces, without tagline |
+| `lacunai-stacked-tagline-dark.svg` | Transparent dark-surface lockup with tagline |
+| `lacunai-stacked-tagline-light.svg` | Transparent light-surface lockup with tagline |
+| `lacunai-horizontal-dark.svg` | Horizontal companion with tagline for dark surfaces |
+| `lacunai-horizontal-light.svg` | Horizontal companion with tagline for light surfaces |
+| `lacunai-monochrome.svg` | Black stacked master, without tagline |
+| `lacunai-icon.svg` | Simplified navy helmet icon for light surfaces |
+| `lacunai-icon-dark.svg` | Simplified ivory helmet icon for dark surfaces |
+| `lacunai-icon-monochrome.svg` | Black simplified helmet icon |
+| `specimen.html` | Self-contained responsive specimen with embedded artwork |
+| `build.py` | Deterministic generator for all production masters and specimen |
+| `tagline-outlines.json` | Portable path data for the tagline; consumed by the generator |
 
-Every production SVG uses filled paths and accessible title/description elements. All backgrounds and internal apertures are transparent. All lettering is bespoke outlined geometry: no fonts, raster images, scripts, masks, filters, or network dependencies. The HTML specimen embeds the SVGs and uses system fonts only for explanatory copy. Its README link resolves locally.
+The primary SVG deliberately includes its navy field. All other production SVG backgrounds are transparent, including the helmet opening and mesh. Production masters contain vector paths, ellipses, circles, local clipping geometry, and accessible title/description elements. They contain no raster images, live text, scripts, or external references.
 
-## Design
+The wordmark’s serif glyphs are custom path geometry. The tagline was converted locally from Helvetica Regular through CoreText and stored as path data; neither the SVGs nor the build requires the font or CoreText. The HTML specimen uses system fonts for explanatory copy and embeds all identity artwork. Its README link resolves locally.
 
-The seal’s layered traces are split by a continuous absent strip. The double frame suggests an institutional impression on paper; the interior suggests an archive with an omission. The absence is transparent geometry, not a background-colored rectangle.
+## Geometry and responsive use
 
-The exact wordmark is **LacunAI**. Bespoke transitional serif letters use contrasting strokes, bracketed feet, ball terminals, and a two-storey “a”. The A and I remain ordinary capitals in the same ink. Their casing supplies the AI distinction without introducing a second visual language.
+The full helmet is drawn in a `720 × 500` coordinate space. Its main shell follows an outer half-ellipse with radii `260 × 310` and an inner opening with radii `108 × 130`. Electrodes are generated inside the shell and transition from concentric closed rings to interrupted rings and curved bridges. The paired couplers are mirrored geometric assemblies.
 
-## Geometry and small use
+The stacked artboard is `800 × 680` without the tagline and `800 × 750` with it. The horizontal artboard is `960 × 260`. The small icon uses a `128 × 128` artboard and deliberately replaces fine mesh with a few distinct closed and open electrode shapes. The specimen and inspection image show these icons at actual `16`, `24`, and `48` pixel sizes.
 
-- Seal artboard: `128 × 128`; center: `(64,64)`.
-- Full seal outer radii: `54/51`; inner radii: `46/44.5`.
-- Central absent strip: `12` units, between `x=58` and `x=70`.
-- Horizontal artboard: `568 × 128`; wordmark begins at `x=146`.
-- Wordmark capital top: `y=29`; baseline: `y=98`.
-- Small-use symbol: one `8`-unit frame replaces the engraved double rule. The interior remains identical.
-- The specimen displays that small-use symbol at actual `16`, `24`, and `48` CSS pixels. At the smallest size, the overall seal and central absence carry recognition; the thin internal strata are subordinate.
-
-Use the small-use icon when the full seal’s fine double rule would become too small. Keep the complete horizontal artboard intact; add clear space outside it when placing it among other elements. Do not stretch the logo, close its aperture, add outlines, or introduce a glow.
+Use the full helmet for covers, splash screens, and larger lockups; use the simplified icon where fine mesh would disappear. At the smallest sizes, the arch and couplers carry recognition. Keep the supplied artboards intact, preserve the open center, and avoid stretching, glow, drop shadows, or additional texture. For one-color printing, use the monochrome master.
 
 ## Palette
 
 | Role | Hex |
 | --- | --- |
-| Ochre paper | `#E8C68B` |
-| Warm ivory | `#F4E8D2` |
-| Brown ink | `#382A20` |
-| Deep ink | `#2E241C` |
+| Navy | `#081D36` |
+| Ivory | `#F2E7D0` |
+| Silver | `#D5D9DC` |
+| AI orange | `#D77C35` |
 
 ## Verification
 
-- Light and dark horizontal masters rendered locally with `rsvg-convert` and inspected as PNG previews.
-- Small-use symbols rendered and inspected at actual pixel sizes on both surfaces.
-- All production SVGs parsed as XML; accessible names present; no text elements, embedded raster content, scripts, or external references.
+- Primary, transparent light/dark, and horizontal masters rendered locally with `rsvg-convert`; the resulting PNGs were visually inspected.
+- Simplified icons rendered and inspected at their actual pixel sizes on both light and dark backgrounds.
+- Every production SVG parsed as XML; accessible names and local clip references checked; no live text, embedded raster content, scripts, or external references.
 - HTML structural checker passed with semantic structure and unique accessible IDs.
-- Local browser access was disabled by Work settings. The HTML specimen has **not** received browser visual, console, viewport, or interaction verification. Its responsive layouts are implemented, not browser-verified.
+- Ruff formatting and lint checks passed for the generator; rebuilding preserves the generated asset bytes.
+- Local browser access was disabled by Work settings. The specimen has **not** received browser visual, console, viewport, or interaction verification. Its responsive layout is implemented, not browser-verified.
 
-Preview PNGs and `verification-symbol-sizes.svg` are inspection evidence. The named production SVGs are the master artwork.
+Preview PNGs and `verification-symbol-sizes.svg` are inspection evidence. Named production SVGs are the master artwork. Previous identity directions are archived outside this project and are not part of this asset set.
