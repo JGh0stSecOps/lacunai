@@ -30,9 +30,13 @@ unrelated facts, inverse and multi-hop recovery, general capabilities, and
 full-answer likelihood against a matched retain-only reference. The run exposed
 both relational learning errors and a capability prompt-format mismatch; failures
 are preserved in the [experiment log](docs/results.md). A new preflight prevents
-planting when the untouched model fails the capability benchmark. The prospective
-correction teaches both relation directions and specifies short-answer formatting;
-it is a separate benchmark revision, not a reinterpretation of these results.
+planting when the untouched model fails the capability benchmark. A subsequent
+format-corrected preflight passed only 6/8 qualification and 7/8 final-capability
+questions and stopped before training. A fixed question bank is being prepared to
+select checks the untouched model can answer; this conditions the preservation
+benchmark on original competence and does not measure broad capability accuracy.
+Balanced forward/inverse training remains unexecuted. These are separate benchmark
+revisions, not reinterpretations of the recorded failures.
 
 ## Earlier experiment: one fact
 

@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "experiment": "connected-fact-03",
+  "artifact_date": "2026-11-04",
+  "record_type": "untouched_capability_preflight_failure",
+  "scientific_verdict": "inconclusive",
+  "outcome": "The untouched model failed the capability gate. The preflight completed; the planting/unlearning pilot did not start.",
+  "target": {
+    "model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+    "tokenizer": {
+      "revision": "7ae557604adf67be50417f59c2c2f167def9a775"
+    }
+  },
+  "code": {
+    "revision": "fd6904321088fd550a0dd335aaf1d79ee571af37",
+    "files_verified": 71,
+    "bundle_sha256": "a6727075c375b5132f35379f9e94e79afbe07685f1e87b47865453a28c311c2b"
+  },
+  "capability_preflight": {
+    "status": "complete",
+    "completed_generations": 16,
+    "passed": false,
+    "qualification": {
+      "total": 8,
+      "correct": 6,
+      "missing": 0,
+      "ambiguous": 0,
+      "not_recovered": 2
+    },
+    "final_capability_only": {
+      "total": 8,
+      "correct": 7,
+      "missing": 0,
+      "ambiguous": 0,
+      "not_recovered": 1
+    },
+    "threshold": "All eight answers in each partition must pass the unchanged strict whole-answer scorer.",
+    "factual_final_probes_evaluated": false,
+    "training": false,
+    "answer_format": "Explicit single-word or digit-integer instructions; scorer not relaxed."
+  },
+  "rejected_response_review": {
+    "grade": "DERIVED",
+    "genuinely_incorrect_complete_short_answers": 3,
+    "formatting_only_rejections": 0,
+    "accepted_equivalence_gaps_observed": 0,
+    "scope": "Only the three rejected capability responses; no factual final prompts inspected.",
+    "description": "All three were complete short answers with genuinely incorrect values. No formatting-only or accepted-equivalence rejection was observed. Historical machine classifications unchanged."
+  },
+  "scientific_measurements": {
+    "planting": null,
+    "unlearning": null,
+    "candidate_execution_observed": null,
+    "reason": "No pilot run directory or terminal scientific summary exists. Completed capability preflight is distinct from a completed unlearning experiment."
+  },
+  "checkpoint_readback": {
+    "source": {
+      "files": 9,
+      "exact_expected_files": true,
+      "inventory_sha256": "90f1c3bfa64b0ad1c409104df1e326a07b3243f1a7efb44c625b9762165a1b29"
+    },
+    "scratch": {
+      "files": 9,
+      "exact_expected_files": true,
+      "inventory_sha256": "ae45bb1f39f16792c411aec22e13dd09db6cfc1d0337c29e0f45d50c33e6efc8"
+    }
+  },
+  "resources": {
+    "samples": 5,
+    "samples_with_violations": 0,
+    "positive_paging_pages": 0,
+    "protected_identity_change_observed": false,
+    "limit": "Stable protected identities do not establish absence of interference."
+  },
+  "attestation": {
+    "signed": false,
+    "signature_verified": false,
+    "evidence": "Transport hashes and frozen script/plan pins verified; all sixteen raw capability rows independently recomputed using the production scorer. No Ed25519 scientific aggregate exists."
+  },
+  "prospective_benchmark": {
+    "status": "not_executed_in_this_attempt",
+    "pairs": 16,
+    "prompt_variants": 32,
+    "quotas": {
+      "arithmetic": 2,
+      "lexical": 1,
+      "basic_science": 3,
+      "general_knowledge": 2
+    },
+    "selection": "First frozen-priority pairs passing both variants under exact scoring, within each category quota; unmet quotas stop preparation without training.",
+    "interpretation": "Competence-conditioned preservation benchmark, not unbiased general capability accuracy. No factual graph, factual evaluation wording, scorer or threshold changes."
+  },
+  "provenance": {
+    "independent_readback_sha256": "35321a400d9bee7299e73a17c23b527faf79c3497b2b462af8d2f7c998c72064",
+    "capability_script_sha256": "3173c3c58e7b186c8ad4536c96cc90da34c47627e96b85c8d45447fbed6fbe84",
+    "capability_plan_sha256": "13c7685869e0f7b0b817fdd6e14c58110cd0f6a47ca05dcefd6783cb8191043b",
+    "receiver_receipt_sha256": "44e924224e483cf8e3292e2f675f365cf9dfa55648f8d680f6aa7843626e0a1a",
+    "collection_receipt_sha256": "da8d8b20543dd6289e969052d929a9022178216ce4ce55bd17d09027d1b88068",
+    "rejected_response_review_sha256": "8d0587312c34b1c1ef5f3ca1196f7b900d18003ea2be7ad17ca6b7dadc7cad46",
+    "capability_bank_sha256": "0cc87e9c4e3ded4bc238f187a11922f391bde8d6e01c7105528c3dc0fc72c03c"
+  },
+  "limits": [
+    "No reduced-recoverability or memory-erasure result follows from this preflight.",
+    "Only sanitized aggregates and evidence digests are published; private prompts, raw responses and checkpoint payloads are not included.",
+    "No new paid model API; electricity and existing subscription allocation unmeasured."
+  ]
+}

@@ -1,5 +1,17 @@
 # Experimental results
 
+## Connected-fact capability preflight — failed before planting
+
+The new untouched-model gate completed 16 capability generations and refused to start the planting/unlearning pilot. Qualification capability correctness was **6/8**; the independently phrased final capability subset was **7/8**. No factual final probes were evaluated. Both partitions had zero missing or ambiguous responses.
+
+Explicit one-word or digit-integer instructions were used with the unchanged strict whole-answer scorer. Post-hoc review of the three rejected responses (**DERIVED**) found genuinely incorrect complete short answers, not formatting-only or accepted-equivalence gaps. No score was changed. The unlearning outcome remains **inconclusive**.
+
+Independent readback verified the raw capability scores, frozen code/plan pins, 71 source files, and exact hashes for nine original and nine reused-scratch checkpoint files. This preflight evidence is transport-hash verified but **not Ed25519 signed**; no scientific aggregate exists. Five host samples recorded no guard violations or positive paging-out delta. This does not prove absence of interference.
+
+A predetermined bank of 16 capability pairs is now frozen for prospective preparation, without new model calls. Selection will require both phrasings to pass exact scoring under fixed category quotas and priority. Such a benchmark is competence-conditioned preservation testing, not unbiased broad capability accuracy. The fact graph and factual evaluation wording remain unchanged.
+
+See the [capability-preflight result JSON](../research/results/connected-fact-preflight-2026-11-04.json) for exact counts, evidence limits and digests.
+
 ## Connected-fact pilot — planting qualification inconclusive
 
 The connected benchmark did not reach unlearning. At the 512-update limit, the model recovered 10/16 target probes and answered 7/8 retained-fact probes correctly. Capability correctness was 0/8 under the frozen whole-answer scorer. No candidate edits, matched retain-only training, benign relearning, or final factual evaluation ran.
