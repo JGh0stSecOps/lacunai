@@ -1,5 +1,15 @@
 # Experimental results
 
+## Pretrained fact — qualification passed, localization refused
+
+**Scientific outcome: inconclusive for erasure.** After changing only the qualification Moon expected answer to the observed correct sentence, the original model scored **8/8 target and 8/8 retain**. Final held-out probes and the scorer were unchanged. Untouched, source-materialization and no-op generations matched, with identical perplexity of 64.00652063548204055896541934 over 60 tokens.
+
+The first attempted method stopped before an editing update: layer 23's single valid mapping pair produced a causal effect of **−2.366231918334961**, selecting **zero neurons**. This metric measures the first answer-token log probability at the final prefill position. The corrupted-context score was −10.03126049041748 and the patched score −12.397492408752441. A negative intervention result for one layer and pair does not establish that the fact has no representation elsewhere.
+
+There was one failed pre-edit service record, **zero completed candidate edits and zero evaluated candidate methods**. Its stale summary label said running; the audited service failure and absent candidate snapshots/afterimages establish the terminal outcome. Final held-out candidate evaluation and benign relearning were not reached. No forgetting edit ran; the two materialization snapshots were restored and the journal was empty. Independent readback verified 29 signed evidence files, 73 code files, and exact expected inventories of all 9 original and 9 scratch checkpoint files.
+
+Of 16 host samples, one recorded both an I/O-pressure ceiling violation and paging activity; positive paging deltas totaled 12,603 pages. Protected process identities remained stable, which does not prove absence of interference. There is no matched retain-only pretraining reference. The next step is read-only all-layer diagnosis, not a completed experiment. [Public aggregate and exact pins](../research/results/pretrained-fact-localization-2026-11-04.json). Earlier baseline measurements below remain unchanged.
+
 ## Pretrained fact baseline — qualification wording mismatch
 
 **Scientific outcome: inconclusive for erasure; no editing method ran.** The original Qwen2.5-0.5B-Instruct recovered the Paris/France fact in all 8 qualification probes: 4/4 direct and 4/4 paraphrased. Retain scoring was 7/8. The rejected response correctly named the Moon in a full sentence, whereas the frozen expected answer was the single word `Moon`. This was a whole-answer formatting mismatch, not an established knowledge failure. The gate stopped execution before scratch materialization, no-op comparison, candidate editing, final held-out evaluation or benign relearning.

@@ -19,9 +19,11 @@ An editing model interprets the target and diagnostic evidence, then proposes a 
 
 ## Current experiment: an existing pretrained fact
 
-The original Qwen2.5-0.5B-Instruct checkpoint recovered **“Paris is the capital of France” in 8/8 qualification probes** without planting or pre-erasure fine-tuning. Retain scoring was 7/8: a factually correct sentence naming the Moon did not match the frozen single-word expected answer. The qualification gate stopped the run before any weight edit; **erasure remains inconclusive, with zero methods executed**.
+The original Qwen2.5-0.5B-Instruct checkpoint recovered **“Paris is the capital of France” in 8/8 qualification probes**, with **8/8 retain answers** after qualification-only answer-format calibration. No planting or pre-erasure fine-tuning occurred. Untouched, source-materialization and no-op results matched.
 
-The [pretrained-fact contract](docs/pretrained-fact-contract.md) and [baseline result](research/results/pretrained-fact-baseline-2026-11-04.json) preserve that outcome. The next calibration changes only that qualification expected answer to the observed correct sentence; final held-out probes remain unchanged. This result does not include a calibrated rerun.
+The first attempted editing method stopped at localization: the single tested mapping pair at layer 23 had a negative causal effect and selected no neurons. **Zero methods optimized or evaluated an edited candidate; erasure remains inconclusive.** Both materialization snapshots were restored, and original and scratch file inventories matched independently checked expectations.
+
+See the [pretrained-fact contract](docs/pretrained-fact-contract.md), [localization result](research/results/pretrained-fact-localization-2026-11-04.json) and preserved [first baseline result](research/results/pretrained-fact-baseline-2026-11-04.json). The next step is read-only diagnosis across all layers; it is not an executed result here.
 
 ## Previous experiment: connected facts
 
