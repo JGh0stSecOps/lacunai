@@ -1,5 +1,38 @@
 # Experimental results
 
+## Connected-fact pilot — planting qualification inconclusive
+
+The connected benchmark did not reach unlearning. At the 512-update limit, the model recovered 10/16 target probes and answered 7/8 retained-fact probes correctly. Capability correctness was 0/8 under the frozen whole-answer scorer. No candidate edits, matched retain-only training, benign relearning, or final factual evaluation ran.
+
+| Planting update | Direct | Paraphrase | Inverse | Multi-hop | Target total | Retain | Capabilities |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 64 | 2/4 | 2/4 | 0/4 | 2/4 | 6/16 | 5/8 | 0/8 |
+| 128 | 3/4 | 3/4 | 0/4 | 2/4 | 8/16 | 7/8 | 0/8 |
+| 192 | 4/4 | 3/4 | 0/4 | 4/4 | 11/16 | 7/8 | 0/8 |
+| 256 | 4/4 | 3/4 | 0/4 | 3/4 | 10/16 | 7/8 | 0/8 |
+| 320 | 4/4 | 3/4 | 0/4 | 4/4 | 11/16 | 7/8 | 0/8 |
+| 384 | 4/4 | 3/4 | 0/4 | 4/4 | 11/16 | 7/8 | 0/8 |
+| 448 | 4/4 | 2/4 | 0/4 | 2/4 | 8/16 | 7/8 | 0/8 |
+| 512 | 4/4 | 2/4 | 0/4 | 4/4 | 10/16 | 7/8 | 0/8 |
+
+All eight screens were recomputed from signed raw records. The final target screen also had six unresolved outputs; the capability screen had one truncated ambiguous output. A zero in the table is a measured correctness count, not evidence of absent information. Inverse retrieval remained 0/4 throughout.
+
+**Post-hoc semantic review (DERIVED):** at update 192, seven capability outputs were semantically correct but violated the exact answer format; one was a truncated non-answer. At update 512, six were semantically correct but nonconforming, one was a malformed multi-number response, and one was a truncated non-answer. All four final inverse outputs repeated the relation object instead of identifying the subject. These observations do not replace the frozen scores or establish preserved general capabilities.
+
+Untouched perplexity was 30.91693274222041057653646864 over 337 scored tokens. Planted perplexity and its ratio were **not measured**: the generation screen never qualified for that evaluation. This corpus differs from the older single-fact corpus, so their raw perplexities should not be compared as one series.
+
+Independent readback verified 21 signed files, 71 executed source files, one restored outer snapshot, an empty transaction journal, and exact hashes for all nine original and nine reused-scratch checkpoint files. One of 80 host samples exceeded the load threshold; observed paging-out deltas totaled zero pages. Stable workload identities do not establish absence of performance interference.
+
+A prospective correction adds explicit short-answer formatting, requires untouched capability qualification before planting, and balances forward/inverse training within the existing budget. It was not executed in revision `53ffa16b5e5018166ee545f9335a10c058969839`; historical thresholds and outcomes remain unchanged.
+
+See the [connected-fact result JSON](../research/results/connected-fact-2026-11-04.json) for the learning curve, ambiguity counts, restoration scope and evidence digests. Signatures establish provenance, not scientific certification.
+
+## Connected-fact first attempt — resource-guard abort
+
+The earlier attempt was stopped after three consecutive physical-host load violations. Its five numerical/guard self-tests passed, but no terminal scientific summary or signed aggregate was available. Candidate execution remains unknown from those absent records; no efficacy result is claimed. The stopped worker exited with code 137 and was not marked OOM-killed. All nine original and nine scratch checkpoint files matched their pre-run hashes.
+
+The four recorded host samples included three load violations and zero observed paging-out delta. This is **inconclusive, unexercised scientific evidence**, separate from the retry’s planting failure. See the [guard-abort JSON](../research/results/connected-fact-abort-2026-11-04.json).
+
 ## Two-method repair follow-up — passed the stated experimental contract
 
 Both saved candidates passed the frozen reused-probe contract, independent reload and a separate benign-relearning test. This is reduced recoverability under these tests; the fresh supplement was subsequently inconclusive, as detailed below.

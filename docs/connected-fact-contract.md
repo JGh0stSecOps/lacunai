@@ -1,7 +1,8 @@
 # Connected-fact experimental contract
 
-Status: implementation and execution preparation. No connected-fact result is
-established by this document. The experiment log records measured outcomes.
+Status: implemented and exercised. The initial completed planting attempt failed
+qualification, so erasure efficacy remains inconclusive. The [experiment log](results.md)
+records measured outcomes; this document specifies the prospective contract.
 
 ## Question and scope
 
@@ -46,6 +47,7 @@ privacy guarantees. They are frozen in the hashed execution inputs before a run.
 
 | Gate | Criterion |
 | --- | --- |
+| Untouched capability qualification | Before planting, every declared general-capability probe must pass raw-output validation on the untouched model. Failure is inconclusive and prevents a scratch transaction or training. |
 | Planting qualification | Every required fact/family is recalled on qualification probes; every retain probe is correct. |
 | Planting collateral | Held-out perplexity is at most 1.15 times untouched-model perplexity. |
 | Final baseline qualification | Every final target and retain probe qualifies before edited results can pass. A failure makes the final contract inconclusive. |
@@ -56,6 +58,11 @@ privacy guarantees. They are frozen in the hashed execution inputs before a run.
 | Full-answer likelihood | For each probe, the target answer's mean log probability is no more than 0.10 nats/token above the matched retain-only reference. All answer tokens, including EOS, are scored. |
 | Integrity | Allowlisted finite bounded tensors, exact source identities, independent checkpoint reload, signed raw evidence and bit-exact restoration. |
 | Benign relearning | Repeat the frozen recovery and collateral checks after the bounded retain-only repair arm. |
+
+The untouched-capability preflight was added after the initial connected run exposed
+a prompt-format mismatch. It does not retroactively change that run's frozen
+contract or scores. Capability prompts must specify their required answer format;
+new benchmarks must qualify the untouched model before consuming planting updates.
 
 The probability and likelihood margins are exploratory tolerances. Small-choice
 recognition depends on distractor selection; neither metric is a membership test
@@ -107,3 +114,29 @@ tests**. Report every successful recovery, unresolved answer and collateral loss
 The final set is evaluated only after candidates are frozen; using its results to
 tune a later candidate requires a new evaluation contract and fresh withheld
 examples. No result triggers automatic promotion, deployment or merge.
+
+## Interface coverage
+
+Schema-two targets use the existing CLI and MCP service. The standalone editing
+and verification interfaces do not currently accept a matched retain-only
+reference, so they cannot pass the connected contract's reference-dependent
+criteria. Missing reference evidence is inconclusive; observed recovery and
+collateral failures remain failures unless baseline qualification itself failed.
+The full protocol is orchestrated by `scripts/connected_fact_pilot.py`, including
+matched controls, candidate freezing, final evaluation, benign relearning and
+restoration. These are not separate MCP tools. See the [MCP guide](mcp.md) for
+transport, exit-status and optional state-clearing limits.
+
+For a development-only dry-run, substitute existing local checkpoint and input
+paths below. The target file is the qualification contract, and the gradient
+file contains only the pinned development partition—not the frozen final probes.
+This validates inputs without loading a model or claiming efficacy:
+
+```bash
+python -m lacunai --workspace /data/connected-plan erase \
+  --model /models/qualified-connected \
+  --target /data/qualification-target.json \
+  --method npo-kl-repair --steps 8 \
+  --gradient-data /data/gradient-development.json \
+  --output /models/connected-candidate --no-apply
+```

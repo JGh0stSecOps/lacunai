@@ -215,6 +215,18 @@ class Storage:
         return load_image(path, payload_pin, receipt_pin)
 
 
+def qualify_untouched_capabilities(evaluation: dict[str, Any], spec: Any) -> None:
+    from lacunai.verify.evaluation import _validated_suite
+
+    if len(spec.capability_probes) != 8:
+        raise ValueError("untouched capability benchmark requires eight probes")
+    capability = _validated_suite(
+        evaluation.get("capability", {}), spec.capability_probes, retain=True
+    )
+    if capability["total"] != 8 or capability["recovered"] != 8:
+        raise ValueError("untouched capability benchmark did not qualify; planting not attempted")
+
+
 def quality_gate(evaluation: dict[str, Any], untouched: dict[str, Any], spec: Any) -> bool:
     from lacunai.verify.connected import qualify_connected
 
@@ -498,6 +510,7 @@ def execute(
     primary_error: BaseException | None = None
     try:
         untouched = score(source, qualification, budget, workspace / "untouched-qualification.json")
+        qualify_untouched_capabilities(untouched, qualification)
         descriptor = identity["descriptor"]
         with safe_open(source / descriptor["file"], framework="pt", device="cpu") as opened:
             original_up = opened.get_tensor(name).float()

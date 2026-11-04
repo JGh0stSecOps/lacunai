@@ -370,3 +370,134 @@ def test_connected_requires_four_facts_in_each_role() -> None:
     final.facts = shifted
     with pytest.raises(ValueError, match="four forget, four neighbor and four unrelated"):
         pilot.validate_data(data, qualification, final)
+
+
+def test_execute_rejects_untouched_capability_failure_before_materialization(
+    tmp_path: Path, monkeypatch: Any
+) -> None:
+    """Control-flow fixture, not model efficacy: real scorer and signed failure finalization."""
+    from dataclasses import dataclass
+    from types import SimpleNamespace
+
+    from lacunai.core.spec import Probe, RuntimeConfig
+    from lacunai.verify.evaluation import _suite
+
+    @dataclass
+    class Spec:
+        target_id: str
+        capability_probes: list[Probe]
+
+    probes = [Probe(f"software fixture {i}", "42") for i in range(8)]
+    spec = Spec("fixture", probes)
+    runtime = SimpleNamespace(
+        check=lambda: None,
+        progress=lambda *a, **k: None,
+        generate=lambda prompt: {
+            "output": "43",
+            "truncated": False,
+            "input_tokens": 1,
+            "output_tokens": 1,
+            "token_ids": [1],
+        },
+    )
+    untouched = {"capability": _suite(runtime, probes, "retain")}
+    source = tmp_path / "source"
+    source.mkdir()
+    (source / "config.json").write_text('{"num_hidden_layers":1}')
+    scratch = tmp_path / "scratch"
+    scratch.mkdir()
+    bundle = tmp_path / "hashes.json"
+    bundle.write_text("{}")
+    plan = {
+        "source": str(source),
+        "scratch": str(scratch),
+        "workspace": str(tmp_path / "work"),
+        "budget_root": str(tmp_path),
+        "key_dir": str(tmp_path / "keys"),
+        "bundle": {"path": str(bundle)},
+    }
+
+    class FakeBudget:
+        def __init__(self, *args: Any) -> None:
+            pass
+
+        def check(self, *args: Any) -> None:
+            pass
+
+        def config(self) -> RuntimeConfig:
+            return RuntimeConfig(max_seconds=None)
+
+    monkeypatch.setattr(pilot, "pilot_api", lambda: SimpleNamespace(Budget=FakeBudget))
+    monkeypatch.setattr(pilot, "inventory", lambda path: {"config.json": "fixture"})
+    monkeypatch.setattr(
+        pilot,
+        "compatible_scratch",
+        lambda *a: {
+            "source_inventory": {"config.json": "fixture"},
+            "scratch_inventory": {"config.json": "fixture"},
+            "descriptor": {"file": "model.safetensors"},
+        },
+    )
+    monkeypatch.setattr(pilot, "Storage", lambda *a: SimpleNamespace(shard_bytes=1))
+    monkeypatch.setattr(pilot, "score", lambda *a: untouched)
+    entered = []
+
+    def prohibited_materialization(*args: Any, **kwargs: Any) -> Any:
+        entered.append(True)
+        raise RuntimeError("materialization reached before capability gate")
+
+    original_import = pilot.import_module
+    monkeypatch.setattr(
+        pilot,
+        "import_module",
+        lambda name: (
+            SimpleNamespace(safe_open=prohibited_materialization)
+            if name == "safetensors"
+            else SimpleNamespace(version=lambda name: "fixture")
+            if name == "importlib.metadata"
+            else original_import(name)
+        ),
+    )
+    with pytest.raises(ValueError, match="untouched capability benchmark did not qualify"):
+        pilot.execute(plan, spec, spec, {})
+    assert entered == []
+    summary = json.loads((tmp_path / "work/summary.json").read_text())
+    assert summary["status"] == "failed" and summary["verdict"] == "inconclusive"
+    assert (tmp_path / "work/report-evidence/signature.json").is_file()
+
+
+def test_untouched_capability_gate_recomputes_raw_evidence() -> None:
+    import copy
+    from types import SimpleNamespace
+
+    from lacunai.core.spec import Probe
+    from lacunai.verify.evaluation import _suite
+
+    probes = [Probe(f"fixture {i}", "42") for i in range(8)]
+    runtime = SimpleNamespace(
+        check=lambda: None,
+        progress=lambda *a, **k: None,
+        generate=lambda prompt: {
+            "output": "42",
+            "truncated": False,
+            "input_tokens": 1,
+            "output_tokens": 1,
+            "token_ids": [1],
+        },
+    )
+    spec = SimpleNamespace(capability_probes=probes)
+    evidence = {"capability": _suite(runtime, probes, "retain")}
+    pilot.qualify_untouched_capabilities(evidence, spec)
+    for mutation in ("wrong_output", "missing_row", "wrong_prompt", "bad_tokens"):
+        changed = copy.deepcopy(evidence)
+        row = changed["capability"]["rows"][0]
+        if mutation == "wrong_output":
+            row["generation"]["output"] = "43"
+        elif mutation == "missing_row":
+            changed["capability"]["rows"].pop()
+        elif mutation == "wrong_prompt":
+            row["prompt"] = "different fixture"
+        else:
+            row["generation"]["token_ids"] = []
+        with pytest.raises(ValueError):
+            pilot.qualify_untouched_capabilities(changed, spec)
