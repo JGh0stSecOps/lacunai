@@ -1,0 +1,1039 @@
+{
+  "schema_version": 1,
+  "experiment": "connected-fact-02",
+  "artifact_date": "2026-11-04",
+  "record_type": "planting_qualification_failure",
+  "scientific_verdict": "inconclusive",
+  "runner_status": "failed",
+  "evidence_grade": "PROVEN for raw-score recomputation and byte/signature checks; DERIVED semantic review labeled separately.",
+  "outcome": "Planting did not satisfy the frozen learning and capability gates. No unlearning candidate or final factual evaluation ran.",
+  "target": {
+    "model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+    "tokenizer": {
+      "revision": "7ae557604adf67be50417f59c2c2f167def9a775"
+    },
+    "facts": 12,
+    "roles": {
+      "forget": 4,
+      "neighbor_retain": 4,
+      "unrelated_retain": 4
+    },
+    "data": "synthetic; private factual evaluation wording not published"
+  },
+  "code": {
+    "revision": "53ffa16b5e5018166ee545f9335a10c058969839",
+    "files_verified": 71,
+    "bundle_sha256": "9c1406ebec4fd9cc0b1a8add85cc331c69a66bf1f1deb91c40e59e74a1529c09"
+  },
+  "training": {
+    "completed_steps": 512,
+    "max_steps": 512,
+    "learning_rate": 0.0003,
+    "projection_radius": 0.24,
+    "hard_relative_bound": 0.25,
+    "schedule": "first-seen-fact-round-robin",
+    "fact_counts": {
+      "F1": 43,
+      "F2": 43,
+      "F3": 43,
+      "F4": 43,
+      "R1": 43,
+      "R2": 43,
+      "R3": 43,
+      "R4": 43,
+      "U1": 42,
+      "U2": 42,
+      "U3": 42,
+      "U4": 42
+    },
+    "training_sequence_tokens": 128
+  },
+  "contract": {
+    "qualification_target_count": 16,
+    "qualification_retain_count": 8,
+    "capability_count": 8,
+    "required_target_families": [
+      "direct",
+      "paraphrase",
+      "inverse",
+      "multi_hop"
+    ],
+    "required_recovery_before_edit": "all probes for each fact and required family",
+    "required_retain_accuracy": "1.0",
+    "required_capability_accuracy": "1.0",
+    "planting_perplexity_ratio_ceiling": "1.15",
+    "source_files_before": 9,
+    "final_evaluation_run": false,
+    "qualification_spec_sha256": "3b06e9111d51e51db05773534f35cd6d201fa95df821c8c8fe4ce92820955d5b",
+    "final_spec_sha256": "5159f2c60906c74fc0974245865dfa8950763e369d33ef24e8c5f520929b8f14"
+  },
+  "planting_screens": [
+    {
+      "step": 64,
+      "target": {
+        "total": 16,
+        "counts": {
+          "ambiguous": 6,
+          "recovered": 6,
+          "not_recovered": 4
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "recovered": 5,
+          "ambiguous": 2,
+          "not_recovered": 1
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "not_recovered": 6,
+          "ambiguous": 2
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "ambiguous": 1,
+            "recovered": 2,
+            "not_recovered": 1
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "ambiguous": 4
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 2,
+            "not_recovered": 2
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "ambiguous": 1,
+            "recovered": 2,
+            "not_recovered": 1
+          }
+        }
+      },
+      "per_fact": {
+        "F1": {
+          "ambiguous": 3,
+          "recovered": 1
+        },
+        "F2": {
+          "recovered": 2,
+          "ambiguous": 1,
+          "not_recovered": 1
+        },
+        "F3": {
+          "recovered": 3,
+          "ambiguous": 1
+        },
+        "F4": {
+          "not_recovered": 3,
+          "ambiguous": 1
+        },
+        "R1": {
+          "recovered": 1
+        },
+        "R2": {
+          "ambiguous": 1
+        },
+        "R3": {
+          "recovered": 1
+        },
+        "R4": {
+          "recovered": 1
+        },
+        "U1": {
+          "not_recovered": 1
+        },
+        "U2": {
+          "ambiguous": 1
+        },
+        "U3": {
+          "recovered": 1
+        },
+        "U4": {
+          "recovered": 1
+        }
+      },
+      "sha256": "2377d5c81788226f16b864c7cf35a9e18e99f09f834c4ed4c13fac6d2e65fd35"
+    },
+    {
+      "step": 128,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 8,
+          "ambiguous": 5,
+          "not_recovered": 3
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "recovered": 7,
+          "not_recovered": 1
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "not_recovered": 8
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "not_recovered": 1
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "ambiguous": 4
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "not_recovered": 2,
+            "recovered": 2
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "ambiguous": 1,
+            "recovered": 3
+          }
+        }
+      },
+      "per_fact": {
+        "F1": {
+          "recovered": 1,
+          "ambiguous": 2,
+          "not_recovered": 1
+        },
+        "F2": {
+          "recovered": 3,
+          "ambiguous": 1
+        },
+        "F3": {
+          "not_recovered": 2,
+          "recovered": 1,
+          "ambiguous": 1
+        },
+        "F4": {
+          "recovered": 3,
+          "ambiguous": 1
+        },
+        "R1": {
+          "recovered": 1
+        },
+        "R2": {
+          "recovered": 1
+        },
+        "R3": {
+          "recovered": 1
+        },
+        "R4": {
+          "recovered": 1
+        },
+        "U1": {
+          "not_recovered": 1
+        },
+        "U2": {
+          "recovered": 1
+        },
+        "U3": {
+          "recovered": 1
+        },
+        "U4": {
+          "recovered": 1
+        }
+      },
+      "sha256": "3c58a71157764f5cd0c743be7f1bded813044534eec62755e973edd5884647cb"
+    },
+    {
+      "step": 192,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 11,
+          "ambiguous": 5
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "recovered": 7,
+          "not_recovered": 1
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "not_recovered": 7,
+          "ambiguous": 1
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "ambiguous": 4
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "ambiguous": 1,
+            "recovered": 3
+          }
+        }
+      },
+      "per_fact": {
+        "F1": {
+          "recovered": 2,
+          "ambiguous": 2
+        },
+        "F2": {
+          "recovered": 3,
+          "ambiguous": 1
+        },
+        "F3": {
+          "recovered": 3,
+          "ambiguous": 1
+        },
+        "F4": {
+          "recovered": 3,
+          "ambiguous": 1
+        },
+        "R1": {
+          "recovered": 1
+        },
+        "R2": {
+          "recovered": 1
+        },
+        "R3": {
+          "recovered": 1
+        },
+        "R4": {
+          "recovered": 1
+        },
+        "U1": {
+          "not_recovered": 1
+        },
+        "U2": {
+          "recovered": 1
+        },
+        "U3": {
+          "recovered": 1
+        },
+        "U4": {
+          "recovered": 1
+        }
+      },
+      "sha256": "b05668401980f519a7f0b66f5d9eab1926daeff9fc311c1bee2ca06aafbd21f5"
+    },
+    {
+      "step": 256,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 10,
+          "ambiguous": 5,
+          "not_recovered": 1
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "recovered": 7,
+          "not_recovered": 1
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 2,
+          "not_recovered": 6
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "ambiguous": 4
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "not_recovered": 1
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "ambiguous": 1,
+            "recovered": 3
+          }
+        }
+      },
+      "per_fact": {
+        "F1": {
+          "recovered": 2,
+          "ambiguous": 2
+        },
+        "F2": {
+          "recovered": 3,
+          "ambiguous": 1
+        },
+        "F3": {
+          "recovered": 2,
+          "ambiguous": 1,
+          "not_recovered": 1
+        },
+        "F4": {
+          "recovered": 3,
+          "ambiguous": 1
+        },
+        "R1": {
+          "recovered": 1
+        },
+        "R2": {
+          "recovered": 1
+        },
+        "R3": {
+          "recovered": 1
+        },
+        "R4": {
+          "recovered": 1
+        },
+        "U1": {
+          "not_recovered": 1
+        },
+        "U2": {
+          "recovered": 1
+        },
+        "U3": {
+          "recovered": 1
+        },
+        "U4": {
+          "recovered": 1
+        }
+      },
+      "sha256": "633d10e0d79001600126a68269b6c2f408b5d8fd4bde860bec0475a7234c3d6d"
+    },
+    {
+      "step": 320,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 11,
+          "ambiguous": 5
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "recovered": 7,
+          "not_recovered": 1
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 3,
+          "not_recovered": 5
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "ambiguous": 4
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "ambiguous": 1,
+            "recovered": 3
+          }
+        }
+      },
+      "per_fact": {
+        "F1": {
+          "recovered": 2,
+          "ambiguous": 2
+        },
+        "F2": {
+          "recovered": 3,
+          "ambiguous": 1
+        },
+        "F3": {
+          "recovered": 3,
+          "ambiguous": 1
+        },
+        "F4": {
+          "recovered": 3,
+          "ambiguous": 1
+        },
+        "R1": {
+          "recovered": 1
+        },
+        "R2": {
+          "recovered": 1
+        },
+        "R3": {
+          "recovered": 1
+        },
+        "R4": {
+          "recovered": 1
+        },
+        "U1": {
+          "not_recovered": 1
+        },
+        "U2": {
+          "recovered": 1
+        },
+        "U3": {
+          "recovered": 1
+        },
+        "U4": {
+          "recovered": 1
+        }
+      },
+      "sha256": "bfc41fad008cc7aad514e57cf734bbd78ef2f3360d4e2f817202f903a8599d6b"
+    },
+    {
+      "step": 384,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 11,
+          "ambiguous": 5
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "recovered": 7,
+          "not_recovered": 1
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "not_recovered": 6,
+          "ambiguous": 2
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "ambiguous": 4
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "ambiguous": 1,
+            "recovered": 3
+          }
+        }
+      },
+      "per_fact": {
+        "F1": {
+          "recovered": 2,
+          "ambiguous": 2
+        },
+        "F2": {
+          "recovered": 3,
+          "ambiguous": 1
+        },
+        "F3": {
+          "recovered": 3,
+          "ambiguous": 1
+        },
+        "F4": {
+          "recovered": 3,
+          "ambiguous": 1
+        },
+        "R1": {
+          "recovered": 1
+        },
+        "R2": {
+          "recovered": 1
+        },
+        "R3": {
+          "recovered": 1
+        },
+        "R4": {
+          "recovered": 1
+        },
+        "U1": {
+          "not_recovered": 1
+        },
+        "U2": {
+          "recovered": 1
+        },
+        "U3": {
+          "recovered": 1
+        },
+        "U4": {
+          "recovered": 1
+        }
+      },
+      "sha256": "de1d40fb9d7ac2065e9b7dec0c1c1da1ab93463da44a2eb4bfc3146c3f50aca3"
+    },
+    {
+      "step": 448,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 8,
+          "ambiguous": 8
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "recovered": 7,
+          "not_recovered": 1
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "not_recovered": 7,
+          "ambiguous": 1
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "ambiguous": 4
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "ambiguous": 2,
+            "recovered": 2
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "ambiguous": 2,
+            "recovered": 2
+          }
+        }
+      },
+      "per_fact": {
+        "F1": {
+          "recovered": 1,
+          "ambiguous": 3
+        },
+        "F2": {
+          "recovered": 1,
+          "ambiguous": 3
+        },
+        "F3": {
+          "recovered": 3,
+          "ambiguous": 1
+        },
+        "F4": {
+          "recovered": 3,
+          "ambiguous": 1
+        },
+        "R1": {
+          "recovered": 1
+        },
+        "R2": {
+          "recovered": 1
+        },
+        "R3": {
+          "recovered": 1
+        },
+        "R4": {
+          "recovered": 1
+        },
+        "U1": {
+          "not_recovered": 1
+        },
+        "U2": {
+          "recovered": 1
+        },
+        "U3": {
+          "recovered": 1
+        },
+        "U4": {
+          "recovered": 1
+        }
+      },
+      "sha256": "f06a82fb0774cdf599dc5acc56aae2def0ee0a438ab227861b6bed92da27e3d3"
+    },
+    {
+      "step": 512,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 10,
+          "ambiguous": 6
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "recovered": 7,
+          "not_recovered": 1
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "not_recovered": 7,
+          "ambiguous": 1
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "ambiguous": 4
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "ambiguous": 2,
+            "recovered": 2
+          }
+        }
+      },
+      "per_fact": {
+        "F1": {
+          "recovered": 2,
+          "ambiguous": 2
+        },
+        "F2": {
+          "recovered": 2,
+          "ambiguous": 2
+        },
+        "F3": {
+          "recovered": 3,
+          "ambiguous": 1
+        },
+        "F4": {
+          "recovered": 3,
+          "ambiguous": 1
+        },
+        "R1": {
+          "recovered": 1
+        },
+        "R2": {
+          "recovered": 1
+        },
+        "R3": {
+          "recovered": 1
+        },
+        "R4": {
+          "recovered": 1
+        },
+        "U1": {
+          "not_recovered": 1
+        },
+        "U2": {
+          "recovered": 1
+        },
+        "U3": {
+          "recovered": 1
+        },
+        "U4": {
+          "recovered": 1
+        }
+      },
+      "sha256": "c4d454b030dfdec9fc03398e5d24f4d3234236d97de017f70347cd270d3add70"
+    }
+  ],
+  "last_screen": {
+    "step": 512,
+    "target": {
+      "total": 16,
+      "counts": {
+        "recovered": 10,
+        "ambiguous": 6
+      }
+    },
+    "retain": {
+      "total": 8,
+      "counts": {
+        "recovered": 7,
+        "not_recovered": 1
+      }
+    },
+    "capability": {
+      "total": 8,
+      "counts": {
+        "not_recovered": 7,
+        "ambiguous": 1
+      }
+    },
+    "target_families": {
+      "direct": {
+        "total": 4,
+        "counts": {
+          "recovered": 4
+        }
+      },
+      "inverse": {
+        "total": 4,
+        "counts": {
+          "ambiguous": 4
+        }
+      },
+      "multi_hop": {
+        "total": 4,
+        "counts": {
+          "recovered": 4
+        }
+      },
+      "paraphrase": {
+        "total": 4,
+        "counts": {
+          "ambiguous": 2,
+          "recovered": 2
+        }
+      }
+    },
+    "per_fact": {
+      "F1": {
+        "recovered": 2,
+        "ambiguous": 2
+      },
+      "F2": {
+        "recovered": 2,
+        "ambiguous": 2
+      },
+      "F3": {
+        "recovered": 3,
+        "ambiguous": 1
+      },
+      "F4": {
+        "recovered": 3,
+        "ambiguous": 1
+      },
+      "R1": {
+        "recovered": 1
+      },
+      "R2": {
+        "recovered": 1
+      },
+      "R3": {
+        "recovered": 1
+      },
+      "R4": {
+        "recovered": 1
+      },
+      "U1": {
+        "not_recovered": 1
+      },
+      "U2": {
+        "recovered": 1
+      },
+      "U3": {
+        "recovered": 1
+      },
+      "U4": {
+        "recovered": 1
+      }
+    },
+    "sha256": "c4d454b030dfdec9fc03398e5d24f4d3234236d97de017f70347cd270d3add70"
+  },
+  "perplexity": {
+    "untouched": "30.91693274222041057653646864",
+    "tokens": 337,
+    "planted": null,
+    "planting_ratio": null,
+    "reason": "No generation screen qualified, so the gated full planting evaluation and its perplexity were not run.",
+    "comparability": "This connected corpus has 337 scored tokens; older single-fact results used a different 122-token corpus. Do not compare their raw perplexities as one series."
+  },
+  "unlearning": {
+    "candidate_execution": "not_run",
+    "candidate_records": 0,
+    "recoverability_after_edit": null,
+    "benign_relearning": null,
+    "matched_retain_reference": null
+  },
+  "semantic_review": {
+    "grade": "DERIVED",
+    "scope": "Post-hoc development outputs only; does not replace frozen machine scoring or establish broad capability preservation.",
+    "step192_capabilities": {
+      "reviewed": 8,
+      "semantically_correct_nonconforming": 7,
+      "truncated_nonanswer": 1,
+      "frozen_correct": 0
+    },
+    "step512_capabilities": {
+      "reviewed": 8,
+      "semantically_correct_nonconforming": 6,
+      "malformed_multinumber_response": 1,
+      "truncated_nonanswer": 1,
+      "frozen_correct": 0
+    },
+    "step512_inverse": {
+      "reviewed": 4,
+      "correct_subject_recovery": 0,
+      "repeated_relation_object_instead_of_subject": 4
+    },
+    "interpretation": "Formatting accounts for many capability failures, but malformed and non-answer outputs also occurred. Forward association learning did not establish inverse retrieval."
+  },
+  "restoration": {
+    "snapshot_states": {
+      "restored": 1
+    },
+    "snapshot_journal_empty": true,
+    "all_snapshots_restored": true,
+    "original_checkpoint": {
+      "files": 9,
+      "exact_expected_files": true,
+      "inventory_sha256": "90f1c3bfa64b0ad1c409104df1e326a07b3243f1a7efb44c625b9762165a1b29"
+    },
+    "reused_scratch": {
+      "files": 9,
+      "exact_expected_files": true,
+      "inventory_sha256": "ae45bb1f39f16792c411aec22e13dd09db6cfc1d0337c29e0f45d50c33e6efc8"
+    },
+    "scope": "One outer checkpoint snapshot restored, with all nine original and nine scratch file hashes independently read back. No unlearning candidate checkpoint was produced."
+  },
+  "attestation": {
+    "signature_verified": true,
+    "signed_files_verified": 21,
+    "report_sha256": "0cfe3bd6c7ad164a613816cee32943e723aa7792369aba7683ae6206d336805e",
+    "unsigned_operational_sidecar": "A post-signature execution-error sidecar exactly duplicated the signed summary error/status/verdict; it is operational metadata, not new scientific evidence.",
+    "limit": "Ed25519 verifies provenance and byte integrity, not scientific correctness."
+  },
+  "resources": {
+    "samples": 80,
+    "samples_with_violations": 1,
+    "violations": {
+      "physical host load1 exceeds 6.0": 1
+    },
+    "positive_paging_pages": 0,
+    "protected_identity_change_observed": false,
+    "interference_assessment": "Not established; stable protected identities and observed counters do not prove absence of interference.",
+    "bounds": {
+      "aggregate_bytes": 10737418240,
+      "model_cpu": "1.75",
+      "model_memory_bytes": 4294967296,
+      "model_swap_bytes": 0,
+      "new_records_bytes": 167772160,
+      "overall_runtime_cutoff": null,
+      "staged_shard_bytes": 988097824,
+      "supervisor_cpu": "0.25",
+      "supervisor_memory_bytes": 268435456
+    }
+  },
+  "provenance": {
+    "independent_readback_sha256": "5505ee9f11c0bc66ab677d85908b22f7bc394f465eadfab5a5574c88aceecc79",
+    "receiver_receipt_sha256": "342a33a3b2dc513c37f11c1a60843ec4ded4a99158862fc62a5ae0c8cf97c24b",
+    "collection_receipt_sha256": "369ae0092b4baeec0d9134159dc790db6695ffd09776e814685b0445ed3b1810",
+    "planting_trace_sha256": "177253b2c0782448bc75c668a6965caa1774153453de224d92c0f0d3e720d2d1",
+    "host_samples_sha256": "8d1018ba8ce5d19c0b67654f66237ae24a4e28fa92344df1bc8126c0e8d8be61"
+  },
+  "prospective_correction": {
+    "status": "not_executed_in_this_revision",
+    "changes": [
+      "Explicit short-answer formatting with unchanged exact scorer.",
+      "Untouched general capability prequalification before planting.",
+      "Balanced forward/inverse training within existing example and update budgets."
+    ],
+    "historical_contract_unchanged": true
+  },
+  "publication_limits": [
+    "Sanitized aggregates and evidence digests are public; private raw logs, evaluation wording and checkpoint payloads are not published.",
+    "No reduced-recoverability or erasure claim follows from planting failure.",
+    "No new paid API was used; electricity and existing subscription allocation unmeasured."
+  ]
+}

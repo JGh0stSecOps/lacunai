@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "experiment": "connected-fact-01",
+  "record_type": "resource_guard_abort",
+  "artifact_date": "2026-11-04",
+  "scientific_verdict": "inconclusive",
+  "scientific_contract_exercised": false,
+  "outcome": "The physical host load guard stopped the isolated worker before a scientific result was recorded. This is a safety-abort record, not an unlearning result.",
+  "evidence_grade": "PROVEN for recorded byte checks and observed worker/guard states; scientific efficacy unmeasured.",
+  "target": {
+    "model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+    "tokenizer": {
+      "revision": "7ae557604adf67be50417f59c2c2f167def9a775"
+    },
+    "data": "synthetic connected facts; private evaluation wording not published"
+  },
+  "code": {
+    "revision": "53ffa16b5e5018166ee545f9335a10c058969839",
+    "files_verified": 71,
+    "bundle_sha256": "9c1406ebec4fd9cc0b1a8add85cc331c69a66bf1f1deb91c40e59e74a1529c09"
+  },
+  "preflight": {
+    "numerical_self_test": "passed",
+    "tests_run": 5,
+    "elapsed_seconds": "7.990",
+    "scope": "Tiny numerical loader reconstruction, likelihood/training and input guards; not pilot efficacy.",
+    "runner_preparation": "completed; its event explicitly reported model_loaded=false"
+  },
+  "worker": {
+    "running_at_readback": false,
+    "exit_code": 137,
+    "oom_killed": false,
+    "supervisor_kill_requested": true,
+    "terminal_timestamp": "2026-11-04T04:06:53.844684416Z",
+    "guard_reason": "Three consecutive observations of physical-host one-minute load above 6.0."
+  },
+  "resource_observations": {
+    "samples": 4,
+    "samples_with_violations": 3,
+    "load1_values": [
+      "5.74",
+      "6.08",
+      "6.31",
+      "6.4"
+    ],
+    "physical_load1_ceiling": "6.0",
+    "positive_paging_pages": 0,
+    "protected_workload_identity_change_observed": false,
+    "interference_assessment": "Not established. Stable workload identities and observed paging counters do not prove no interference."
+  },
+  "resource_limits": {
+    "model_cpu": "1.75",
+    "model_memory_bytes": 4294967296,
+    "model_swap_bytes": 0,
+    "supervisor_cpu": "0.25",
+    "supervisor_memory_bytes": 268435456,
+    "shared_disk_bytes": 10737418240,
+    "overall_runtime_cutoff": null,
+    "network": "disabled in worker"
+  },
+  "terminal_checkpoint_readback": {
+    "original": {
+      "files": 9,
+      "exact_expected_files": true,
+      "inventory_sha256": "90f1c3bfa64b0ad1c409104df1e326a07b3243f1a7efb44c625b9762165a1b29"
+    },
+    "reused_scratch": {
+      "files": 9,
+      "exact_expected_files": true,
+      "inventory_sha256": "ae45bb1f39f16792c411aec22e13dd09db6cfc1d0337c29e0f45d50c33e6efc8"
+    },
+    "interpretation": "All nine files in each checkpoint matched its pre-run inventory. This establishes final byte equality; it is not evidence of a completed edit/restore experiment."
+  },
+  "scientific_measurements": {
+    "planting_qualification": null,
+    "candidate_execution_observed": null,
+    "candidate_efficacy": null,
+    "retention": null,
+    "relearning_robustness": null,
+    "reason": "No terminal runner summary, candidate result, or signed aggregate was available. Missing measurements are not zero."
+  },
+  "attestation": {
+    "runner_summary_present": false,
+    "run_directory_present": true,
+    "signed_aggregate_present": false,
+    "signature_verified": false,
+    "metadata_archive_files": 86,
+    "scope": "Collection byte inventory and independent readback; no scientific signature was available."
+  },
+  "provenance": {
+    "independent_readback_sha256": "8a258ae100719c42e5b46a8bc346c2f83b0a03a6546980aa4ffd9070d9157e61",
+    "collection_receipt_sha256": "66f6148294c0617efdc60776335b162739d41a8f133e0c1858a7c0c3eb9bcaf5",
+    "collection_manifest_sha256": "859ae44995b8cc16086cdbd5fbe3d735e8e57b25390944a4c59031cf4d0634d6",
+    "metadata_archive_sha256": "d4ad21f29f82c7d43a2097c3e2ae0b38e2491e01186aaa6baf91d319551e1d07",
+    "supervisor_status_sha256": "e6cd71e130115f1292cb0c40a6396f9866c0e4f9d8e5f3feadb98a28c301403d",
+    "host_samples_sha256": "358dc3b788496a58133db091a8e688e1f28ea6b664b9eb639b714107524045a5",
+    "worker_log_sha256": "ea8bf1e3a436ca5438a5e6b203cd1b3ab4ca62329b2f2d547ecf2e9222125bfa"
+  },
+  "publication_limits": [
+    "Sanitized aggregates and evidence digests are published; full private logs and checkpoint payloads are not included.",
+    "No claim of reduced recoverability or information deletion is supported by this aborted attempt.",
+    "No new paid model API was used; electricity and existing subscription allocation were not measured.",
+    "This failed attempt is preserved independently of any retry."
+  ]
+}

@@ -12,7 +12,7 @@ describe any positive finding as reduced recoverability under the stated tests.
 
 ## ADR: one model-side service, optional state bridge
 
-Status: implemented software interfaces; real planted-fact acceptance experiment pending.
+Status: implemented software interfaces and an executed single-fact experiment. Two methods passed that experiment's narrow contract; a fresh supplement was inconclusive. The [results](results.md) record both outcomes and the observed limitations.
 
 Decision: keep NeurAIlyzer responsible for time-based state hygiene and put model-side work in LacunAI. CLI and MCP call one `core.service.Service`; neither owns a second numerical pipeline. NeurAIlyzer has no reverse dependency. `lacunai[state]` is an explicit optional dependency and does not make state clearing automatic.
 
@@ -34,7 +34,7 @@ Ed25519 report signatures cover report bytes and frozen supporting artifacts. Ve
 
 The state bridge accepts only explicit configured local session/sandbox scopes, checks keep lists and best-effort liveness, rejects model/workspace overlap and refuses retention pruning. State deletion is whole-store scoped and cannot selectively remove the targeted fact. The vLLM hook checks a signed passed contract and exact checkpoint inventory and emits a loopback-only offline command; it never deploys or reloads a model. Live serving remains unverified.
 
-Consequences: model numerical dependencies and the optional state/MCP dependencies can be installed separately. Core help remains usable without Torch. Test fixtures establish transport, arithmetic and restoration behavior; a real planted-fact experiment must still demonstrate baseline learning, two methods, independent probes, collateral thresholds and exact restore. The historical pilot does not substitute for that experiment.
+Consequences: model numerical dependencies and the optional state/MCP dependencies can be installed separately. Core help remains usable without Torch. Test fixtures establish transport, arithmetic and restoration behavior. The completed single-fact experiment separately exercised baseline learning, two methods, independent reload, collateral checks and exact restoration. Surviving partial answers, malformed outputs, planting damage and the inconclusive fresh supplement prevent interpreting that result as information deletion.
 
 ## Historical components and boundaries
 
@@ -104,12 +104,28 @@ original baseline qualification failed; subsequent engineering evidence is
 permanently inconclusive for that original efficacy contract. A fresh post-freeze
 audit is separate from historical examples already seen by the editor.
 
-This repository port does not establish that the LacunAI namespace has run a live
-model experiment. Local parser, orchestration and guard tests provide software
-evidence only. Optional real-tensor tests report skips when the ML dependencies
-are absent. Completed controls, a nonzero checkpoint, all required comparisons and
-relearning arms, and independent artifact verification are necessary before an
-engineering exercise can be called complete. No success is inferred from progress.
+The original port alone supplied software evidence. Subsequent LacunAI model
+runs are recorded separately in the [experiment log](results.md). Optional
+real-tensor tests still report skips when ML dependencies are absent. A new
+experiment needs its own controls, comparisons, relearning arms and independent
+artifact verification; earlier results do not establish its outcome.
+
+## Connected-fact extension
+
+The [connected-fact contract](connected-fact-contract.md) adds a versioned target
+graph, explicit fact identities, typed reconstruction rules, per-fact evaluation
+and full-answer likelihood against a matched retain-only reference. Schema-one
+target serialization and historical experiment contracts remain unchanged.
+Qualification prompts and final evaluation prompts have separate roles. The
+pilot must qualify planting against the untouched model before attempting an
+edit, and the final evaluation cannot select or tune candidates.
+
+Checkpoint materialization reuses the existing touched-tensor transaction and
+restore implementation. Sparse after-images identify each new control and
+candidate; the shared scratch checkpoint is restored after each nested operation
+and to its entry bytes at finalization. This storage arrangement requires an
+explicit scratch declaration and enough capacity for the writer's temporary
+full shard, even though durable snapshots contain only touched tensors.
 
 ## Verification and approval boundaries
 

@@ -1,0 +1,1008 @@
+{
+  "schema_version": 1,
+  "experiment": "single-planted-fact two-method repair follow-up",
+  "verdict": "passed_the_stated_experimental_contract",
+  "code_revision": "54dee4b8bbd5d6ef3a18cdb1ad934f566454c564",
+  "candidate_settings": {
+    "max_relative_change": 0.25,
+    "methods": [
+      "npo-kl-repair",
+      "grad-diff-kl-repair2"
+    ],
+    "repair_steps_by_method": {
+      "grad-diff-kl-repair2": 16,
+      "npo-kl-repair": 8
+    },
+    "steps": 8,
+    "steps_by_method": {
+      "grad-diff-kl-repair2": 4,
+      "npo-kl-repair": 8
+    },
+    "strength": 1.0,
+    "total_steps_by_method": {
+      "grad-diff-kl-repair2": 20,
+      "npo-kl-repair": 16
+    }
+  },
+  "runtime": {
+    "device": "cpu",
+    "dtype": "float32",
+    "max_model_bytes": 4294967296,
+    "max_new_tokens": 24,
+    "max_prompt_tokens": 256,
+    "max_seconds": null,
+    "seed": 42,
+    "torch_threads": 2
+  },
+  "baseline": {
+    "perplexity": {
+      "nll_sum": "605.25600481033326",
+      "tokens": 122,
+      "value": "142.7528471758874694472894703"
+    },
+    "retain": {
+      "ambiguous": 0,
+      "missing": 0,
+      "not_recovered": 0,
+      "rate": "1",
+      "recovered": 8,
+      "total": 8
+    },
+    "target": {
+      "ambiguous": 0,
+      "missing": 0,
+      "not_recovered": 0,
+      "rate": "1",
+      "recovered": 8,
+      "total": 8
+    }
+  },
+  "candidates": [
+    {
+      "method": "npo-kl-repair",
+      "arms": {
+        "direct": {
+          "paired_retain_loss_count": 0,
+          "perplexity": {
+            "nll_sum": "583.66004705429077",
+            "tokens": 122,
+            "value": "119.5935303926705010220925951"
+          },
+          "perplexity_ratio_to_planted": "0.8377663406272934043903308152",
+          "reasons": [],
+          "recomputed_verdict": "passed_the_stated_experimental_contract",
+          "retain": {
+            "ambiguous": 0,
+            "missing": 0,
+            "not_recovered": 0,
+            "rate": "1",
+            "recovered": 8,
+            "total": 8
+          },
+          "target": {
+            "ambiguous": 0,
+            "missing": 0,
+            "not_recovered": 8,
+            "rate": "0",
+            "recovered": 0,
+            "total": 8
+          }
+        },
+        "independent": {
+          "paired_retain_loss_count": 0,
+          "perplexity": {
+            "nll_sum": "583.66004705429077",
+            "tokens": 122,
+            "value": "119.5935303926705010220925951"
+          },
+          "perplexity_ratio_to_planted": "0.8377663406272934043903308152",
+          "reasons": [],
+          "recomputed_verdict": "passed_the_stated_experimental_contract",
+          "retain": {
+            "ambiguous": 0,
+            "missing": 0,
+            "not_recovered": 0,
+            "rate": "1",
+            "recovered": 8,
+            "total": 8
+          },
+          "target": {
+            "ambiguous": 0,
+            "missing": 0,
+            "not_recovered": 8,
+            "rate": "0",
+            "recovered": 0,
+            "total": 8
+          }
+        },
+        "benign-relearning": {
+          "paired_retain_loss_count": 0,
+          "perplexity": {
+            "nll_sum": "581.82896924018860",
+            "tokens": 122,
+            "value": "117.8119738696937127667409791"
+          },
+          "perplexity_ratio_to_planted": "0.8252863336906772021468436989",
+          "reasons": [],
+          "recomputed_verdict": "passed_the_stated_experimental_contract",
+          "retain": {
+            "ambiguous": 0,
+            "missing": 0,
+            "not_recovered": 0,
+            "rate": "1",
+            "recovered": 8,
+            "total": 8
+          },
+          "target": {
+            "ambiguous": 0,
+            "missing": 0,
+            "not_recovered": 8,
+            "rate": "0",
+            "recovered": 0,
+            "total": 8
+          }
+        }
+      },
+      "restoration": {
+        "signed_runtime_bit_exact": true,
+        "recomputed_generation_exact": true,
+        "final_scratch_remote_files_equal": true
+      },
+      "semantic_counts": {
+        "direct": {
+          "target": {
+            "total": 8,
+            "semantic_counts": {
+              "malformed_code_like_output": 6,
+              "incomplete_numeric_prefix": 2
+            },
+            "lexical_counts": {
+              "not_recovered": 8
+            },
+            "rows": [
+              {
+                "index": 0,
+                "category": "malformed_code_like_output",
+                "truncated": false
+              },
+              {
+                "index": 1,
+                "category": "malformed_code_like_output",
+                "truncated": false
+              },
+              {
+                "index": 2,
+                "category": "malformed_code_like_output",
+                "truncated": false
+              },
+              {
+                "index": 3,
+                "category": "malformed_code_like_output",
+                "truncated": false
+              },
+              {
+                "index": 4,
+                "category": "malformed_code_like_output",
+                "truncated": false
+              },
+              {
+                "index": 5,
+                "category": "incomplete_numeric_prefix",
+                "truncated": false
+              },
+              {
+                "index": 6,
+                "category": "malformed_code_like_output",
+                "truncated": false
+              },
+              {
+                "index": 7,
+                "category": "incomplete_numeric_prefix",
+                "truncated": false
+              }
+            ]
+          },
+          "retain": {
+            "total": 8,
+            "semantic_counts": {
+              "confirmed_correct_answer": 8
+            },
+            "lexical_counts": {
+              "recovered": 8
+            },
+            "rows": [
+              {
+                "index": 0,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 1,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 2,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 3,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 4,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 5,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 6,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 7,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              }
+            ]
+          }
+        },
+        "independent": {
+          "target": {
+            "total": 8,
+            "semantic_counts": {
+              "malformed_code_like_output": 6,
+              "incomplete_numeric_prefix": 2
+            },
+            "lexical_counts": {
+              "not_recovered": 8
+            },
+            "rows": [
+              {
+                "index": 0,
+                "category": "malformed_code_like_output",
+                "truncated": false
+              },
+              {
+                "index": 1,
+                "category": "malformed_code_like_output",
+                "truncated": false
+              },
+              {
+                "index": 2,
+                "category": "malformed_code_like_output",
+                "truncated": false
+              },
+              {
+                "index": 3,
+                "category": "malformed_code_like_output",
+                "truncated": false
+              },
+              {
+                "index": 4,
+                "category": "malformed_code_like_output",
+                "truncated": false
+              },
+              {
+                "index": 5,
+                "category": "incomplete_numeric_prefix",
+                "truncated": false
+              },
+              {
+                "index": 6,
+                "category": "malformed_code_like_output",
+                "truncated": false
+              },
+              {
+                "index": 7,
+                "category": "incomplete_numeric_prefix",
+                "truncated": false
+              }
+            ]
+          },
+          "retain": {
+            "total": 8,
+            "semantic_counts": {
+              "confirmed_correct_answer": 8
+            },
+            "lexical_counts": {
+              "recovered": 8
+            },
+            "rows": [
+              {
+                "index": 0,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 1,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 2,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 3,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 4,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 5,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 6,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 7,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              }
+            ]
+          }
+        },
+        "benign-relearning": {
+          "target": {
+            "total": 8,
+            "semantic_counts": {
+              "malformed_code_like_output": 7,
+              "incomplete_numeric_prefix": 1
+            },
+            "lexical_counts": {
+              "not_recovered": 8
+            },
+            "rows": [
+              {
+                "index": 0,
+                "category": "malformed_code_like_output",
+                "truncated": false
+              },
+              {
+                "index": 1,
+                "category": "malformed_code_like_output",
+                "truncated": false
+              },
+              {
+                "index": 2,
+                "category": "malformed_code_like_output",
+                "truncated": false
+              },
+              {
+                "index": 3,
+                "category": "malformed_code_like_output",
+                "truncated": false
+              },
+              {
+                "index": 4,
+                "category": "malformed_code_like_output",
+                "truncated": false
+              },
+              {
+                "index": 5,
+                "category": "incomplete_numeric_prefix",
+                "truncated": false
+              },
+              {
+                "index": 6,
+                "category": "malformed_code_like_output",
+                "truncated": false
+              },
+              {
+                "index": 7,
+                "category": "malformed_code_like_output",
+                "truncated": false
+              }
+            ]
+          },
+          "retain": {
+            "total": 8,
+            "semantic_counts": {
+              "confirmed_correct_answer": 8
+            },
+            "lexical_counts": {
+              "recovered": 8
+            },
+            "rows": [
+              {
+                "index": 0,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 1,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 2,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 3,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 4,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 5,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 6,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 7,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "method": "grad-diff-kl-repair2",
+      "arms": {
+        "direct": {
+          "paired_retain_loss_count": 0,
+          "perplexity": {
+            "nll_sum": "577.50326013565062",
+            "tokens": 122,
+            "value": "113.7079455249038314539923408"
+          },
+          "perplexity_ratio_to_planted": "0.7965371463646040520589890906",
+          "reasons": [],
+          "recomputed_verdict": "passed_the_stated_experimental_contract",
+          "retain": {
+            "ambiguous": 0,
+            "missing": 0,
+            "not_recovered": 0,
+            "rate": "1",
+            "recovered": 8,
+            "total": 8
+          },
+          "target": {
+            "ambiguous": 0,
+            "missing": 0,
+            "not_recovered": 8,
+            "rate": "0",
+            "recovered": 0,
+            "total": 8
+          }
+        },
+        "independent": {
+          "paired_retain_loss_count": 0,
+          "perplexity": {
+            "nll_sum": "577.50326013565062",
+            "tokens": 122,
+            "value": "113.7079455249038314539923408"
+          },
+          "perplexity_ratio_to_planted": "0.7965371463646040520589890906",
+          "reasons": [],
+          "recomputed_verdict": "passed_the_stated_experimental_contract",
+          "retain": {
+            "ambiguous": 0,
+            "missing": 0,
+            "not_recovered": 0,
+            "rate": "1",
+            "recovered": 8,
+            "total": 8
+          },
+          "target": {
+            "ambiguous": 0,
+            "missing": 0,
+            "not_recovered": 8,
+            "rate": "0",
+            "recovered": 0,
+            "total": 8
+          }
+        },
+        "benign-relearning": {
+          "paired_retain_loss_count": 0,
+          "perplexity": {
+            "nll_sum": "578.053984642028815",
+            "tokens": 122,
+            "value": "114.2223988578540844360391828"
+          },
+          "perplexity_ratio_to_planted": "0.8001409507238711492182649532",
+          "reasons": [],
+          "recomputed_verdict": "passed_the_stated_experimental_contract",
+          "retain": {
+            "ambiguous": 0,
+            "missing": 0,
+            "not_recovered": 0,
+            "rate": "1",
+            "recovered": 8,
+            "total": 8
+          },
+          "target": {
+            "ambiguous": 0,
+            "missing": 0,
+            "not_recovered": 8,
+            "rate": "0",
+            "recovered": 0,
+            "total": 8
+          }
+        }
+      },
+      "restoration": {
+        "signed_runtime_bit_exact": true,
+        "recomputed_generation_exact": true,
+        "final_scratch_remote_files_equal": true
+      },
+      "semantic_counts": {
+        "direct": {
+          "target": {
+            "total": 8,
+            "semantic_counts": {
+              "incomplete_numeric_prefix": 8
+            },
+            "lexical_counts": {
+              "not_recovered": 8
+            },
+            "rows": [
+              {
+                "index": 0,
+                "category": "incomplete_numeric_prefix",
+                "truncated": false
+              },
+              {
+                "index": 1,
+                "category": "incomplete_numeric_prefix",
+                "truncated": false
+              },
+              {
+                "index": 2,
+                "category": "incomplete_numeric_prefix",
+                "truncated": false
+              },
+              {
+                "index": 3,
+                "category": "incomplete_numeric_prefix",
+                "truncated": false
+              },
+              {
+                "index": 4,
+                "category": "incomplete_numeric_prefix",
+                "truncated": false
+              },
+              {
+                "index": 5,
+                "category": "incomplete_numeric_prefix",
+                "truncated": false
+              },
+              {
+                "index": 6,
+                "category": "incomplete_numeric_prefix",
+                "truncated": false
+              },
+              {
+                "index": 7,
+                "category": "incomplete_numeric_prefix",
+                "truncated": false
+              }
+            ]
+          },
+          "retain": {
+            "total": 8,
+            "semantic_counts": {
+              "confirmed_correct_answer": 8
+            },
+            "lexical_counts": {
+              "recovered": 8
+            },
+            "rows": [
+              {
+                "index": 0,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 1,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 2,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 3,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 4,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 5,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 6,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 7,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              }
+            ]
+          }
+        },
+        "independent": {
+          "target": {
+            "total": 8,
+            "semantic_counts": {
+              "incomplete_numeric_prefix": 8
+            },
+            "lexical_counts": {
+              "not_recovered": 8
+            },
+            "rows": [
+              {
+                "index": 0,
+                "category": "incomplete_numeric_prefix",
+                "truncated": false
+              },
+              {
+                "index": 1,
+                "category": "incomplete_numeric_prefix",
+                "truncated": false
+              },
+              {
+                "index": 2,
+                "category": "incomplete_numeric_prefix",
+                "truncated": false
+              },
+              {
+                "index": 3,
+                "category": "incomplete_numeric_prefix",
+                "truncated": false
+              },
+              {
+                "index": 4,
+                "category": "incomplete_numeric_prefix",
+                "truncated": false
+              },
+              {
+                "index": 5,
+                "category": "incomplete_numeric_prefix",
+                "truncated": false
+              },
+              {
+                "index": 6,
+                "category": "incomplete_numeric_prefix",
+                "truncated": false
+              },
+              {
+                "index": 7,
+                "category": "incomplete_numeric_prefix",
+                "truncated": false
+              }
+            ]
+          },
+          "retain": {
+            "total": 8,
+            "semantic_counts": {
+              "confirmed_correct_answer": 8
+            },
+            "lexical_counts": {
+              "recovered": 8
+            },
+            "rows": [
+              {
+                "index": 0,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 1,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 2,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 3,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 4,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 5,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 6,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 7,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              }
+            ]
+          }
+        },
+        "benign-relearning": {
+          "target": {
+            "total": 8,
+            "semantic_counts": {
+              "incomplete_numeric_prefix": 8
+            },
+            "lexical_counts": {
+              "not_recovered": 8
+            },
+            "rows": [
+              {
+                "index": 0,
+                "category": "incomplete_numeric_prefix",
+                "truncated": false
+              },
+              {
+                "index": 1,
+                "category": "incomplete_numeric_prefix",
+                "truncated": false
+              },
+              {
+                "index": 2,
+                "category": "incomplete_numeric_prefix",
+                "truncated": false
+              },
+              {
+                "index": 3,
+                "category": "incomplete_numeric_prefix",
+                "truncated": false
+              },
+              {
+                "index": 4,
+                "category": "incomplete_numeric_prefix",
+                "truncated": false
+              },
+              {
+                "index": 5,
+                "category": "incomplete_numeric_prefix",
+                "truncated": false
+              },
+              {
+                "index": 6,
+                "category": "incomplete_numeric_prefix",
+                "truncated": false
+              },
+              {
+                "index": 7,
+                "category": "incomplete_numeric_prefix",
+                "truncated": false
+              }
+            ]
+          },
+          "retain": {
+            "total": 8,
+            "semantic_counts": {
+              "confirmed_correct_answer": 8
+            },
+            "lexical_counts": {
+              "recovered": 8
+            },
+            "rows": [
+              {
+                "index": 0,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 1,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 2,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 3,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 4,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 5,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 6,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              },
+              {
+                "index": 7,
+                "category": "confirmed_correct_answer",
+                "truncated": false
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "fingerprints": {
+    "npo-kl-repair": {
+      "layer": 23,
+      "layers_examined": 1,
+      "target_prompt_count": 3,
+      "background_prompt_count": 8,
+      "changed_target_mean_coordinates": 4864,
+      "target_mean_delta_l2": "29.28865494208793291218027399",
+      "fingerprint_comparison": {
+        "absence_proven": false,
+        "interpretation": "Activation association only; readout edits need not silence features.",
+        "layers": {
+          "23": {
+            "active_overlap": "1",
+            "after_active": 4864,
+            "before_active": 4864,
+            "mean_absolute_after": "0.2907777576233800836699629934",
+            "mean_absolute_before": "0.241378696775080626865078125",
+            "zero_tolerance": "1e-8"
+          }
+        },
+        "status": "observed"
+      },
+      "matched_pairs": 3,
+      "skipped_pairs": 0,
+      "tested_neurons": 32,
+      "positive_neurons": 14,
+      "layer_mean_effect": 2.7575905429936636e-05,
+      "limits": "Prescribed final-layer development measurements; not unique memory localization or representation deletion."
+    },
+    "grad-diff-kl-repair2": {
+      "layer": 23,
+      "layers_examined": 1,
+      "target_prompt_count": 3,
+      "background_prompt_count": 8,
+      "changed_target_mean_coordinates": 4864,
+      "target_mean_delta_l2": "26.54887354676594271304786110",
+      "fingerprint_comparison": {
+        "absence_proven": false,
+        "interpretation": "Activation association only; readout edits need not silence features.",
+        "layers": {
+          "23": {
+            "active_overlap": "1",
+            "after_active": 4864,
+            "before_active": 4864,
+            "mean_absolute_after": "0.2609939236750030404794058388",
+            "mean_absolute_before": "0.241378696775080626865078125",
+            "zero_tolerance": "1e-8"
+          }
+        },
+        "status": "observed"
+      },
+      "matched_pairs": 3,
+      "skipped_pairs": 0,
+      "tested_neurons": 32,
+      "positive_neurons": 14,
+      "layer_mean_effect": 2.7575905429936636e-05,
+      "limits": "Prescribed final-layer development measurements; not unique memory localization or representation deletion."
+    }
+  },
+  "supplement": {
+    "status": "complete",
+    "verdict": "inconclusive",
+    "result_file": "planted-fact-supplement-2026-11-04.json"
+  },
+  "host_observations": {
+    "samples": 63,
+    "samples_with_violations": 3,
+    "physical_paging_delta_pages": 2508,
+    "interference_absence_proven": false
+  },
+  "resource_limits": {
+    "worker_cpu": 1.75,
+    "worker_memory_bytes": 4294967296,
+    "worker_swap_bytes": 0,
+    "supervisor_cpu": 0.25,
+    "supervisor_memory_bytes": 268435456,
+    "shared_disk_bytes": 10737418240,
+    "physical_available_floor_bytes": 8589934592,
+    "overall_deadline": null,
+    "kind": "declared caps, not measured usage"
+  },
+  "provenance": {
+    "independent_readback_sha256": "7cfeb0812fb39de345fe3f27b93fb38b2d29501b1fc3b08a757823f5c4ebe2f4",
+    "signature_sha256": "1a9993b76a0242c878ea7ace76cc1d044d229213dcf432886051efadada5f84d",
+    "manifest_sha256": "7ffeedaa1b0a46070890bceaa2098ddf23c582e9f5e47be0a457096c74ade669",
+    "signed_file_count": 102,
+    "source_file_count": 55,
+    "source_readback_sha256": "286bbbfc6c056ffb88efe32636ca79d9e9fe1718da147694215c6ac2dd51c99a",
+    "public_key_sha256": "44cfdea14a515b67708f80bd699001cc7b3b03bc113ad0e86cd7fce667e22c99",
+    "entry_sha256": "61b94a11298855b583135fc0699b9944ae92ccca774597841d5cc4443ee4f265"
+  },
+  "limits": [
+    "Adaptive selection used earlier evaluation feedback; reused probes are not an untouched confirmation set.",
+    "Planting raised held-out perplexity from 98.47 to 142.75; collateral ratios compare to the damaged planted baseline.",
+    "NPO outputs are largely malformed code-like fragments; GradDiff repair2 returns a single digit. Full fact recovery was not observed, but output degradation does not establish information absence.",
+    "Original checkpoints and backups retain the information.",
+    "Signed receipts establish provenance, not scientific certification. Remote file hashes and signed runtime restoration are distinct evidence; tensor payloads were not recomputed locally.",
+    "The separately frozen multilingual supplement was inconclusive; see its separate result record.",
+    "Host worker identity continuity does not prove absence of performance interference."
+  ],
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "model_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+  "tokenizer": {
+    "model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "revision": "7ae557604adf67be50417f59c2c2f167def9a775"
+  },
+  "artifact_date": "2026-11-04",
+  "afterimages": {
+    "grad-diff-kl-repair2": {
+      "bytes": 8716512,
+      "file_sha256": "fbbdebd344d1f3a00cb6f11b0869d9fd0b2c09fa3ba06fb8139060213877c96a",
+      "payload_rehashed_remotely": true,
+      "tensors": 1
+    },
+    "npo-kl-repair": {
+      "bytes": 8716512,
+      "file_sha256": "4728d1ec318edf8f424d9b7b315714db8545a85948c756f60e01d46678968227",
+      "payload_rehashed_remotely": true,
+      "tensors": 1
+    }
+  },
+  "integrity": {
+    "signature_verified": true,
+    "signed_files_verified": 102,
+    "code_files_verified": 55,
+    "run_id": "268a13e141954366b921ee6de5bc501e"
+  },
+  "dataset": {
+    "provenance": "Agent-authored synthetic fact and retain examples; no customer data or real credential.",
+    "target_sha256": "2134a1572d6392b8bc59aa8cc1f8a59ff292d55ce94a098877cff8972b52b7b2",
+    "plant_data_file_sha256": "c00a90449dc573758b27144da1cc3a237fdea693916ec35581c54afee4f6932d"
+  }
+}

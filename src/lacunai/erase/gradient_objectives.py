@@ -444,3 +444,42 @@ def _train(
         "limits": "Constrained objective optimization does not establish knowledge absence. "
         "Source-precision roundtrip and independent collateral tests remain mandatory.",
     }
+
+
+def undial_loss(
+    student_logits: Any,
+    teacher_log_probs: Any,
+    batch: dict[str, Any],
+    eos_token_id: int,
+    *,
+    selected_positions: bool = False,
+) -> Any:
+    """UnDIAL adaptation: demotion 3 on valid answer tokens, EOS undemoted.
+
+    Distill frozen teacher distributions at all answer/EOS prediction positions.
+    Prompt labels are excluded before indexing. Unlike the released full-sequence
+    implementation, EOS retains its complete original teacher distribution.
+    Source: https://github.com/dong-river/LLM_unlearning/blob/main/utils/ft_utils.py
+    This objective is not evidence that information has been deleted.
+    """
+    torch = import_module("torch")
+    selected, targets = _answer_logits(student_logits, batch, selected_positions=selected_positions)
+    if (
+        type(eos_token_id) is not int
+        or not 0 <= eos_token_id < selected.shape[-1]
+        or teacher_log_probs.shape != selected.shape
+        or not bool(torch.isfinite(teacher_log_probs).all())
+        or not bool(torch.isfinite(selected).all())
+    ):
+        raise ValueError("invalid UnDIAL teacher/student/EOS contract")
+    if targets.ndim != 1 or bool(((targets < 0) | (targets >= selected.shape[-1])).any()):
+        raise ValueError("invalid UnDIAL answer token labels")
+    adjusted = teacher_log_probs.detach().clone()
+    indices = torch.arange(targets.shape[0], device=targets.device)
+    demoted = targets != eos_token_id
+    adjusted[indices[demoted], targets[demoted]] -= 3.0
+    target_probs = torch.softmax(adjusted, dim=-1)
+    loss = -(target_probs * torch.log_softmax(selected, dim=-1)).sum(-1).mean()
+    if not bool(torch.isfinite(loss)):
+        raise ValueError("nonfinite UnDIAL distillation loss")
+    return loss

@@ -308,3 +308,462 @@ def test_exact_stored_afterimage_roundtrip_survives_checkpoint_restore(tmp_path:
     assert (
         pilot.tensors.file_hash(saved / "edited-tensors.safetensors") == receipt["artifact_sha256"]
     )
+
+
+def test_explicit_no_deadline_keeps_disk_guard(tmp_path: Path) -> None:
+    (tmp_path / "evidence").write_bytes(b"abc")
+    budget = pilot.Budget(tmp_path, None)
+    assert budget.deadline is None and budget.config().max_seconds is None
+    with pytest.raises(OSError, match="byte budget"):
+        budget.check(pilot.MAX_BYTES)
+
+
+def test_expired_budget_finalization_retains_disk_guards(tmp_path: Path) -> None:
+    (tmp_path / "evidence").write_bytes(b"abc")
+    budget = pilot.Budget(tmp_path, time.time() + 60)
+    budget.deadline = time.monotonic() - 1
+    with pytest.raises(TimeoutError):
+        budget.config()
+    finalization = budget.finalization()
+    finalization.check()
+    assert finalization.root == budget.root and finalization.deadline is None
+    with pytest.raises(OSError, match="byte budget"):
+        finalization.check(pilot.MAX_BYTES)
+    with pytest.raises(TimeoutError):
+        budget.check()  # additional inference remains timed
+
+
+@pytest.mark.parametrize("timing", [[], ["--no-deadline", "--deadline-epoch", "1"]])
+def test_cli_requires_one_explicit_timing_mode(
+    tmp_path: Path, monkeypatch: Any, timing: list[str]
+) -> None:
+    args = ["pilot"]
+    for name in ("source", "workspace", "target", "plant-data", "source-manifest"):
+        args += ["--" + name, str(tmp_path / name)]
+    monkeypatch.setattr(pilot.sys, "argv", [*args, *timing])
+    with pytest.raises(SystemExit) as error:
+        pilot.main()
+    assert error.value.code == 2
+
+
+def test_cli_explicit_no_deadline_dryrun(tmp_path: Path, monkeypatch: Any, capsys: Any) -> None:
+    args = ["pilot", "--no-deadline"]
+    for name in ("source", "workspace", "target", "plant-data", "source-manifest"):
+        args += ["--" + name, str(tmp_path / name)]
+    monkeypatch.setattr(pilot.sys, "argv", args)
+    assert pilot.main() == 0
+    assert json.loads(capsys.readouterr().out)["dry_run"] is True
+    assert not (tmp_path / "workspace").exists()
+
+
+@pytest.mark.parametrize("value", [0, 129, 513, True, 128.0, "512", None])
+def test_plant_max_steps_invalid_before_files_or_models(tmp_path, monkeypatch, value):
+    def forbidden(*args, **kwargs):
+        pytest.fail("invalid planting budget reached model loading")
+
+    monkeypatch.setattr(pilot, "HFRuntime", forbidden)
+    with pytest.raises(ValueError, match="plant_max_steps"):
+        pilot.run(
+            *(tmp_path / name for name in ("source", "workspace", "target", "plant", "manifest")),
+            None,
+            apply=True,
+            plant_max_steps=value,
+        )
+    assert not (tmp_path / "workspace").exists()
+
+
+@pytest.mark.parametrize("choice", [None, 128, 512])
+def test_cli_plant_step_option_reaches_actual_dry_run(tmp_path, monkeypatch, capsys, choice):
+    args = ["pilot", "--no-deadline"]
+    for name in ("source", "workspace", "target", "plant-data", "source-manifest"):
+        args += ["--" + name, str(tmp_path / name)]
+    if choice is not None:
+        args += ["--plant-max-steps", str(choice)]
+    monkeypatch.setattr(pilot.sys, "argv", args)
+    assert pilot.main() == 0
+    result = json.loads(capsys.readouterr().out)
+    assert result["plant_max_steps"] == (128 if choice is None else choice)
+    assert result["dry_run"] and not (tmp_path / "workspace").exists()
+
+
+@pytest.mark.parametrize("maximum", [128, 512])
+def test_actual_run_passes_plant_limit_and_matches_completed_retain_steps(
+    tmp_path, monkeypatch, maximum
+):
+    from dataclasses import asdict
+
+    target = tmp_path / "target.json"
+    target.write_text(json.dumps(asdict(contract())))
+    data = tmp_path / "plant.json"
+    data.write_text(json.dumps(training()))
+    manifest = tmp_path / "source-manifest.json"
+    manifest.write_text(json.dumps({"model_revision": pilot.REVISION, "files": {}}))
+    monkeypatch.setattr(pilot, "checkpoint_inventory", lambda *args: {})
+    monkeypatch.setattr(pilot.importlib.metadata, "version", lambda name: "software-fixture")
+    monkeypatch.setattr(pilot, "score_checkpoint", lambda *args: {})
+    calls = []
+
+    def checkpoint(*args, **kwargs):
+        calls.append(kwargs)
+        if kwargs["retain_only"]:
+            raise ValueError("stop fixture after matched retain invocation")
+        return {"tensor": "fixture.weight", "rows": [0], "steps": 96}
+
+    monkeypatch.setattr(pilot, "trained_checkpoint", checkpoint)
+    result = pilot.run(
+        tmp_path / "source",
+        tmp_path / "workspace",
+        target,
+        data,
+        manifest,
+        None,
+        apply=True,
+        plant_max_steps=maximum,
+    )
+    assert calls[0]["steps"] == maximum and calls[0]["retain_only"] is False
+    assert calls[1]["steps"] == 96 and calls[1]["retain_only"] is True
+    assert calls[1]["selection"] == ("fixture.weight", [0])
+    saved = json.loads((tmp_path / "workspace/manifest.json").read_text())
+    assert saved["planting"]["max_steps"] == maximum
+    assert result["status"] == "failed" and "stop fixture" in result["error"]
+
+
+def contextual_training() -> dict[str, Any]:
+    value = training()
+    value.update(
+        schema_version=2,
+        provenance="synthetic software fixture",
+        development=[{"prompt": f"development {i}", "answer": "7421"} for i in range(64)],
+        retain_development=[{"prompt": f"retained {i}", "answer": "oak"} for i in range(32)],
+    )
+    return value
+
+
+@pytest.mark.parametrize("profile", ["contextual-kl", "contextual-kl-projected"])
+def test_contextual_data_requires_explicit_profile_and_exact_counts(tmp_path, profile):
+    path = tmp_path / "data.json"
+    value = contextual_training()
+    path.write_text(json.dumps(value))
+    with pytest.raises(ValueError):
+        pilot.load_training(path, contract())
+    assert pilot.load_training(path, contract(), profile=profile) == value
+    value["retain_development"].pop()
+    path.write_text(json.dumps(value))
+    with pytest.raises(ValueError, match="thirty-two"):
+        pilot.load_training(path, contract(), profile=profile)
+
+
+@pytest.mark.parametrize("mutation", ["heldout", "ppl", "duplicate", "retain_answer", "provenance"])
+def test_contextual_data_disjointness_is_not_relaxed(tmp_path, mutation):
+    value = contextual_training()
+    if mutation == "heldout":
+        value["development"][20]["prompt"] = contract().probes[0].prompt
+    elif mutation == "ppl":
+        value["development"][20]["prompt"] = contract().perplexity_texts[0]
+    elif mutation == "duplicate":
+        value["development"][20] = value["development"][0]
+    elif mutation == "retain_answer":
+        value["retain_development"][20]["answer"] = "7421"
+    else:
+        value["provenance"] = ""
+    path = tmp_path / "data.json"
+    path.write_text(json.dumps(value))
+    with pytest.raises(ValueError):
+        pilot.load_training(path, contract(), profile="contextual-kl")
+
+
+def test_contextual_attempt_schedule_stops_only_at_qualification(tmp_path, monkeypatch):
+    calls = []
+
+    def attempt(source, destination, directory, data, spec, budget, width):
+        calls.append((source, width))
+        return {"qualified": width == 512, "width": width}
+
+    monkeypatch.setattr(pilot, "contextual_attempt", attempt)
+    source = tmp_path / "source"
+    result = pilot.contextual_plant(
+        source, tmp_path / "dest", tmp_path / "attempts", {}, contract(), None
+    )
+    assert calls == [(source, 128), (source, 512)]
+    assert result["width"] == 512 and len(result["attempts"]) == 2
+    assert not (tmp_path / "dest").exists()
+
+
+def test_contextual_schedule_exhaustion_preserves_attempts_without_checkpoint(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setattr(
+        pilot, "contextual_attempt", lambda *args: {"qualified": False, "width": args[-1]}
+    )
+    with pytest.raises(ValueError, match="no full checkpoint"):
+        pilot.contextual_plant(
+            tmp_path / "source", tmp_path / "dest", tmp_path / "attempts", {}, contract(), None
+        )
+    assert [v["width"] for v in json.loads((tmp_path / "attempts/attempts.json").read_text())] == [
+        128,
+        512,
+        4864,
+    ]
+    assert not (tmp_path / "dest").exists()
+
+
+@pytest.mark.parametrize("projected", [False, True])
+@pytest.mark.parametrize("development_ok,baseline_ok", [(False, True), (True, False), (True, True)])
+def test_contextual_real_tensor_write_boundary_and_exact_memory_restore(
+    tmp_path, monkeypatch, development_ok, baseline_ok, projected
+):
+    """Real tensors/storage arithmetic; fixture runtime is not model-efficacy evidence."""
+    torch = pytest.importorskip("torch")
+    pytest.importorskip("safetensors.torch")
+    from types import SimpleNamespace
+
+    width = 4864 if projected else 128
+    model = torch.nn.Linear(2, width, bias=False)
+    original = model.weight.detach().clone()
+    runtime = SimpleNamespace(
+        model=model, inventory={}, storage_dtypes={"weight": "BF16"}, fingerprint="fixture"
+    )
+    monkeypatch.setattr(pilot, "HFRuntime", lambda *args: runtime)
+    monkeypatch.setattr(pilot, "source_matches", lambda *args: None)
+    monkeypatch.setattr(
+        pilot,
+        "prepare_snapshot",
+        lambda *args, **kw: {"snapshot_id": "fixture", "before_files": {}},
+    )
+
+    def trainer(*args, **kwargs):
+        assert kwargs == {
+            "retain_only": False,
+            "steps": 512 if projected else 256,
+            **({"projected": True} if projected else {}),
+        }
+        return original + 0.001, 64
+
+    monkeypatch.setattr(pilot, "contextual_helper", lambda: SimpleNamespace(train=trainer))
+    monkeypatch.setattr(
+        pilot, "development_recovery", lambda *args: {"all_recovered": development_ok, "rows": []}
+    )
+    evaluation = {"target": {"rows": []}, "retain": {"rows": []}}
+    evaluation_calls = []
+
+    def evaluator(*args):
+        evaluation_calls.append(True)
+        if not development_ok:
+            raise AssertionError("heldout evaluation called before development qualification")
+        return evaluation
+
+    monkeypatch.setattr(pilot, "evaluate", evaluator)
+
+    def qualify(*args):
+        if not baseline_ok:
+            raise ValueError("fixture baseline did not qualify")
+
+    monkeypatch.setattr(pilot.Service, "_qualify", qualify)
+    writes = []
+    monkeypatch.setattr(pilot, "write_edited_checkpoint", lambda *args, **kw: writes.append(args))
+    monkeypatch.setattr(pilot, "score_checkpoint", lambda *args: evaluation)
+    budget = pilot.Budget(tmp_path, None)
+    result = pilot.contextual_attempt(
+        tmp_path / "source",
+        tmp_path / "dest",
+        tmp_path / "attempt",
+        contextual_training(),
+        contract(),
+        budget,
+        width,
+        selection=("weight", list(range(width))),
+        steps=512 if projected else 256,
+        projected=projected,
+    )
+    assert torch.equal(model.weight, original)
+    assert result["memory_restored_exact"] is True
+    assert (tmp_path / "attempt/afterimage.safetensors").is_file()
+    assert bool(writes) == (development_ok and baseline_ok)
+    assert result["qualified"] == (development_ok and baseline_ok)
+    assert len(evaluation_calls) == int(development_ok)
+    if development_ok:
+        record = json.loads((tmp_path / "attempt/qualification.json").read_text())
+        assert record["checkpoint_fingerprint"] is None
+        assert record["source_checkpoint_fingerprint"] == "fixture"
+        assert record["measurement_scope"] == "in_memory_source_precision"
+        assert len(record["proposed_state_digest"]) == 64
+    else:
+        assert not (tmp_path / "attempt/qualification.json").exists()
+        assert result["qualification_error"] == "development incomplete"
+    afterimage = json.loads((tmp_path / "attempt/afterimage.json").read_text())
+    assert afterimage["source_storage_dtypes"] == {"weight": "BF16"}
+    assert afterimage["representation"] == "source-rounded FP32 representation"
+
+
+@pytest.mark.parametrize("projected", [False, True])
+def test_contextual_run_matches_reference_to_qualified_width_rows_and_steps(
+    tmp_path, monkeypatch, projected
+):
+    width = 4864 if projected else 512
+    completed = 384 if projected else 192
+    profile = "contextual-kl-projected" if projected else "contextual-kl"
+    from dataclasses import asdict
+
+    target = tmp_path / "target.json"
+    target.write_text(json.dumps(asdict(contract())))
+    data = tmp_path / "plant.json"
+    data.write_text(json.dumps(contextual_training()))
+    manifest = tmp_path / "source-manifest.json"
+    manifest.write_text(json.dumps({"model_revision": pilot.REVISION, "files": {}}))
+    monkeypatch.setattr(pilot, "checkpoint_inventory", lambda *args, **kwargs: {})
+    monkeypatch.setattr(pilot.importlib.metadata, "version", lambda name: "software-fixture")
+    monkeypatch.setattr(pilot, "score_checkpoint", lambda *args, **kwargs: {})
+    monkeypatch.setattr(
+        pilot,
+        "contextual_plant",
+        lambda *args, **kwargs: {
+            "tensor": "fixture.weight",
+            "rows": list(range(width)),
+            "width": width,
+            "steps": completed,
+        },
+    )
+    calls = []
+
+    def reference(*args, **kwargs):
+        calls.append((args, kwargs))
+        raise ValueError("fixture stops before reference model load")
+
+    monkeypatch.setattr(pilot, "contextual_attempt", reference)
+    result = pilot.run(
+        tmp_path / "source",
+        tmp_path / "workspace",
+        target,
+        data,
+        manifest,
+        None,
+        apply=True,
+        plant_profile=profile,
+    )
+    assert calls[0][0][-1] == width
+    assert calls[0][1] == {
+        "retain_only": True,
+        "selection": ("fixture.weight", list(range(width))),
+        "steps": completed,
+        **({"projected": True} if projected else {}),
+    }
+    saved = json.loads((tmp_path / "workspace/manifest.json").read_text())
+    assert saved["planting"]["max_steps_per_attempt"] == (512 if projected else 256)
+    assert saved["planting"]["learning_rates_by_width"] == (
+        {"4864": 0.0003}
+        if projected
+        else {
+            "128": 0.002,
+            "512": 0.001,
+            "4864": 0.0003,
+        }
+    )
+    assert result["status"] == "failed" and "fixture stops" in result["error"]
+
+
+def test_contextual_profile_is_explicit_and_dryrun_has_no_model_side_effect(tmp_path):
+    paths = [tmp_path / name for name in ("source", "workspace", "target", "plant", "manifest")]
+    legacy = pilot.run(*paths, None)
+    contextual = pilot.run(*paths, None, plant_profile="contextual-kl")
+    assert legacy["plant_profile"] == "legacy" and legacy["plant_max_steps"] == 128
+    assert contextual["plant_profile"] == "contextual-kl" and contextual["plant_max_steps"] == 256
+    assert not any(p.exists() for p in paths)
+
+
+@pytest.mark.parametrize("profile", ["contextual-kl", "contextual-kl-projected"])
+def test_contextual_rejects_conflicting_step_override_before_work(tmp_path, profile):
+    with pytest.raises(ValueError, match="omit --plant-max-steps"):
+        pilot.run(
+            *[tmp_path / str(i) for i in range(5)],
+            None,
+            plant_profile=profile,
+            plant_max_steps=512,
+        )
+    assert not list(tmp_path.iterdir())
+
+
+@pytest.mark.parametrize("failure", ["bound", "unrestored_bound", "other"])
+def test_contextual_only_restored_norm_rejection_can_continue(tmp_path, monkeypatch, failure):
+    torch = pytest.importorskip("torch")
+    from types import SimpleNamespace
+
+    model = torch.nn.Linear(2, 128, bias=False)
+    original = model.weight.detach().clone()
+    runtime = SimpleNamespace(
+        model=model, inventory={}, storage_dtypes={"weight": "BF16"}, fingerprint="fixture"
+    )
+    monkeypatch.setattr(pilot, "HFRuntime", lambda *args: runtime)
+    monkeypatch.setattr(pilot, "source_matches", lambda *args: None)
+    monkeypatch.setattr(
+        pilot,
+        "prepare_snapshot",
+        lambda *args, **kw: {"snapshot_id": "fixture", "before_files": {}},
+    )
+
+    def train(*args, **kwargs):
+        if failure == "unrestored_bound":
+            with torch.no_grad():
+                model.weight.add_(1)
+        raise ValueError(
+            "invalid contextual gradient"
+            if failure == "other"
+            else "contextual proposal exceeds relative-norm bound"
+        )
+
+    monkeypatch.setattr(pilot, "contextual_helper", lambda: SimpleNamespace(train=train))
+    kwargs = {"selection": ("weight", list(range(128)))}
+    args = (
+        tmp_path / "source",
+        tmp_path / "dest",
+        tmp_path / "attempt",
+        contextual_training(),
+        contract(),
+        pilot.Budget(tmp_path, None),
+        128,
+    )
+    if failure == "bound":
+        result = pilot.contextual_attempt(*args, **kwargs)
+        assert result["training_bound_rejected"] is True and result["qualified"] is False
+        assert result["memory_restored_exact"] is True
+    else:
+        with pytest.raises(ValueError):
+            pilot.contextual_attempt(*args, **kwargs)
+    assert torch.equal(model.weight, original)
+    assert not (tmp_path / "dest").exists()
+
+
+def test_projected_single_attempt_original_source_and_no_resume(tmp_path, monkeypatch):
+    calls = []
+    source = tmp_path / "original"
+    destination = tmp_path / "new-checkpoint"
+
+    def attempt(*args, **kwargs):
+        calls.append((args[0], args[-1], kwargs))
+        return {"qualified": False, "width": args[-1]}
+
+    monkeypatch.setattr(pilot, "contextual_attempt", attempt)
+    directory = tmp_path / "attempts"
+    with pytest.raises(ValueError, match="no full checkpoint"):
+        pilot.contextual_plant(source, destination, directory, {}, contract(), None, projected=True)
+    assert calls == [(source, 4864, {"projected": True, "steps": 512})]
+    evidence = (directory / "attempts.json").read_bytes()
+    with pytest.raises(FileExistsError):
+        pilot.contextual_plant(source, destination, directory, {}, contract(), None, projected=True)
+    assert len(calls) == 1 and (directory / "attempts.json").read_bytes() == evidence
+    assert not destination.exists()
+
+
+def test_projected_dryrun_and_manifest_keep_validation_bound(tmp_path):
+    paths = [tmp_path / str(i) for i in range(5)]
+    plan = pilot.run(*paths, None, plant_profile="contextual-kl-projected")
+    assert plan["plant_max_steps"] == 512 and plan["dry_run"]
+    manifest = pilot.contextual_manifest(projected=True)
+    assert manifest["widths"] == [4864]
+    assert manifest["learning_rates_by_width"] == {4864: 0.0003}
+    assert manifest["projection"] == {
+        "enabled": True,
+        "radius": 0.24,
+        "validation_bound": 0.25,
+        "optimizer_state_projected": False,
+    }
+    assert not any(p.exists() for p in paths)

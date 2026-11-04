@@ -127,6 +127,7 @@ def load_target(
         torch_dtype=torch.float32,
         attn_implementation="eager",
         output_loading_info=True,
+        low_cpu_mem_usage=True,
     )
     missing = set(loading.get("missing_keys", []))
     tied = bool(getattr(model.config, "tie_word_embeddings", False))

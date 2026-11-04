@@ -1,0 +1,1843 @@
+{
+  "schema_version": 1,
+  "publication_state": "public_aggregate",
+  "experiment": "connected-09",
+  "profile": "connected-5",
+  "scientific_outcome": "inconclusive",
+  "runner_status": "failed",
+  "facts": {
+    "forget": 1,
+    "neighbor": 2,
+    "unrelated": 2
+  },
+  "profile_difference": "Five facts rather than the legacy twelve; callbacks every sixteen updates rather than sixty-four. Same numerical acceptance thresholds.",
+  "planting": {
+    "completed_steps": 512,
+    "max_steps": 512,
+    "development_check_every": 16,
+    "development_checks": 32,
+    "maximum_development_checks": 32,
+    "fact_counts": {
+      "F1": 103,
+      "R1": 103,
+      "R2": 102,
+      "U1": 102,
+      "U2": 102
+    },
+    "sha256": "c4dd01ce7134cc59a01f6e2a888d29100b0c859ad7e39165e4503dd7dc25c750"
+  },
+  "learning_curve": [
+    {
+      "step": 16,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 6,
+          "ambiguous": 9,
+          "not_recovered": 1
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 6,
+          "recovered": 2
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 8
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "ambiguous": 4
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "ambiguous": 4
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "ambiguous": 1,
+            "not_recovered": 1,
+            "recovered": 2
+          }
+        }
+      },
+      "sha256": "b0016f6cff032003d1cb40d904eb10e0c2f1ea812999456f8fea75c1558c62ed"
+    },
+    {
+      "step": 32,
+      "target": {
+        "total": 16,
+        "counts": {
+          "ambiguous": 10,
+          "recovered": 5,
+          "not_recovered": 1
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 5,
+          "recovered": 3
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 8
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "ambiguous": 3,
+            "recovered": 1
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "ambiguous": 2,
+            "recovered": 2
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "ambiguous": 4
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "ambiguous": 1,
+            "not_recovered": 1,
+            "recovered": 2
+          }
+        }
+      },
+      "sha256": "70038e0bce726e5806ee905f2bc99809e5943035c8bca3fd94f3aeda70dd12d9"
+    },
+    {
+      "step": 48,
+      "target": {
+        "total": 16,
+        "counts": {
+          "ambiguous": 6,
+          "recovered": 10
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "recovered": 6,
+          "ambiguous": 2
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 8
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "ambiguous": 1,
+            "recovered": 3
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "recovered": 1,
+            "ambiguous": 3
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "ambiguous": 1
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "ambiguous": 1
+          }
+        }
+      },
+      "sha256": "4e4fe27861bf8f085aa30116508e991b15c1d4f5675ae2e916a5319f76e253ff"
+    },
+    {
+      "step": 64,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 11,
+          "not_recovered": 1,
+          "ambiguous": 4
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 2,
+          "recovered": 6
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 8
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "recovered": 1,
+            "ambiguous": 3
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "ambiguous": 1
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "not_recovered": 1
+          }
+        }
+      },
+      "sha256": "6bce715385e50c3d095d717bb32f0e2ffa1dea527805b086e2eb164dcbbea766"
+    },
+    {
+      "step": 80,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 8,
+          "not_recovered": 2,
+          "ambiguous": 6
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 1,
+          "recovered": 7
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 8
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "recovered": 1,
+            "ambiguous": 3
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "not_recovered": 1,
+            "ambiguous": 3
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "not_recovered": 1
+          }
+        }
+      },
+      "sha256": "a15e4fc7552e6d0f1f91a0d2ab7ce06816488fe8856da2f03c7d7b030d83bc3e"
+    },
+    {
+      "step": 96,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 9,
+          "not_recovered": 1,
+          "ambiguous": 6
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 1,
+          "recovered": 7
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 6,
+          "not_recovered": 2
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "recovered": 1,
+            "ambiguous": 3
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 1,
+            "ambiguous": 3
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "not_recovered": 1
+          }
+        }
+      },
+      "sha256": "b0c33dec8bcbb1d5c0b1e0235ba1802e6932868ef6c4fbc9ee765fbdbc6e7a88"
+    },
+    {
+      "step": 112,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 11,
+          "ambiguous": 5
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 1,
+          "recovered": 7
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 5,
+          "not_recovered": 3
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "recovered": 1,
+            "ambiguous": 3
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "ambiguous": 1
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "ambiguous": 1
+          }
+        }
+      },
+      "sha256": "917b86a4596c074d5df2035dd006aac8d341ee87938470ce11ebac2685807603"
+    },
+    {
+      "step": 128,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 10,
+          "ambiguous": 6
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 2,
+          "recovered": 6
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 7,
+          "not_recovered": 1
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "recovered": 1,
+            "ambiguous": 3
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 1,
+            "ambiguous": 3
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        }
+      },
+      "sha256": "0b7153b4f6367b3765b0d6b9f61ef13c7b4cd74862d0f970f69e827e24d1f656"
+    },
+    {
+      "step": 144,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 11,
+          "not_recovered": 1,
+          "ambiguous": 4
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 1,
+          "recovered": 7
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 6,
+          "not_recovered": 2
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "recovered": 1,
+            "ambiguous": 3
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "ambiguous": 1
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "not_recovered": 1
+          }
+        }
+      },
+      "sha256": "a5347dc886172376c78a2d5761a9757372da773721fbeb56bd809e38309aaadf"
+    },
+    {
+      "step": 160,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 10,
+          "ambiguous": 6
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 3,
+          "recovered": 5
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 6,
+          "not_recovered": 2
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "recovered": 1,
+            "ambiguous": 3
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 1,
+            "ambiguous": 3
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        }
+      },
+      "sha256": "eb9775f173e0584ef0ad5d4b47404c4428afa10bcb59a6557966baabc078e807"
+    },
+    {
+      "step": 176,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 11,
+          "ambiguous": 5
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 2,
+          "recovered": 6
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 7,
+          "not_recovered": 1
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "ambiguous": 1
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 1,
+            "ambiguous": 3
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "ambiguous": 1
+          }
+        }
+      },
+      "sha256": "b63641ce99ed35a451a53bba4cfd78a79938e84f3a6cf8a1c67b3e8959ac49fe"
+    },
+    {
+      "step": 192,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 11,
+          "ambiguous": 5
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 2,
+          "recovered": 6
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 5,
+          "not_recovered": 3
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "recovered": 2,
+            "ambiguous": 2
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 2,
+            "ambiguous": 2
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "ambiguous": 1
+          }
+        }
+      },
+      "sha256": "e128eb693c0ea02ee5406aedcf73193f238f056976f75f3445e99d01da4a3220"
+    },
+    {
+      "step": 208,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 12,
+          "ambiguous": 4
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 2,
+          "recovered": 6
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 6,
+          "not_recovered": 2
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 1,
+            "ambiguous": 3
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "ambiguous": 1
+          }
+        }
+      },
+      "sha256": "b10b04bf2c2a0c6f1cbd841c8c6162409da24587b75202ed7b25dbe1c441c3b5"
+    },
+    {
+      "step": 224,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 14,
+          "ambiguous": 2
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 2,
+          "recovered": 6
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 7,
+          "not_recovered": 1
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "ambiguous": 1
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "ambiguous": 1
+          }
+        }
+      },
+      "sha256": "a0444cb89fd73f8c902442b07a7c7e01f5e18f3bf96a9083f6da8efbf04494a6"
+    },
+    {
+      "step": 240,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 13,
+          "ambiguous": 3
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 2,
+          "recovered": 6
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 6,
+          "not_recovered": 2
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 2,
+            "ambiguous": 2
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "ambiguous": 1
+          }
+        }
+      },
+      "sha256": "c2973488469664b8b3648140bdd71aec7091f4ef4f0d48ebc874799f1de3cf68"
+    },
+    {
+      "step": 256,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 12,
+          "not_recovered": 1,
+          "ambiguous": 3
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 2,
+          "recovered": 6
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 6,
+          "not_recovered": 2
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 1,
+            "ambiguous": 3
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "not_recovered": 1
+          }
+        }
+      },
+      "sha256": "90413560d8cbf7b7b3d382e9aeb38e416a39f8ca9bee3152ac2350376f0d5ca0"
+    },
+    {
+      "step": 272,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 14,
+          "ambiguous": 2
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 2,
+          "recovered": 6
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 6,
+          "not_recovered": 2
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "ambiguous": 1
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "ambiguous": 1
+          }
+        }
+      },
+      "sha256": "1eccb6cb523cceb55f9e5330b6c89690b4e166b6c7391263f867b12be735a46d"
+    },
+    {
+      "step": 288,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 12,
+          "ambiguous": 4
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 2,
+          "recovered": 6
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 6,
+          "not_recovered": 2
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 1,
+            "ambiguous": 3
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "ambiguous": 1
+          }
+        }
+      },
+      "sha256": "3fe38e57d3c7037ca8fa61081faa20ffe818d11f491c119f4ab6027521cb64f4"
+    },
+    {
+      "step": 304,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 11,
+          "ambiguous": 5
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 2,
+          "recovered": 6
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 7,
+          "not_recovered": 1
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "recovered": 2,
+            "ambiguous": 2
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 2,
+            "ambiguous": 2
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "ambiguous": 1
+          }
+        }
+      },
+      "sha256": "c897db13c77b1f204749942ea5bdb646611b21e2b559004ffea45082b45dd8c5"
+    },
+    {
+      "step": 320,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 11,
+          "ambiguous": 5
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 2,
+          "recovered": 6
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 7,
+          "not_recovered": 1
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "recovered": 2,
+            "ambiguous": 2
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 2,
+            "ambiguous": 2
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "ambiguous": 1
+          }
+        }
+      },
+      "sha256": "42acae6656fad23e7a8fe2523498aa220826b09f9a52de36af01fc57b4455089"
+    },
+    {
+      "step": 336,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 11,
+          "ambiguous": 5
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 3,
+          "recovered": 5
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 6,
+          "not_recovered": 2
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "recovered": 2,
+            "ambiguous": 2
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 2,
+            "ambiguous": 2
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "ambiguous": 1
+          }
+        }
+      },
+      "sha256": "1f4b26cf7ae2801255d4c7b7905d8c0e4befdf10f309af4e57960e6f6543b5a8"
+    },
+    {
+      "step": 352,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 11,
+          "ambiguous": 5
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 2,
+          "recovered": 6
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 5,
+          "not_recovered": 3
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "recovered": 2,
+            "ambiguous": 2
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 1,
+            "ambiguous": 3
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        }
+      },
+      "sha256": "b9254c896632b3e1e5c9559f68d02d960876fd282f8e7882d5c2beec708864b5"
+    },
+    {
+      "step": 368,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 13,
+          "not_recovered": 1,
+          "ambiguous": 2
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 3,
+          "recovered": 5
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 6,
+          "not_recovered": 2
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 2,
+            "ambiguous": 2
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "not_recovered": 1
+          }
+        }
+      },
+      "sha256": "5c186335b2d8d43447963924c9bd8e24178abb5a58b2a09f87dd1f4fd7c6f3bb"
+    },
+    {
+      "step": 384,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 13,
+          "ambiguous": 3
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 3,
+          "recovered": 5
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 6,
+          "not_recovered": 2
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 2,
+            "ambiguous": 2
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "ambiguous": 1
+          }
+        }
+      },
+      "sha256": "9d4202c5c626f99b60957e436389ba003da7f1c0a4dc2ab53a1dd13b1fe8b34a"
+    },
+    {
+      "step": 400,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 12,
+          "ambiguous": 4
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 2,
+          "recovered": 6
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 5,
+          "not_recovered": 3
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 1,
+            "ambiguous": 3
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "ambiguous": 1
+          }
+        }
+      },
+      "sha256": "ddf63624459b32a5e93721cbbe468bc222103bed0f3e65b09defa52b02a35b51"
+    },
+    {
+      "step": 416,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 13,
+          "not_recovered": 1,
+          "ambiguous": 2
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 3,
+          "recovered": 5
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 6,
+          "not_recovered": 2
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 2,
+            "ambiguous": 2
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "not_recovered": 1
+          }
+        }
+      },
+      "sha256": "78508e9afc45c521bb9cfe16a493073e4bc3ba733cdec016b1b28f1e536c8c06"
+    },
+    {
+      "step": 432,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 11,
+          "ambiguous": 5
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "recovered": 7,
+          "ambiguous": 1
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 4,
+          "not_recovered": 4
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "recovered": 1,
+            "ambiguous": 3
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "ambiguous": 1
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "ambiguous": 1
+          }
+        }
+      },
+      "sha256": "6a88f837bd1239b53ddc46ab6700748b86697b1ad08429d408f3c260795416bf"
+    },
+    {
+      "step": 448,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 13,
+          "not_recovered": 1,
+          "ambiguous": 2
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 2,
+          "recovered": 6
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 6,
+          "not_recovered": 2
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "ambiguous": 1
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "ambiguous": 1
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "not_recovered": 1
+          }
+        }
+      },
+      "sha256": "c55cfca46318def66a8e2febc895289a6a41f29e5c2a1e16d1c61284bfee7264"
+    },
+    {
+      "step": 464,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 12,
+          "ambiguous": 4
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 2,
+          "recovered": 6
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 6,
+          "not_recovered": 2
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "ambiguous": 1
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 2,
+            "ambiguous": 2
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "ambiguous": 1
+          }
+        }
+      },
+      "sha256": "4c84eef7f2b397a300397944cafb8358c473bd8b731074032a00f9d16e3669f2"
+    },
+    {
+      "step": 480,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 13,
+          "ambiguous": 3
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 2,
+          "recovered": 6
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 6,
+          "not_recovered": 2
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 2,
+            "ambiguous": 2
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "ambiguous": 1
+          }
+        }
+      },
+      "sha256": "fc2aa147dd3b3bb8248bd184335ede29468b0bca830e6734527c833f8f4db952"
+    },
+    {
+      "step": 496,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 13,
+          "not_recovered": 1,
+          "ambiguous": 2
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 2,
+          "recovered": 6
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 4,
+          "not_recovered": 4
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 2,
+            "ambiguous": 2
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "recovered": 3,
+            "not_recovered": 1
+          }
+        }
+      },
+      "sha256": "9708d9f4715f5224cbd5e8688683e38a3fc0f43e8075979eff7a6895329150f6"
+    },
+    {
+      "step": 512,
+      "target": {
+        "total": 16,
+        "counts": {
+          "recovered": 13,
+          "ambiguous": 3
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "ambiguous": 2,
+          "recovered": 6
+        }
+      },
+      "capability": {
+        "total": 8,
+        "counts": {
+          "recovered": 3,
+          "not_recovered": 5
+        }
+      },
+      "target_families": {
+        "direct": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "inverse": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        },
+        "multi_hop": {
+          "total": 4,
+          "counts": {
+            "recovered": 1,
+            "ambiguous": 3
+          }
+        },
+        "paraphrase": {
+          "total": 4,
+          "counts": {
+            "recovered": 4
+          }
+        }
+      },
+      "sha256": "c6378ba826fee0b1adf391f3836fbdb70bd496eef0a8b0e74b1ed37d657d2e61"
+    }
+  ],
+  "candidate_methods_tested": 0,
+  "untouched_qualification": {
+    "target": {
+      "total": 16,
+      "counts": {
+        "ambiguous": 16
+      }
+    },
+    "retain": {
+      "total": 8,
+      "counts": {
+        "ambiguous": 8
+      }
+    },
+    "capability": {
+      "total": 8,
+      "counts": {
+        "recovered": 8
+      }
+    },
+    "perplexity": "30.91693274222041057653646864",
+    "perplexity_tokens": 337
+  },
+  "planted_qualification": null,
+  "planted_perplexity_status": "not_measured",
+  "phases": {
+    "matched_reference_measured": false,
+    "no_op_measured": false,
+    "final_factual_measured": false,
+    "benign_relearning_measured": false
+  },
+  "restoration": {
+    "checkpoint_readbacks": {
+      "source": {
+        "files": 9,
+        "exact_expected_files": true,
+        "inventory_sha256": "90f1c3bfa64b0ad1c409104df1e326a07b3243f1a7efb44c625b9762165a1b29"
+      },
+      "scratch": {
+        "files": 9,
+        "exact_expected_files": true,
+        "inventory_sha256": "ae45bb1f39f16792c411aec22e13dd09db6cfc1d0337c29e0f45d50c33e6efc8"
+      }
+    },
+    "snapshot_journal_empty": true,
+    "snapshot_states": {
+      "restored": 1
+    },
+    "all_snapshots_restored": true
+  },
+  "host": {
+    "samples": 79,
+    "samples_with_violations": 5,
+    "violation_counts": {
+      "physical host paging out during sample interval": 5
+    },
+    "positive_paging_pages": 48837,
+    "negative_counter_deltas": 0,
+    "protected_identity_change_observed": false
+  },
+  "declared_bounds": {
+    "aggregate_bytes": 10737418240,
+    "model_cpu": "1.75",
+    "model_memory_bytes": 4294967296,
+    "model_swap_bytes": 0,
+    "new_records_bytes": 167772160,
+    "overall_runtime_cutoff": null,
+    "staged_shard_bytes": 988097824,
+    "supervisor_cpu": "0.25",
+    "supervisor_memory_bytes": 268435456
+  },
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "model_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+  "tokenizer": {
+    "revision": "7ae557604adf67be50417f59c2c2f167def9a775"
+  },
+  "code_revision": "8e1201dd37daccfa3fbf1193ec8c8e42679fb969",
+  "evidence": {
+    "independent_readback_sha256": "4c547a791dc1f61cecf9ad12f2fb4d7425ce6c35ac857034a24f1bbcf6c8fe2c",
+    "signed_report_sha256": "e1c94ef07bed31e2742a3a561a6d6a118fdc91a43642b6e9d0f0634bbfe01778",
+    "bundle_sha256": "cbbc70389cc39efb7823c4806e06cde573b8a577049eb8d5c260cb7ee9f979d7",
+    "signature_verified": true,
+    "signed_files": 45,
+    "code_files": 71
+  },
+  "limits": [
+    "Capability checks are conditioned on untouched-model competence; not unbiased general capability accuracy.",
+    "Missing measurements remain absent, not zero or success.",
+    "Signatures establish byte integrity and provenance, not scientific certification or knowledge absence.",
+    "Receiver checkpoint hashes and recorded runtime restoration are distinct from independent local tensor reconstruction.",
+    "Raw private evidence is not published here; public aggregates/digests alone do not enable complete independent reproduction.",
+    "Prior connected08 resource abort is separate evidence and is not reclassified by this result.",
+    "Five samples with paging-out guard violations were observed; none reached the sustained-abort threshold. Stable protected identities do not establish absence of interference."
+  ]
+}

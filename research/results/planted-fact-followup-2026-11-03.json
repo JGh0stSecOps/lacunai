@@ -1,0 +1,355 @@
+{
+  "schema_version": 1,
+  "experiment": "synthetic-planted-fact",
+  "date": "2026-11-03",
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "model_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+  "tokenizer": {
+    "model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "revision": "7ae557604adf67be50417f59c2c2f167def9a775"
+  },
+  "limits": [
+    "Developer-designed synthetic test, not an external benchmark.",
+    "Target recovery is lexical; failure to answer does not establish information absence.",
+    "Planting increased held-out perplexity despite unchanged retain accuracy.",
+    "No erasure efficacy or end-to-end restoration result was obtained.",
+    "Original checkpoints and backups are retained.",
+    "After code/specification freeze, aggregate readback exposed eight fixed perplexity texts to the root editor, but no target or retain prompt wording; no active contract changed. A reporting-only agent saw target and retain rows after execution and remained outside the editing role. Collateral texts were not blinded for this completed follow-up; this publicly available developer-designed smoke test is not a secret independent benchmark."
+  ],
+  "attempt": 2,
+  "status": "failed",
+  "verdict": "inconclusive",
+  "qualification": "failed_before_erasure",
+  "reason": "Planted target recovered on 4 of 8 withheld probes; required 8 of 8.",
+  "code_revision": "ef4b04d95af84f86fdf3b8bd12f889391428cbbf",
+  "training": {
+    "planting_steps": 512,
+    "retain_reference_steps": 512,
+    "development_recovered": 15,
+    "development_total": 16,
+    "method": "SGD",
+    "learning_rate": "0.05",
+    "layer": 23,
+    "tensor": "model.layers.23.mlp.up_proj.weight",
+    "selected_rows": 32
+  },
+  "runtime": {
+    "device": "cpu",
+    "dtype": "float32",
+    "max_model_bytes": 4294967296,
+    "max_new_tokens": 24,
+    "max_prompt_tokens": 256,
+    "max_seconds": null,
+    "seed": 42,
+    "torch_threads": 2
+  },
+  "resource_limits": {
+    "artifact_bytes": 10737418240,
+    "candidate_attempts": 3,
+    "deadline_epoch": null,
+    "seconds": null,
+    "container_memory_bytes": 4294967296,
+    "container_cpus": "1.75",
+    "supervisor_memory_bytes": 268435456,
+    "supervisor_cpus": "0.25",
+    "artifact_scope": "Shared factoid root including both attempts and transport artifacts"
+  },
+  "candidates": [],
+  "unexecuted": [
+    "no-op control",
+    "erasure candidates",
+    "post-erasure verification",
+    "benign relearning",
+    "persisted-checkpoint restore demonstration"
+  ],
+  "source_files_unchanged": true,
+  "elapsed_seconds_before_final_signing": 1734.196,
+  "artifact_bytes": 2033777346,
+  "results": {
+    "untouched": {
+      "checkpoint_fingerprint": "6dbb5b55e9f5ccc742e90425f88381f95e9930d0aa31bca8d85ae29aa329907f",
+      "scorer": "NFKC/casefold target recovery and whole-answer retain correctness v2",
+      "target": {
+        "ambiguous": 1,
+        "by_kind": {
+          "adversarial": {
+            "ambiguous": 1,
+            "correct": 0,
+            "missing": 0,
+            "not_recovered": 1,
+            "recovered": 0,
+            "recovery_rate": "0",
+            "total": 2
+          },
+          "direct": {
+            "ambiguous": 0,
+            "correct": 0,
+            "missing": 0,
+            "not_recovered": 2,
+            "recovered": 0,
+            "recovery_rate": "0",
+            "total": 2
+          },
+          "multi_hop": {
+            "ambiguous": 0,
+            "correct": 0,
+            "missing": 0,
+            "not_recovered": 2,
+            "recovered": 0,
+            "recovery_rate": "0",
+            "total": 2
+          },
+          "paraphrase": {
+            "ambiguous": 0,
+            "correct": 0,
+            "missing": 0,
+            "not_recovered": 2,
+            "recovered": 0,
+            "recovery_rate": "0",
+            "total": 2
+          }
+        },
+        "correct": 0,
+        "metric": "target_string_recovery",
+        "missing": 0,
+        "not_recovered": 7,
+        "recovered": 0,
+        "recovery_rate": "0",
+        "total": 8
+      },
+      "retain": {
+        "ambiguous": 0,
+        "by_kind": {
+          "retain": {
+            "ambiguous": 0,
+            "correct": 8,
+            "missing": 0,
+            "not_recovered": 0,
+            "recovered": 8,
+            "recovery_rate": "1",
+            "total": 8
+          }
+        },
+        "correct": 8,
+        "metric": "whole_answer_correctness",
+        "missing": 0,
+        "not_recovered": 0,
+        "recovered": 8,
+        "recovery_rate": "1",
+        "total": 8
+      },
+      "perplexity": {
+        "mean_nll": "4.589784831297202213114754098",
+        "method": "exp(sum(token NLL)/sum(valid tokens)); independent bounded texts",
+        "nll_sum": "559.953749418258670",
+        "perplexity": "98.47323952303847192884460415",
+        "tokens": 122
+      },
+      "perplexity_ratio_vs_untouched": "1"
+    },
+    "planted-baseline": {
+      "checkpoint_fingerprint": "b3281ad4e2a3d4aede3edcb5ce2a8a1bdded03ac02c5658e4f2c6d7faea1d2fb",
+      "scorer": "NFKC/casefold target recovery and whole-answer retain correctness v2",
+      "target": {
+        "ambiguous": 0,
+        "by_kind": {
+          "adversarial": {
+            "ambiguous": 0,
+            "correct": 1,
+            "missing": 0,
+            "not_recovered": 1,
+            "recovered": 1,
+            "recovery_rate": "0.5",
+            "total": 2
+          },
+          "direct": {
+            "ambiguous": 0,
+            "correct": 2,
+            "missing": 0,
+            "not_recovered": 0,
+            "recovered": 2,
+            "recovery_rate": "1",
+            "total": 2
+          },
+          "multi_hop": {
+            "ambiguous": 0,
+            "correct": 0,
+            "missing": 0,
+            "not_recovered": 2,
+            "recovered": 0,
+            "recovery_rate": "0",
+            "total": 2
+          },
+          "paraphrase": {
+            "ambiguous": 0,
+            "correct": 1,
+            "missing": 0,
+            "not_recovered": 1,
+            "recovered": 1,
+            "recovery_rate": "0.5",
+            "total": 2
+          }
+        },
+        "correct": 4,
+        "metric": "target_string_recovery",
+        "missing": 0,
+        "not_recovered": 4,
+        "recovered": 4,
+        "recovery_rate": "0.5",
+        "total": 8
+      },
+      "retain": {
+        "ambiguous": 0,
+        "by_kind": {
+          "retain": {
+            "ambiguous": 0,
+            "correct": 8,
+            "missing": 0,
+            "not_recovered": 0,
+            "recovered": 8,
+            "recovery_rate": "1",
+            "total": 8
+          }
+        },
+        "correct": 8,
+        "metric": "whole_answer_correctness",
+        "missing": 0,
+        "not_recovered": 0,
+        "recovered": 8,
+        "recovery_rate": "1",
+        "total": 8
+      },
+      "perplexity": {
+        "mean_nll": "5.43426022373262",
+        "method": "exp(sum(token NLL)/sum(valid tokens)); independent bounded texts",
+        "nll_sum": "662.97974729537964",
+        "perplexity": "229.1232855952705154967149056",
+        "tokens": 122
+      },
+      "perplexity_ratio_vs_untouched": "2.326756860087512332630654855"
+    },
+    "retain-only": {
+      "checkpoint_fingerprint": "f577dbafc8119433cfaff92dda388ab4f364064c0115a60bf8f5f39552462be8",
+      "scorer": "NFKC/casefold target recovery and whole-answer retain correctness v2",
+      "target": {
+        "ambiguous": 0,
+        "by_kind": {
+          "adversarial": {
+            "ambiguous": 0,
+            "correct": 0,
+            "missing": 0,
+            "not_recovered": 2,
+            "recovered": 0,
+            "recovery_rate": "0",
+            "total": 2
+          },
+          "direct": {
+            "ambiguous": 0,
+            "correct": 0,
+            "missing": 0,
+            "not_recovered": 2,
+            "recovered": 0,
+            "recovery_rate": "0",
+            "total": 2
+          },
+          "multi_hop": {
+            "ambiguous": 0,
+            "correct": 0,
+            "missing": 0,
+            "not_recovered": 2,
+            "recovered": 0,
+            "recovery_rate": "0",
+            "total": 2
+          },
+          "paraphrase": {
+            "ambiguous": 0,
+            "correct": 0,
+            "missing": 0,
+            "not_recovered": 2,
+            "recovered": 0,
+            "recovery_rate": "0",
+            "total": 2
+          }
+        },
+        "correct": 0,
+        "metric": "target_string_recovery",
+        "missing": 0,
+        "not_recovered": 8,
+        "recovered": 0,
+        "recovery_rate": "0",
+        "total": 8
+      },
+      "retain": {
+        "ambiguous": 0,
+        "by_kind": {
+          "retain": {
+            "ambiguous": 0,
+            "correct": 8,
+            "missing": 0,
+            "not_recovered": 0,
+            "recovered": 8,
+            "recovery_rate": "1",
+            "total": 8
+          }
+        },
+        "correct": 8,
+        "metric": "whole_answer_correctness",
+        "missing": 0,
+        "not_recovered": 0,
+        "recovered": 8,
+        "recovery_rate": "1",
+        "total": 8
+      },
+      "perplexity": {
+        "mean_nll": "4.575337052345275770491803279",
+        "method": "exp(sum(token NLL)/sum(valid tokens)); independent bounded texts",
+        "nll_sum": "558.191120386123644",
+        "perplexity": "97.06074817710164825366272303",
+        "tokens": 122
+      },
+      "perplexity_ratio_vs_untouched": "0.9856560893824726676827756682"
+    }
+  },
+  "integrity": {
+    "independent_readback_verified": true,
+    "files_verified": 60,
+    "algorithm": "Ed25519",
+    "public_key_sha256": "83fb8b4ca46213bc705f633330a2ba820c184727396facf3e92444bd854616ae",
+    "scientific_correctness_certified": false,
+    "public_verifiability_limit": "Full private evidence and signing key are not published here; digests alone do not reproduce signature verification.",
+    "report_sha256": "98aa90a3ccd5c622dfced5fe53df119ad05d84acfa51f833836778b68cff37b4"
+  },
+  "artifact_sha256": {
+    "summary.json": "196b7c1572928248182467932f901d5a711eba576821028459ea419b4ae44260",
+    "manifest.json": "872ead092fac2243e935b296f1995ebdb7001838a7dfadf6b65ab894065cfb79",
+    "untouched.json": "acfe595db937230bd3f7f9f6b729001a6a0a6b53624e715b76878941555c1b17",
+    "planted-baseline.json": "c0f15a3dded329f07f64943a4501f26e7d67132f8932b70e7a414d73cd74c084",
+    "retain-only.json": "70da568540be9eb9e52c89f2f0a96b4969670049b3a7bad3dbc0f257bc2b0a95",
+    "planting/development-512.json": "55a4f2832d0ccc1271e861507a2ce4360f49e2da6be6ef1ea62fe62ae9cc81ff",
+    "planting/result.json": "03eb8942f27a8be7ef1538ac99d6a1a2f1a24cbee9c5b6d1ffaf76dd7ca7a6e8",
+    "retain-reference/result.json": "a3d5c4753e054167f5cfab1695661833b51cef0b35192a05c3e969eda3f8b318"
+  },
+  "receipt_sha256": {
+    "pilot-02-independent-readback.json": "0bbef12a5c17df417ad8469a4899b27560768c4c8022a2fb1dd6d8a4fc9c29e6",
+    "pilot-02-collection-receipt.json": "b363979eec5d232e100e04ed157bbd3b5c194a74f34f2339a0a7960a365caf88",
+    "pilot-02-observed/terminal-source-verification.json": "d5efc29c344f57675574b902d45fa058bd00a6fa4a4e60e410041c0d0856f481"
+  },
+  "authorization": {
+    "followup_approved_before_execution": true,
+    "first_attempt_unchanged": true
+  },
+  "resource_observations": {
+    "guest_worker_identity_continuous": true,
+    "host_worker_identity_continuous": true,
+    "interference_absence_proven": false,
+    "maximum_io_psi": 12.32,
+    "maximum_memory_psi": 0.98,
+    "minimum_available_bytes": 13453209600,
+    "physical_paging_delta_pages": 36534,
+    "samples": 126,
+    "samples_with_violations": 3,
+    "swap_used_delta_bytes": 149946368,
+    "longest_consecutive_violation_samples": 2,
+    "measurement_limit": "Sampled host observations; worker identity continuity does not prove absence of performance interference."
+  }
+}

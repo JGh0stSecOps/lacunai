@@ -1,0 +1,390 @@
+{
+  "schema_version": 1,
+  "experiment": "planted-fact-eight-step-gradients",
+  "artifact_date": "2026-11-04",
+  "status": "complete",
+  "verdict": "failed",
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "model_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+  "code_revision": "19782d1ca97d7c86bcdaee434e471ba0c0402bdb",
+  "candidate_settings": {
+    "max_relative_change": 0.25,
+    "methods": [
+      "npo-kl",
+      "grad-diff-kl"
+    ],
+    "steps": 8,
+    "strength": 1.0
+  },
+  "runtime": {
+    "device": "cpu",
+    "dtype": "float32",
+    "max_model_bytes": 4294967296,
+    "max_new_tokens": 24,
+    "max_prompt_tokens": 256,
+    "max_seconds": null,
+    "seed": 42,
+    "torch_threads": 2
+  },
+  "baseline": {
+    "perplexity": {
+      "nll_sum": "605.25600481033326",
+      "tokens": 122,
+      "value": "142.7528471758874694472894703"
+    },
+    "retain": {
+      "ambiguous": 0,
+      "missing": 0,
+      "not_recovered": 0,
+      "rate": "1",
+      "recovered": 8,
+      "total": 8
+    },
+    "target": {
+      "ambiguous": 0,
+      "missing": 0,
+      "not_recovered": 0,
+      "rate": "1",
+      "recovered": 8,
+      "total": 8
+    }
+  },
+  "noop_generation_exact": true,
+  "candidates": [
+    {
+      "benign-relearning": {
+        "paired_retain_loss_count": 0,
+        "perplexity": {
+          "nll_sum": "583.62223172187804",
+          "tokens": 122,
+          "value": "119.5564667182244103239783569"
+        },
+        "perplexity_ratio_to_planted": "0.8375067053543070512217007539",
+        "reasons": [],
+        "recomputed_verdict": "passed_the_stated_experimental_contract",
+        "retain": {
+          "ambiguous": 0,
+          "missing": 0,
+          "not_recovered": 0,
+          "rate": "1",
+          "recovered": 8,
+          "total": 8
+        },
+        "target": {
+          "ambiguous": 0,
+          "missing": 0,
+          "not_recovered": 8,
+          "rate": "0",
+          "recovered": 0,
+          "total": 8
+        }
+      },
+      "benign_verdict": "passed_the_stated_experimental_contract",
+      "direct": {
+        "paired_retain_loss_count": 1,
+        "perplexity": {
+          "nll_sum": "580.36544251441955",
+          "tokens": 122,
+          "value": "116.4071303940261748132525739"
+        },
+        "perplexity_ratio_to_planted": "0.8154452446794253725374924200",
+        "reasons": [
+          "retain accuracy collateral threshold exceeded",
+          "paired retain loss threshold exceeded"
+        ],
+        "recomputed_verdict": "failed",
+        "retain": {
+          "ambiguous": 0,
+          "missing": 0,
+          "not_recovered": 1,
+          "rate": "0.875",
+          "recovered": 7,
+          "total": 8
+        },
+        "target": {
+          "ambiguous": 0,
+          "missing": 0,
+          "not_recovered": 8,
+          "rate": "0",
+          "recovered": 0,
+          "total": 8
+        }
+      },
+      "independent": {
+        "paired_retain_loss_count": 1,
+        "perplexity": {
+          "nll_sum": "580.36544251441955",
+          "tokens": 122,
+          "value": "116.4071303940261748132525739"
+        },
+        "perplexity_ratio_to_planted": "0.8154452446794253725374924200",
+        "reasons": [
+          "retain accuracy collateral threshold exceeded",
+          "paired retain loss threshold exceeded"
+        ],
+        "recomputed_verdict": "failed",
+        "retain": {
+          "ambiguous": 0,
+          "missing": 0,
+          "not_recovered": 1,
+          "rate": "0.875",
+          "recovered": 7,
+          "total": 8
+        },
+        "target": {
+          "ambiguous": 0,
+          "missing": 0,
+          "not_recovered": 8,
+          "rate": "0",
+          "recovered": 0,
+          "total": 8
+        }
+      },
+      "independent_verdict": "failed",
+      "method": "npo-kl",
+      "restoration_evidence": "signed runtime receipt; final scratch file readback separately reported",
+      "restored-evaluation": {
+        "paired_retain_loss_count": 0,
+        "perplexity": {
+          "nll_sum": "605.25600481033326",
+          "tokens": 122,
+          "value": "142.7528471758874694472894703"
+        },
+        "perplexity_ratio_to_planted": "1",
+        "reasons": [
+          "target remains recoverable through adversarial probes",
+          "target remains recoverable through direct probes",
+          "target remains recoverable through multi_hop probes",
+          "target remains recoverable through paraphrase probes"
+        ],
+        "recomputed_verdict": "failed",
+        "retain": {
+          "ambiguous": 0,
+          "missing": 0,
+          "not_recovered": 0,
+          "rate": "1",
+          "recovered": 8,
+          "total": 8
+        },
+        "target": {
+          "ambiguous": 0,
+          "missing": 0,
+          "not_recovered": 0,
+          "rate": "1",
+          "recovered": 8,
+          "total": 8
+        }
+      },
+      "restored_bit_exact": true,
+      "restored_generation_exact": true,
+      "restored_generation_recomputed_equal": true,
+      "status": "evaluated",
+      "verdict": "failed"
+    },
+    {
+      "benign-relearning": {
+        "paired_retain_loss_count": 1,
+        "perplexity": {
+          "nll_sum": "582.09695482254027",
+          "tokens": 122,
+          "value": "118.0710444541816965628928851"
+        },
+        "perplexity_ratio_to_planted": "0.8271011527266070415595556361",
+        "reasons": [
+          "ambiguous, truncated or missing observations",
+          "paired retain loss threshold exceeded"
+        ],
+        "recomputed_verdict": "failed",
+        "retain": {
+          "ambiguous": 1,
+          "missing": 0,
+          "not_recovered": 1,
+          "rate": "0.75",
+          "recovered": 6,
+          "total": 8
+        },
+        "target": {
+          "ambiguous": 8,
+          "missing": 0,
+          "not_recovered": 0,
+          "rate": "0",
+          "recovered": 0,
+          "total": 8
+        }
+      },
+      "benign_verdict": "failed",
+      "direct": {
+        "paired_retain_loss_count": 1,
+        "perplexity": {
+          "nll_sum": "599.56836128234864",
+          "tokens": 122,
+          "value": "136.2504538585068124332093742"
+        },
+        "perplexity_ratio_to_planted": "0.9544499920945956237895942626",
+        "reasons": [
+          "ambiguous, truncated or missing observations",
+          "paired retain loss threshold exceeded"
+        ],
+        "recomputed_verdict": "failed",
+        "retain": {
+          "ambiguous": 3,
+          "missing": 0,
+          "not_recovered": 1,
+          "rate": "0.5",
+          "recovered": 4,
+          "total": 8
+        },
+        "target": {
+          "ambiguous": 8,
+          "missing": 0,
+          "not_recovered": 0,
+          "rate": "0",
+          "recovered": 0,
+          "total": 8
+        }
+      },
+      "independent": {
+        "paired_retain_loss_count": 1,
+        "perplexity": {
+          "nll_sum": "599.56836128234864",
+          "tokens": 122,
+          "value": "136.2504538585068124332093742"
+        },
+        "perplexity_ratio_to_planted": "0.9544499920945956237895942626",
+        "reasons": [
+          "ambiguous, truncated or missing observations",
+          "paired retain loss threshold exceeded"
+        ],
+        "recomputed_verdict": "failed",
+        "retain": {
+          "ambiguous": 3,
+          "missing": 0,
+          "not_recovered": 1,
+          "rate": "0.5",
+          "recovered": 4,
+          "total": 8
+        },
+        "target": {
+          "ambiguous": 8,
+          "missing": 0,
+          "not_recovered": 0,
+          "rate": "0",
+          "recovered": 0,
+          "total": 8
+        }
+      },
+      "independent_verdict": "failed",
+      "method": "grad-diff-kl",
+      "restoration_evidence": "signed runtime receipt; final scratch file readback separately reported",
+      "restored-evaluation": {
+        "paired_retain_loss_count": 0,
+        "perplexity": {
+          "nll_sum": "605.25600481033326",
+          "tokens": 122,
+          "value": "142.7528471758874694472894703"
+        },
+        "perplexity_ratio_to_planted": "1",
+        "reasons": [
+          "target remains recoverable through adversarial probes",
+          "target remains recoverable through direct probes",
+          "target remains recoverable through multi_hop probes",
+          "target remains recoverable through paraphrase probes"
+        ],
+        "recomputed_verdict": "failed",
+        "retain": {
+          "ambiguous": 0,
+          "missing": 0,
+          "not_recovered": 0,
+          "rate": "1",
+          "recovered": 8,
+          "total": 8
+        },
+        "target": {
+          "ambiguous": 0,
+          "missing": 0,
+          "not_recovered": 0,
+          "rate": "1",
+          "recovered": 8,
+          "total": 8
+        }
+      },
+      "restored_bit_exact": true,
+      "restored_generation_exact": true,
+      "restored_generation_recomputed_equal": true,
+      "status": "evaluated",
+      "verdict": "failed"
+    }
+  ],
+  "afterimages": {
+    "grad-diff-kl": {
+      "bytes": 8716512,
+      "file_sha256": "ac0df7db02baa678e207a701d35d0bb32acb8f1b18027b997eedbc45668893cd",
+      "payload_rehashed_remotely": true,
+      "tensors": 1
+    },
+    "npo-kl": {
+      "bytes": 8716512,
+      "file_sha256": "efeaf5d34b3be0ec367df2d19cbf2d8612d171c492da97529f07bea0b912ec94",
+      "payload_rehashed_remotely": true,
+      "tensors": 1
+    }
+  },
+  "retain_reference": {
+    "matched_to": "original planting, not new unlearning updates",
+    "original_plant_steps": 192,
+    "reused": true
+  },
+  "integrity": {
+    "signature_verified": true,
+    "signed_files_verified": 102,
+    "code_files_verified": 53,
+    "run_id": "3e628ab036ec4b04b45f384e4a2ce793",
+    "public_key_sha256": "6bd2233b8c84a81e3f226c3b7a3c15ca408244e2371cded267b376c67eeb29b7",
+    "scientific_correctness_certified": false
+  },
+  "restoration": {
+    "collector_sha256": "c839146336b345901cde9d92e5182e523a03bc26d2b82af16f20478911d3c318",
+    "file_count": 9,
+    "limit": "Separate collected file-hash receipt; this local program does not reread remote tensor payloads.",
+    "planted_files_rehashed_equal": true,
+    "receipt_sha256": "16a3ab9bfe2742c9341847c411796bd8754fcede3cd800730b62257ecd442733",
+    "scratch_files_rehashed_equal": true,
+    "source_files_rehashed_equal": true
+  },
+  "host_observations": {
+    "availability": "collected_unsigned_host_samples",
+    "guest_worker_identity_continuous": true,
+    "host_worker_identity_continuous": true,
+    "interference_absence_proven": false,
+    "maximum_io_psi": 4.65,
+    "maximum_memory_psi": 0.05,
+    "minimum_available_bytes": 14183874560,
+    "physical_paging_delta_pages": 9406,
+    "samples": 63,
+    "samples_with_violations": 5,
+    "sha256": "5e59f99b6ae9c6937a966d0b035ee12ac8001dbb49a9bd5975d7f503d53e5ec4",
+    "swap_used_delta_bytes": 31920128
+  },
+  "independent_readback_sha256": "5d6fc6314ed87a4aa7ff60a85ad27b4684fdbc03f5c3e4cf59c07e0427c7124e",
+  "artifact_sha256": {
+    "manifest.json": "41eafba9275fc4542b366919b245d9d17147388f6f2d3a82467919dbfd254d78",
+    "summary.json": "87cc9d60c58610c5fd141617b7b00b70ff614b923422ae17806d3e2fc340e748",
+    "baseline.json": "da916dab621d3efe1e5ae5b07be383c848b1723562d2bd101970afbb6877c568",
+    "noop.json": "da916dab621d3efe1e5ae5b07be383c848b1723562d2bd101970afbb6877c568"
+  },
+  "limitations": [
+    "NPO reduced observed target recovery to zero but lost one retained answer; its full candidate contract failed.",
+    "NPO benign retain-only SGD passed its own arm in FP32 memory. That repaired state was not persisted or independently reloaded in this experiment.",
+    "All GradDiff target observations were ambiguous; zero confirmed recovery does not establish successful forgetting.",
+    "The repeated evaluation set guided subsequent method choice through aggregate feedback; it is no longer a fresh confirmation set for later candidates.",
+    "The separately frozen multilingual supplement remains unrun.",
+    "The retain-only reference matches original planting, not new unlearning updates.",
+    "Planting itself raised perplexity by a factor of 1.449661327964025065273278508; edit ratios use the planted baseline.",
+    "Private raw evidence remains preserved; published digests alone do not provide complete public reproducibility.",
+    "Original checkpoints and backups retain the information."
+  ],
+  "tokenizer": {
+    "model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "revision": "7ae557604adf67be50417f59c2c2f167def9a775"
+  }
+}

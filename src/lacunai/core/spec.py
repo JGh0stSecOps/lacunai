@@ -138,6 +138,10 @@ class TargetSpec:
 
     @classmethod
     def from_dict(cls, value: dict[str, Any]) -> TargetSpec:
+        if value.get("schema_version") == 2:
+            from .connected import ConnectedTargetSpec
+
+            return ConnectedTargetSpec.from_dict(value)
         value = dict(value)
         for name, klass in (("mapping", MappingProbe), ("probes", Probe), ("retain", Probe)):
             value[name] = [klass(**item) for item in value[name]]

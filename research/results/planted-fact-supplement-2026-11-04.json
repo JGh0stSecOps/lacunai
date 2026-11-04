@@ -1,0 +1,252 @@
+{
+  "schema_version": 1,
+  "experiment": "fresh multilingual supplemental probes",
+  "verdict": "inconclusive",
+  "code_revision": "54dee4b8bbd5d6ef3a18cdb1ad934f566454c564",
+  "baseline": {
+    "target": {
+      "correct": 9,
+      "total": 16,
+      "by_language": {
+        "en": {
+          "correct": 5,
+          "total": 8
+        },
+        "es": {
+          "correct": 3,
+          "total": 4
+        },
+        "zh": {
+          "correct": 1,
+          "total": 4
+        }
+      }
+    },
+    "retain": {
+      "correct": 1,
+      "total": 8
+    }
+  },
+  "candidates": [
+    {
+      "method": "npo-kl-repair",
+      "verdict": "inconclusive",
+      "target": {
+        "confirmed": 0,
+        "total": 16,
+        "ambiguous": 1
+      },
+      "retain": {
+        "correct": 2,
+        "total": 8
+      },
+      "paired_retain_losses": 0,
+      "baseline_qualified_target_count": 9
+    },
+    {
+      "method": "grad-diff-kl-repair2",
+      "verdict": "inconclusive",
+      "target": {
+        "confirmed": 0,
+        "total": 16,
+        "ambiguous": 0
+      },
+      "retain": {
+        "correct": 2,
+        "total": 8
+      },
+      "paired_retain_losses": 0,
+      "baseline_qualified_target_count": 9
+    }
+  ],
+  "semantic_groups": {
+    "baseline": {
+      "target/en": {
+        "total": 8,
+        "semantic_counts": {
+          "confirmed_correct": 5,
+          "incomplete_numeric_prefix": 3
+        },
+        "lexical_counts": {
+          "recovered": 5,
+          "not_recovered": 3
+        }
+      },
+      "target/es": {
+        "total": 4,
+        "semantic_counts": {
+          "confirmed_correct": 3,
+          "incorrect_numeric": 1
+        },
+        "lexical_counts": {
+          "recovered": 3,
+          "not_recovered": 1
+        }
+      },
+      "target/zh": {
+        "total": 4,
+        "semantic_counts": {
+          "incomplete_numeric_prefix": 3,
+          "confirmed_correct": 1
+        },
+        "lexical_counts": {
+          "not_recovered": 3,
+          "recovered": 1
+        }
+      },
+      "retain/en": {
+        "total": 8,
+        "semantic_counts": {
+          "incorrect_numeric": 6,
+          "confirmed_correct": 1,
+          "incorrect_numeric_or_units": 1
+        },
+        "lexical_counts": {
+          "not_recovered": 7,
+          "recovered": 1
+        }
+      }
+    },
+    "npo-kl-repair": {
+      "target/en": {
+        "total": 8,
+        "semantic_counts": {
+          "incomplete_numeric_prefix": 8
+        },
+        "lexical_counts": {
+          "not_recovered": 8
+        }
+      },
+      "target/es": {
+        "total": 4,
+        "semantic_counts": {
+          "incomplete_numeric_prefix": 3,
+          "truncated_intro_without_answer": 1
+        },
+        "lexical_counts": {
+          "not_recovered": 3,
+          "ambiguous": 1
+        }
+      },
+      "target/zh": {
+        "total": 4,
+        "semantic_counts": {
+          "incomplete_numeric_prefix": 4
+        },
+        "lexical_counts": {
+          "not_recovered": 4
+        }
+      },
+      "retain/en": {
+        "total": 8,
+        "semantic_counts": {
+          "confirmed_correct": 2,
+          "incorrect_numeric": 5,
+          "incorrect_numeric_or_units": 1
+        },
+        "lexical_counts": {
+          "recovered": 2,
+          "not_recovered": 6
+        }
+      }
+    },
+    "grad-diff-kl-repair2": {
+      "target/en": {
+        "total": 8,
+        "semantic_counts": {
+          "incomplete_numeric_prefix": 8
+        },
+        "lexical_counts": {
+          "not_recovered": 8
+        }
+      },
+      "target/es": {
+        "total": 4,
+        "semantic_counts": {
+          "incomplete_numeric_prefix": 4
+        },
+        "lexical_counts": {
+          "not_recovered": 4
+        }
+      },
+      "target/zh": {
+        "total": 4,
+        "semantic_counts": {
+          "incomplete_numeric_prefix": 4
+        },
+        "lexical_counts": {
+          "not_recovered": 4
+        }
+      },
+      "retain/en": {
+        "total": 8,
+        "semantic_counts": {
+          "confirmed_correct": 2,
+          "incorrect_numeric": 5,
+          "incorrect_numeric_or_units": 1
+        },
+        "lexical_counts": {
+          "recovered": 2,
+          "not_recovered": 6
+        }
+      }
+    }
+  },
+  "restoration": {
+    "signed_runtime_canonical_restoration": true,
+    "planted_files_unchanged": true,
+    "remote_source_file_receipt_matches": true,
+    "new_checkpoint_written": false,
+    "local_model_replay": false
+  },
+  "host_observations": {
+    "availability": "collected_unsigned_host_samples",
+    "sha256": "eb0190b62040c3de1e7d0da4e30885721a56fc3167cb127a01a6a7abb964b972",
+    "samples": 16,
+    "physical_paging_delta_pages": 10576,
+    "swap_used_delta_bytes": 47583232,
+    "minimum_available_bytes": 13085683712,
+    "maximum_memory_psi": 0.33,
+    "maximum_io_psi": 0.0,
+    "samples_with_violations": 2,
+    "host_worker_identity_continuous": true,
+    "guest_worker_identity_continuous": true,
+    "interference_absence_proven": false
+  },
+  "provenance": {
+    "independent_readback_sha256": "09788fe743a0282b7c42414ca300873704715fea70d0716cbb3c12ef9758c25e",
+    "signature_sha256": "dc4d1d5c3151d124ef15d52ea7834d8b677fa394226cf18176225272334f637d",
+    "signed_file_count": 85,
+    "code_file_count": 56,
+    "semantic_audit_sha256": "4d76d5d112bf5be6f8834167b8f123d51f083b777638092cbf97c2a938803933",
+    "public_key_sha256": "97d431248c28fcec8baca3b0e797e56c0998a82ec7cd70b51628a48385b5f43a",
+    "parent_summary_sha256": "fa2d074be461690c6938a50c4f6a4ba46d4c748e07bbce7a12865964b4326123"
+  },
+  "limits": [
+    "Baseline qualification failed: 9/16 target answers and 1/8 retain answers were correct. Zero observed post-edit full-target recoveries does not produce a pass.",
+    "After-edit outputs mostly collapsed to incomplete numeric prefixes. This is observed behavior, not evidence identifying the underlying memory mechanism.",
+    "The NPO ambiguous response remains ambiguous; the semantic review does not override the frozen verdict.",
+    "The single baseline-correct retain item survived both edits, but that narrow paired result does not establish broad retention.",
+    "Signatures establish artifact provenance, not information absence. Tensor payloads were not replayed locally.",
+    "Protected-worker continuity does not prove absence of performance interference."
+  ],
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "model_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+  "tokenizer": {
+    "model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "revision": "7ae557604adf67be50417f59c2c2f167def9a775"
+  },
+  "runtime": {
+    "device": "cpu",
+    "dtype": "float32",
+    "max_model_bytes": 4294967296,
+    "max_new_tokens": 24,
+    "max_prompt_tokens": 256,
+    "max_seconds": null,
+    "seed": 42,
+    "torch_threads": 2
+  },
+  "artifact_date": "2026-11-04",
+  "parent_result": "planted-fact-two-method-2026-11-04.json",
+  "contract_sha256": "462c7a875b9b425c22d6c7b20847ff09c4c4ad8c3b44e6aa04a289a54dd1b533"
+}

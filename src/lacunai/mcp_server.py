@@ -19,7 +19,7 @@ def invoke(workspace: Path, operation: str, **kwargs: Any) -> dict[str, Any]:
                 seed=kwargs.pop("seed", 42),
                 torch_threads=kwargs.pop("threads", 2),
             )
-        for name in ("model", "target", "output", "state_config"):
+        for name in ("model", "target", "output", "state_config", "gradient_data"):
             if kwargs.get(name) is not None:
                 kwargs[name] = Path(kwargs[name]).expanduser()
         return dict(getattr(Service(workspace), operation)(**kwargs))
@@ -64,6 +64,7 @@ def build_server(workspace: Path) -> Any:
         strength: float = 1.0,
         max_relative_change: float = 0.25,
         steps: int = 12,
+        gradient_data: str | None = None,
         max_seconds: int = 3600,
         seed: int = 42,
         threads: int = 2,
@@ -81,6 +82,7 @@ def build_server(workspace: Path) -> Any:
         strength: float = 1.0,
         max_relative_change: float = 0.25,
         steps: int = 12,
+        gradient_data: str | None = None,
         max_seconds: int = 3600,
         seed: int = 42,
         threads: int = 2,

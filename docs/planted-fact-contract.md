@@ -1,12 +1,8 @@
 # Frozen synthetic planted-fact contract
 
-Status: dataset and acceptance contract frozen; execution pending. This document does not authorize an installation, model run or resource extension. The execution batch must record its separately approved wall-time, memory, disk and host-pressure limits before starting.
+Status: the first execution completed with **failed planting qualification; scientific verdict inconclusive**. After 128 steps, development recovery was 10/16 and withheld recovery was 2/8, below the required 8/8. Retain accuracy was 8/8, but planting increased held-out perplexity from 98.4732 to 140.1753. No erasure candidates, no-op control, benign relearning or persisted-checkpoint restore demonstration ran. See the [measured results](results.md).
 
-This is the next research scope after pausing the broader Chinese-literacy
-experiment: one synthetic fact, with demonstrated baseline recall and matched
-controls. The narrower scope makes the claim testable; it does not guarantee that
-an edit will pass. Results will be added to the [public experiment log](results.md)
-with unsuccessful methods and missing robustness checks retained.
+The numerical procedure below records the first attempt. The separately approved 512-step follow-up has now completed: development recovery 15/16, withheld recovery 4/8 and retain accuracy 8/8; its qualification also failed, with scientific verdict inconclusive. Planted perplexity was 229.1233 against untouched 98.4732. No erasure or restoration arm executed. At first publication that follow-up was unapproved and unexecuted; this retrospective annotation does not alter the original 128-step procedure or measurements. This document does not authorize installations, runs or resource extensions. The approved first execution used explicit no-overall-deadline mode while retaining disk and external resource guards.
 
 ## Provenance and separation
 
@@ -15,6 +11,10 @@ The fact concerns a fictional station and an invented access code. All target/de
 `examples/planted-fact/plant-data.json` contains schema version 1, model revision `7ae557604adf67be50417f59c2c2f167def9a775`, 16 target-development prompts and 8 retain-development prompts. `target.json` contains 3 clean/corrupt mapping pairs drawn from target development, 8 held-out target probes (2 each: direct, paraphrase, multi-hop, adversarial), 8 disjoint retain paraphrases, 8 background texts, and 8 held-out perplexity texts. No held-out target prompt supplies its answer. All answer-bearing prompts request answer-only output. Generation remains bounded to 24 tokens.
 
 Training prompt strings are disjoint from held-out target prompts, held-out retain prompts and perplexity text after whitespace/case normalization. Mapping is intentionally a subset of training development. The multi-hop probes state their alias relation in the prompt; they test a simple stated relation plus recall, not arbitrary compositional reasoning. Background and perplexity texts are unrelated synthetic prose. This experiment makes no Chinese-language capability claim.
+
+## Evaluation exposure disclosure
+
+After the first run's code and edit specification were frozen, aggregate readback exposed the eight fixed perplexity texts to the root editor. It did not expose target or retain prompt wording to that editor, and no active contract changed. A reporting-only agent subsequently saw target and retain rows after execution and remained outside the editing role. The collateral texts are therefore not blinded for the proposed follow-up. This publicly available, developer-designed smoke test is not a secret independent benchmark.
 
 ## Frozen numerical procedure
 
@@ -46,4 +46,24 @@ The overall requested demonstration additionally requires at least two methods t
 | `plant-data.json` bytes | `f73afdfd9aa6ce5a4ab6a016d38fe8d653425cc1d49f36719d22c2edaf93e5ca` |
 | Parsed `TargetSpec` canonical digest | `2134a1572d6392b8bc59aa8cc1f8a59ff292d55ce94a098877cff8972b52b7b2` |
 
-Measured before execution: `TargetSpec.from_path` accepted the contract, expected dataset counts matched, and normalized training/evaluation prompt overlap was zero. Token alignment and baseline learnability remain unmeasured until the approved model execution.
+Measured before execution: `TargetSpec.from_path` accepted the contract, expected dataset counts matched, and normalized training/evaluation prompt overlap was zero. The first execution measured insufficient baseline learnability. In that first execution, causal mapping and edit qualification did not proceed. The later contextual pilot qualified and executed mapping and editing; its measured results are reported separately.
+
+
+## Contextual learning follow-up (implementation; not an efficacy result)
+
+The separately selected `contextual-kl` profile uses schema-version 2 development data in `examples/planted-fact/contextual-plant-data.json`: 64 prompts about the same synthetic fact and 32 unrelated retain-development examples. Its file SHA-256 is `c00a90449dc573758b27144da1cc3a237fdea693916ec35581c54afee4f6932d`. The original mapping examples remain within development, and normalized training/evaluation prompt overlap is checked before execution. Target, retain and perplexity evaluation data and acceptance thresholds above are unchanged.
+
+Three fixed planting profiles start independently from the untouched checkpoint: 128 rows at learning rate 0.002, 512 rows at 0.001, and 4,864 rows at 0.0003. Each permits up to 256 AdamW updates with no weight decay, target-answer NLL weight 1, retain KL weight 1, retain-answer NLL weight 0.25, gradient clipping at 1 and the existing 0.25 tensor-relative bound. Every 64 steps, development recall is measured after source-precision rounding. The selected plant must qualify on all development examples and the unchanged baseline contract, then reproduce its qualification generations after persistence and reload. The matched retain-only reference uses the selected profile, rows and actual completed steps.
+
+The batch retains distinct planted, matched-retain and byte-identical no-op checkpoints. Editing uses one newly created isolated scratch checkpoint with explicit in-place transactions; the original and prior-run checkpoints remain untouched. Each method retains its own before-images, after-images and reports. Scratch checkpoint hashes and restored generations must match the planted baseline before the next method starts. This changes storage use, not the evidence required for acceptance. Historical candidate states can be reconstructed from their preserved tensor images.
+
+This is a broader experimental training schedule, not a lower qualification threshold. The contextual profile was subsequently executed and independently read back; see the contextual results. This profile description preserves its frozen training and evaluation rules.
+
+
+### Projected contextual follow-up
+
+`--plant-profile contextual-kl-projected` is a separate, unexecuted follow-up profile. It starts from the untouched source, opens only the full 4,864-row final up-projection, and permits at most 512 AdamW updates at learning rate 0.0003. It reuses the same 64 development and 32 retain-development examples, objectives, source-precision checks and frozen evaluation contract. At each 64-step boundary, all development examples must recover before early stopping. The matched retain-only reference uses the identical rows, profile and actual completed update count. `--plant-max-steps` overrides are refused for this profile.
+
+After every optimizer update, the tensor delta is projected into a relative Frobenius-radius 0.24 ball around the untouched source. AdamW moments are not projected. The independent pre/post-storage validation bound remains 0.25; projection is not permission to relax it. Traces record projection scale, pre-projection distance, cumulative projection count and measured post-rounding distance. This constrains training rather than establishing learning or forgetting.
+
+Existing `legacy` and `contextual-kl` schedules remain unchanged. The follow-up uses a new workspace, does not resume failed attempts, and preserves previous results. Compact attempt evidence, qualification before full checkpoint persistence, reload parity, matched controls, serial scratch edits and exact restoration retain the existing requirements. No additional erase methods or acceptance thresholds are introduced.

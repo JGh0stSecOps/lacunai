@@ -26,4 +26,4 @@ excluded; retention that would prune older snapshots is refused.
 
 ## Evidence boundaries
 
-Run records identify source checkpoint hashes, frozen target contracts and runtime settings. Reports retain raw evaluation outputs and sign artifact integrity; they cannot prove permanent erasure. The new real planted-fact acceptance experiment remains pending. Local tests, historical CPU pilot evidence, repository creation and CI configuration are distinct from a completed new experiment or a green hosted CI run.
+Run records identify source checkpoint hashes, frozen target contracts and runtime settings. Reports retain raw evaluation outputs and sign artifact integrity; they cannot prove permanent erasure. Executed planted-fact outcomes and remaining acceptance requirements are recorded in the [measured results](results.md). Local tests, historical CPU pilot evidence, repository creation and CI configuration are distinct from a completed new experiment or a green hosted CI run.

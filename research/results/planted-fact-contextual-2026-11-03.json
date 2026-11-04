@@ -1,0 +1,580 @@
+{
+  "schema_version": 1,
+  "experiment": "synthetic-planted-fact-contextual",
+  "artifact_date": "2026-11-03",
+  "status": "complete",
+  "verdict": "failed",
+  "qualification": "passed before erasure",
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "model_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+  "code_revision": "faebf0f21a080fadfd5a6434b02d51ea2409c444",
+  "provenance": "Developer-designed synthetic fact and evaluation; not a pretrained-memory deletion benchmark.",
+  "planting": {
+    "attempted_widths": [
+      128,
+      512,
+      4864
+    ],
+    "selected_width": 4864,
+    "selected_steps": 192,
+    "development_recovered": 64,
+    "development_total": 64,
+    "withheld_recovered": 8,
+    "withheld_total": 8,
+    "retain_correct": 8,
+    "retain_total": 8,
+    "reload_generation_exact_receipt": true,
+    "perplexity_ratio_to_untouched": "1.449661327964025065273278508"
+  },
+  "controls": {
+    "measurements": {
+      "untouched": {
+        "target": {
+          "recovered": 0,
+          "not_recovered": 7,
+          "ambiguous": 1,
+          "missing": 0,
+          "total": 8,
+          "rate": "0"
+        },
+        "retain": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "1"
+        },
+        "perplexity": {
+          "nll_sum": "559.953749418258670",
+          "tokens": 122,
+          "value": "98.47323952303847192884460415"
+        }
+      },
+      "planted-baseline": {
+        "target": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "1"
+        },
+        "retain": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "1"
+        },
+        "perplexity": {
+          "nll_sum": "605.25600481033326",
+          "tokens": 122,
+          "value": "142.7528471758874694472894703"
+        }
+      },
+      "retain-only": {
+        "target": {
+          "recovered": 0,
+          "not_recovered": 8,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "0"
+        },
+        "retain": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "1"
+        },
+        "perplexity": {
+          "nll_sum": "547.49775552749632",
+          "tokens": 122,
+          "value": "88.91550357344541764634036328"
+        }
+      },
+      "noop": {
+        "target": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "1"
+        },
+        "retain": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "1"
+        },
+        "perplexity": {
+          "nll_sum": "605.25600481033326",
+          "tokens": 122,
+          "value": "142.7528471758874694472894703"
+        }
+      }
+    },
+    "retain_reference_actual_steps": 192,
+    "noop_generation_exact": true
+  },
+  "candidates": [
+    {
+      "method": "ablate-neurons",
+      "verdict": "failed",
+      "independent_verdict": "failed",
+      "benign_verdict": "failed",
+      "restored_bit_exact_receipt": true,
+      "restored_generation_exact_receipt": true,
+      "restoration_evidence": "Signed runtime hashes and generation receipts; this earlier intermediate checkpoint state was not independently rehashed.",
+      "direct": {
+        "target": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "1"
+        },
+        "retain": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "1"
+        },
+        "perplexity": {
+          "nll_sum": "618.28494215011597",
+          "tokens": 122,
+          "value": "158.8418990425325684111049570"
+        },
+        "perplexity_ratio_to_planted": "1.112705646051469559044245286"
+      },
+      "independent": {
+        "target": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "1"
+        },
+        "retain": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "1"
+        },
+        "perplexity": {
+          "nll_sum": "618.28494215011597",
+          "tokens": 122,
+          "value": "158.8418990425325684111049570"
+        },
+        "perplexity_ratio_to_planted": "1.112705646051469559044245286"
+      },
+      "benign-relearning": {
+        "target": {
+          "recovered": 7,
+          "not_recovered": 1,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "0.875"
+        },
+        "retain": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "1"
+        },
+        "perplexity": {
+          "nll_sum": "607.05312728881835",
+          "tokens": 122,
+          "value": "144.8712338764438041067413815"
+        },
+        "perplexity_ratio_to_planted": "1.014839540804018047917975194"
+      },
+      "restored-evaluation": {
+        "target": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "1"
+        },
+        "retain": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "1"
+        },
+        "perplexity": {
+          "nll_sum": "605.25600481033326",
+          "tokens": 122,
+          "value": "142.7528471758874694472894703"
+        },
+        "perplexity_ratio_to_planted": "1"
+      }
+    },
+    {
+      "method": "rank-one",
+      "verdict": "failed",
+      "independent_verdict": "failed",
+      "benign_verdict": "failed",
+      "restored_bit_exact_receipt": true,
+      "restored_generation_exact_receipt": true,
+      "restoration_evidence": "Signed runtime hashes and generation receipts; this earlier intermediate checkpoint state was not independently rehashed.",
+      "direct": {
+        "target": {
+          "recovered": 5,
+          "not_recovered": 3,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "0.625"
+        },
+        "retain": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "1"
+        },
+        "perplexity": {
+          "nll_sum": "596.53384304046631",
+          "tokens": 122,
+          "value": "132.9032824774214000693608547"
+        },
+        "perplexity_ratio_to_planted": "0.9310026742490795692994555875"
+      },
+      "independent": {
+        "target": {
+          "recovered": 5,
+          "not_recovered": 3,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "0.625"
+        },
+        "retain": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "1"
+        },
+        "perplexity": {
+          "nll_sum": "596.53384304046631",
+          "tokens": 122,
+          "value": "132.9032824774214000693608547"
+        },
+        "perplexity_ratio_to_planted": "0.9310026742490795692994555875"
+      },
+      "benign-relearning": {
+        "target": {
+          "recovered": 7,
+          "not_recovered": 1,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "0.875"
+        },
+        "retain": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "1"
+        },
+        "perplexity": {
+          "nll_sum": "615.78213024139405",
+          "tokens": 122,
+          "value": "155.6164786683916312039254787"
+        },
+        "perplexity_ratio_to_planted": "1.090111207916257736193568712"
+      },
+      "restored-evaluation": {
+        "target": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "1"
+        },
+        "retain": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "1"
+        },
+        "perplexity": {
+          "nll_sum": "605.25600481033326",
+          "tokens": 122,
+          "value": "142.7528471758874694472894703"
+        },
+        "perplexity_ratio_to_planted": "1"
+      }
+    },
+    {
+      "method": "ablate-direction",
+      "verdict": "failed",
+      "independent_verdict": "failed",
+      "benign_verdict": "failed",
+      "restored_bit_exact_receipt": true,
+      "restored_generation_exact_receipt": true,
+      "restoration_evidence": "Signed runtime hashes and generation receipts; independent final scratch file rehash additionally verifies restoration after direction ablation.",
+      "direct": {
+        "target": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "1"
+        },
+        "retain": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "1"
+        },
+        "perplexity": {
+          "nll_sum": "627.19936943054199",
+          "tokens": 122,
+          "value": "170.8828848518561240580845036"
+        },
+        "perplexity_ratio_to_planted": "1.197054126992712816928281356"
+      },
+      "independent": {
+        "target": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "1"
+        },
+        "retain": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "1"
+        },
+        "perplexity": {
+          "nll_sum": "627.19936943054199",
+          "tokens": 122,
+          "value": "170.8828848518561240580845036"
+        },
+        "perplexity_ratio_to_planted": "1.197054126992712816928281356"
+      },
+      "benign-relearning": {
+        "target": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "1"
+        },
+        "retain": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "1"
+        },
+        "perplexity": {
+          "nll_sum": "650.37045955657961",
+          "tokens": 122,
+          "value": "206.6249690187084964722746988"
+        },
+        "perplexity_ratio_to_planted": "1.447431509118157420252435983"
+      },
+      "restored-evaluation": {
+        "target": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "1"
+        },
+        "retain": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "1"
+        },
+        "perplexity": {
+          "nll_sum": "605.25600481033326",
+          "tokens": 122,
+          "value": "142.7528471758874694472894703"
+        },
+        "perplexity_ratio_to_planted": "1"
+      }
+    }
+  ],
+  "passed_methods": [],
+  "runtime": {
+    "device": "cpu",
+    "dtype": "float32",
+    "max_model_bytes": 4294967296,
+    "max_new_tokens": 24,
+    "max_prompt_tokens": 256,
+    "max_seconds": null,
+    "seed": 42,
+    "torch_threads": 2
+  },
+  "limits": {
+    "artifact_bytes": 10737418240,
+    "candidate_attempts": 3,
+    "deadline_epoch": null,
+    "seconds": null,
+    "container_cpu_quota": 1.75,
+    "container_memory_bytes": 4294967296
+  },
+  "artifact_bytes": 4177263700,
+  "elapsed_seconds_before_final_signing": 2471.951,
+  "integrity": {
+    "independent_report_readback_verified": true,
+    "signed_files_verified": 175,
+    "code_files_verified": 49,
+    "run_id": "50fde6078f1c41d9b804291dfdbd273c",
+    "public_key_sha256": "998245b627bad17f14bea69a86519db693c8d2d93da1aa926209cae4b51e2eb9",
+    "report_sha256": "e518e8ae9376f6900465001d361febfb5d1f4ba658dc347d9b8bc97f0bfc6225",
+    "scientific_correctness_certified": false,
+    "original_source_files_rehashed_unchanged": true,
+    "original_source_file_count": 9,
+    "restoration_verification_state": "Final scratch after direction ablation independently rehashed equal to planted; earlier intermediate restores supported by signed runtime receipts.",
+    "independent_final_scratch_restoration_verified": true,
+    "checkpoint_readback": {
+      "phase": "complete",
+      "planted_inventory": [
+        {
+          "path": "LICENSE",
+          "sha256": "832dd9e00a68dd83b3c3fb9f5588dad7dcf337a0db50f7d9483f310cd292e92e"
+        },
+        {
+          "path": "README.md",
+          "sha256": "b19c806a904db6dc878a0462e70b551f6b7ac78dfbb88c2eb966ca2b9109ae15"
+        },
+        {
+          "path": "config.json",
+          "sha256": "18e18afcaccafade98daf13a54092927904649e1dd4eba8299ab717d5d94ff45"
+        },
+        {
+          "path": "generation_config.json",
+          "sha256": "e558847a8b4402616f1273797b015104dc266fe4b520056fca88823ba8f8ebe6"
+        },
+        {
+          "path": "merges.txt",
+          "sha256": "599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3"
+        },
+        {
+          "path": "model.safetensors",
+          "sha256": "e3c5f5a624a1466ed6c2fd0baf0556da2eb586ae15132e00099ec046193cea27"
+        },
+        {
+          "path": "tokenizer.json",
+          "sha256": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539"
+        },
+        {
+          "path": "tokenizer_config.json",
+          "sha256": "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583"
+        },
+        {
+          "path": "vocab.json",
+          "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+        }
+      ],
+      "planted_fingerprint": "bb85c92cb6827402faaf7f12f5dae69318b8d5245b8a61a5b2da0d6c1d10a9bd",
+      "scratch_full_files_equal": true,
+      "checkpoint_files": 9,
+      "checkpoint_bytes": 999602607,
+      "afterimage_file_hashes": {
+        "ablate-neurons": "03ae03d51323950db7d3324f0558b7fa66f727387bc36b4779351153feab9384",
+        "rank-one": "ff7ab2e896ba57836397fcb50327237f7a22656d01c35a7dbb87e9627e32e2bb",
+        "ablate-direction": "49a8fdd0c3bf9ac518d8cba6f889075dac50d37f3d35742441632d2b0a1c8407"
+      },
+      "receipt_sha256": "430c166c79b2e6d96c36479c96d5aa99a0d6079f67abc0ec35850eb9756809d2"
+    }
+  },
+  "host_observations": {
+    "samples": 180,
+    "samples_with_violations": 8,
+    "physical_paging_delta_pages": 53355,
+    "swap_used_delta_bytes": 218628096,
+    "host_worker_identity_continuous": true,
+    "guest_worker_identity_continuous": true,
+    "interference_absence_proven": false
+  },
+  "artifact_sha256": {
+    "summary.json": "57d311e659fe32144a35adc4ddf8be42254887c0367c1f3b6c3a368ab35e0d43",
+    "manifest.json": "b6469ca86c0a76779b38d3a9509d70f3b4611bf89b8b57211567c44c629601c1",
+    "untouched.json": "5268aa53b1cef5749eccb49163ababa9b4063bfff4b193127ccb1d534cfba763",
+    "planted-baseline.json": "da916dab621d3efe1e5ae5b07be383c848b1723562d2bd101970afbb6877c568",
+    "retain-only.json": "55be04a804874a0a0da7dde7ba8ac77841a4438bfbdf05024d98dcb1c5b5bc8f",
+    "noop.json": "da916dab621d3efe1e5ae5b07be383c848b1723562d2bd101970afbb6877c568",
+    "planting/attempts.json": "9dabd350e8f2b48941ec3b5c3b39ef6a68e8b14e00b5dc744d76c4238a5e0854",
+    "planting/width-4864/development-final.json": "bf5b3230c3fa497a025d10161761a981f79d0ce37ddd7e569cfd5d572b1a43c3",
+    "retain-reference/attempt.json": "61064d3c0c665341afdabe9d017d41b2dc799ab1c690143619098659a539d775",
+    "service/runs/0cd98aceb5434afb8525f39a6e89f80c/after.json": "74d6308ab7790ff33ceaea416f381a9c81a798c1c6d02226f47fa8b2b70bc9be",
+    "service/runs/4ffbf57debee4ad18c462e3e725b01a9/after.json": "74d6308ab7790ff33ceaea416f381a9c81a798c1c6d02226f47fa8b2b70bc9be",
+    "ablate-neurons/benign-relearning.json": "8d0b23fd88d057165c941192c938ce26a68bf4563bdb368d5b2c5429e681d72a",
+    "ablate-neurons/restored-evaluation.json": "da916dab621d3efe1e5ae5b07be383c848b1723562d2bd101970afbb6877c568",
+    "service/runs/5c5a3d3856ab4b0a9422e699d2f3aa9e/after.json": "4a7fd359bb712dee71f370bd93ac08a91eb601d862b22a0b617e15a972b0961d",
+    "service/runs/94efe1d70019419dba70fb9c12e53f50/after.json": "4a7fd359bb712dee71f370bd93ac08a91eb601d862b22a0b617e15a972b0961d",
+    "rank-one/benign-relearning.json": "8c8cc404a24d428a48bf59a708585da0ac85c473eb6ab805f591678e1dbdb600",
+    "rank-one/restored-evaluation.json": "da916dab621d3efe1e5ae5b07be383c848b1723562d2bd101970afbb6877c568",
+    "service/runs/e08e378424444f7ba02438f9a7e69a3b/after.json": "faaaaa7778322a41f1bf9cc6df7a2f12206bf18a228a1f13eb2c3cbacf1839af",
+    "service/runs/515950694cf74e3da25b008f8a2029dd/after.json": "faaaaa7778322a41f1bf9cc6df7a2f12206bf18a228a1f13eb2c3cbacf1839af",
+    "ablate-direction/benign-relearning.json": "c30f5cf75ef2c8813a5734ca132731cba2a05c589272f6433f5095a2834ad53f",
+    "ablate-direction/restored-evaluation.json": "da916dab621d3efe1e5ae5b07be383c848b1723562d2bd101970afbb6877c568"
+  },
+  "readback_sha256": "4aeb5d111609fb020f3d08ca29006aca8053ab5f24ba61c0a0c4c73dd22d34bf",
+  "unexecuted": [
+    "supplementary multilingual recovery contract",
+    "npo-kl factoid follow-up",
+    "grad-diff-kl factoid follow-up"
+  ],
+  "evidence_limits": [
+    "Published aggregates and private artifact digests do not provide full public reproduction or independent signature replay.",
+    "Direct and independent evaluations use the same frozen lexical scorer; independent rerun is not an independent semantic judge.",
+    "Retain probes test unrelated elementary abilities, not learned neighboring station memories.",
+    "Benign relearning is only eight retain-only SGD updates on touched tensors; broader recovery resistance is not established.",
+    "Original checkpoints and backups retain the planted information.",
+    "Observed resource-pressure/paging events prevent a no-interference claim.",
+    "Previously disclosed evaluation exposure remains; no secret independently blinded benchmark claim."
+  ],
+  "tokenizer": {
+    "model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "revision": "7ae557604adf67be50417f59c2c2f167def9a775"
+  }
+}

@@ -17,11 +17,33 @@ Both interfaces expose the same mapping, editing, verification and restoration s
 
 An editing model interprets the target and diagnostic evidence, then proposes a constrained JSON specification. Numerical code applies the edit. Independent evaluation measures recoverability and collateral damage. Weight-space programming is a research hypothesis; an incorrect answer or refusal does not demonstrate information deletion.
 
-## Current experiment: one fact
+## Current experiment: connected facts
 
-The first focused demonstration targets **one planted synthetic fact** in
-Qwen2.5-0.5B-Instruct: a fictional station and its invented access code. It is
-planned; successful removal has not been demonstrated.
+The latest five-fact pilot **failed planting qualification after 512 updates; erasure efficacy remains inconclusive**. It exercised utility KL plus `0.25 × mean utility-answer NLL`, but recovered only 12/16 target answers and 5/8 retained-fact answers, while capability correctness fell from 8/8 untouched to 4/8. Direct and inverse target recall reached 4/4 each; paraphrased recall was 3/4 and multi-hop recall 1/4. Neither unlearning method ran. Original checkpoint files remained unchanged; the working checkpoint was restored exactly.
+
+The [connected contract](docs/connected-fact-contract.md) tests neighboring and unrelated facts, inverse and multi-hop recovery, capabilities, and full-answer likelihood against a matched retain-only reference. Capability probes were selected for untouched-model competence; this is preservation testing, not unbiased broad capability accuracy.
+
+The [experiment log](docs/results.md) preserves the earlier twelve-fact and five-fact failures alongside the [utility-preservation result](research/results/connected-five-fact-utility-2026-11-04.json). The latest objective was exercised under unchanged acceptance thresholds. Comparing these individual runs does not establish improvement; software tests and artifact signatures are not efficacy evidence.
+
+## Earlier experiment: one fact
+
+**Two methods passed the stated experimental contract on one planted fact.**
+Qwen2.5-0.5B-Instruct first learned the fact with 64/64 development and 8/8
+evaluation recall. NPO with retain-only repair and GradDiff with two repair rounds
+each reduced measured full-fact recovery to 0/8 while retaining 8/8 unrelated
+answers. Both passed independent checkpoint reload, bounded benign relearning,
+and bit-exact weight restoration with matching restored generations.
+
+These are adaptively selected results on a reused small evaluation set. A fresh
+multilingual supplement found no confirmed full-fact recovery, but was
+**inconclusive**: the baseline recovered only 9/16 target answers and answered
+1/8 retain probes correctly, failing qualification; one NPO response was ambiguous. See all outcomes in the [measured results](docs/results.md).
+
+**Partial numeric prefixes survived; some target answers became malformed.**
+The measured activations changed but remained active. Planting itself raised
+held-out perplexity from 98.47 to 142.75; edit collateral compares against that
+planted baseline. This is **reduced recoverability under these tests**, not
+proof of information deletion or general quality preservation.
 
 1. Plant the fact and verify that the model can recall it before editing.
 2. Map the relevant activations and apply bounded edits to isolated checkpoints.
@@ -46,7 +68,7 @@ are not replaced with later successes.
 The shared service supports local Hugging Face safetensors checkpoints with Qwen2/Llama gated MLPs. The built-in runtime is currently **CPU float32**. No hosted inference or automatic model download is used. CLI and MCP share the same execution and snapshot code.
 
 - **Map / locate:** sparse activation fingerprints with background IDF weighting, then activation patching to rank causal effects. The persistent index exports JSON and per-layer heatmaps. These are localization measurements, not a unique physical address for a fact.
-- **Erase:** neuron ablation, direction projection, a bounded rank-one rewrite, and the retained historical column operator. `rank-one` is a ROME-inspired diagonal approximation, not a full ROME/MEMIT implementation.
+- **Erase:** neuron ablation, direction projection, a bounded rank-one rewrite, the retained historical column operator, and experimental `npo-kl` / `grad-diff-kl` proposals. `rank-one` is a ROME-inspired diagonal approximation, not a full ROME/MEMIT implementation. The gradient methods require separate development data and are restricted to the final Qwen up-projection matrix.
 - **Verify:** frozen direct/paraphrased and optional multi-hop/adversarial probes, paired retain checks, held-out perplexity, and before/after fingerprints. Raw evidence is retained.
 - **Restore:** snapshots preserve the original bytes of touched tensors and checkpoint metadata; restoration validates checkpoint hashes. No subtraction of rounded floating-point deltas is used to reconstruct originals.
 
@@ -89,6 +111,8 @@ lacunai --workspace /data/lacunai runs
 ```
 
 Commands emit JSON results to stdout and progress to stderr. Applied edits and verification return nonzero for failed or inconclusive scientific contracts. Signed JSON/Markdown reports attest artifact integrity against a separately trusted public key; signatures do not prove information absence or scientific correctness. Retained originals and backups still contain original information.
+
+The experimental gradient methods require `--gradient-data /data/development.json` on both `erase` and `forget`, including dry-runs. This file contains `schema_version: 1`, the exact checkpoint `source_fingerprint`, `forget` and `retain_development` arrays of `{prompt, answer}` objects, and a provenance string. Evaluation probes and held-out perplexity texts cannot be used as training examples. Applied runs freeze this data, verify its checkpoint binding and use the existing snapshot, independent verification and restoration flow. These bounded OpenUnlearning-inspired adaptations are not evidence of successful unlearning; consult the recorded experiment results.
 
 ### MCP and serving
 
