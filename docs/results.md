@@ -1,5 +1,29 @@
 # Experimental results
 
+## Contextual planted-fact pilot — failed
+
+Planting qualified in this attempt: the selected 4,864-row profile reached 64/64 development recovery, 8/8 withheld recovery and 8/8 retain accuracy after 192 updates. Saved-checkpoint reload matched the qualification generations. The matched retain-only reference also ran 192 updates and recovered 0/8 target probes with 8/8 retain accuracy; the no-op control matched planted-baseline generations.
+
+**All three erasure methods failed.** Recovery persisted in both direct evaluation and independent reruns:
+
+| Method | Direct recovery | Independent recovery | After benign relearning | Direct PPL / planted | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| ablate-neurons | 8/8 | 8/8 | 7/8 | 1.1127 | failed |
+| rank-one | 5/8 | 5/8 | 7/8 | 0.9310 | failed |
+| ablate-direction | 8/8 | 8/8 | 8/8 | 1.1971 | failed |
+
+All direct, independent and benign-relearning retain scores were 8/8. Direction ablation also exceeded the frozen 1.15 perplexity-ratio threshold. Rank-one reduced measured recall to 5/8, but recovery increased to 7/8 after eight bounded retain-only SGD updates. This does not satisfy zero recovery or demonstrate reliable deletion.
+
+Planting itself increased held-out perplexity from 98.4732 to 142.7528, a factor of **1.449661327964025065273278508**. These values and candidate ratios were recomputed with `decimal.Decimal` from token-loss aggregates over the same 122 tokens. Preserving eight simple retain answers does not establish general quality preservation.
+
+Every method has signed receipts recording bit-exact checkpoint restoration and matching restored generations. Independent file rehashing confirmed all nine files of the final restored scratch checkpoint equal the planted checkpoint after direction ablation. Earlier intermediate restores remain supported by signed runtime hash and generation receipts, not independent historical payload replays. All three preserved afterimage files also matched their receipt hashes. The original nine checkpoint files were rehashed unchanged. Independent local readback verified 175 signed evidence files and 49 code files for executed revision `faebf0f21a080fadfd5a6434b02d51ea2409c444`; signature integrity does not certify scientific correctness.
+
+The CPU float32 run used seed 42, two Torch threads, 256 input tokens and at most 24 generated tokens, with a 1.75-CPU / 4-GiB container cap, shared 10-GiB artifact budget and no overall deadline.
+
+Resource monitoring recorded pressure or paging violations in 8 of 180 samples. Protected-worker identities remained continuous in those observations, but absence of interference is not proven. Original checkpoints and backups retain the information.
+
+See the [contextual result JSON](../research/results/planted-fact-contextual-2026-11-03.json) for exact aggregates, identities and evidence digests. The separate multilingual supplementary contract is frozen but **unrun**. The `npo-kl` and `grad-diff-kl` methods are available through the shared CLI/MCP service, but their factoid follow-up has **not executed**. No method passed; the requested two-method demonstration remains incomplete. Prior attempts below remain unchanged.
+
 ## Approved 512-step follow-up — inconclusive
 
 The approved follow-up completed 512 planting steps and 512 matched retain-only steps. Development recovery reached 15/16, but withheld recovery was only 4/8: direct 2/2, paraphrase 1/2, multi-hop 0/2 and adversarial 1/2. It again failed the required 8/8 qualification, so no erasure candidate ran.

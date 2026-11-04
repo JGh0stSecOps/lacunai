@@ -19,13 +19,22 @@ An editing model interprets the target and diagnostic evidence, then proposes a 
 
 ## Current experiment: one fact
 
-The first focused demonstration targets **one planted synthetic fact** in
-Qwen2.5-0.5B-Instruct: a fictional station and its invented access code. The first
-real run and the approved 512-step follow-up were **inconclusive**: withheld
-recall reached only 2/8 and 4/8 respectively, below the required 8/8 before editing.
-The follow-up reached 15/16 development recall and 8/8 retain accuracy, but planting
-increased held-out perplexity from 98.47 to 229.12. No erasure candidate ran in
-either attempt; successful removal and the two-method demonstration remain unproven.
+The latest real pilot learned **one planted synthetic fact** in Qwen2.5-0.5B-Instruct:
+64/64 development and 8/8 withheld recall, with 8/8 retain accuracy. All three
+erasure methods then **failed**: neuron ablation retained 8/8 target answers,
+rank-one retained 5/8, and direction ablation retained 8/8. After bounded benign
+relearning, recovery was 7/8, 7/8 and 8/8 respectively.
+
+Planting also raised held-out perplexity from 98.47 to 142.75. Signed restoration
+receipts report exact weights and matching generations. Independent file rehashing
+confirmed the final restored checkpoint; earlier intermediate restores have signed
+runtime receipts. The earlier 128-step and 512-step attempts remain
+recorded as inconclusive qualification failures. Reliable removal and the
+requested two-method demonstration remain unproven.
+
+The separate multilingual supplement has not run. `npo-kl` and `grad-diff-kl`
+are exposed through the shared CLI/MCP service; their factoid follow-up is not yet
+executed. See the [measured results](docs/results.md) for controls and limitations.
 
 1. Plant the fact and verify that the model can recall it before editing.
 2. Map the relevant activations and apply bounded edits to isolated checkpoints.
