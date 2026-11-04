@@ -1,0 +1,251 @@
+{
+  "publication_state": "public_aggregate",
+  "experiment": "pretrained-02",
+  "independent_readback_sha256": "884968b2ee1bfc20c72487131b8977c38d386bd187dcb7b0be99c51e4fcb1631",
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "model_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+  "scientific_verdict": "inconclusive",
+  "runner_status": "failed",
+  "code_revision": "4a581eab5094044ea149a3ef33b0739c7a9dd11a",
+  "bundle_sha256": "9ee787e62aeb3b902a68be6c02af83d426b79a40107841ae03b9f7f78d9eb451",
+  "code_files": 73,
+  "declared_bounds": {
+    "aggregate_bytes": 10737418240,
+    "model_cpu": "1.75",
+    "model_memory_bytes": 4294967296,
+    "model_swap_bytes": 0,
+    "new_records_bytes": 167772160,
+    "overall_runtime_cutoff": null,
+    "staged_shard_bytes": 988097824,
+    "supervisor_cpu": "0.25",
+    "supervisor_memory_bytes": 268435456
+  },
+  "checkpoint_readbacks": {
+    "source": {
+      "files": 9,
+      "exact_expected_files": true,
+      "inventory_sha256": "90f1c3bfa64b0ad1c409104df1e326a07b3243f1a7efb44c625b9762165a1b29"
+    },
+    "scratch": {
+      "files": 9,
+      "exact_expected_files": true,
+      "inventory_sha256": "ae45bb1f39f16792c411aec22e13dd09db6cfc1d0337c29e0f45d50c33e6efc8"
+    }
+  },
+  "host": {
+    "samples": 16,
+    "samples_with_violations": 1,
+    "violation_counts": {
+      "io_psi exceeds ceiling": 1,
+      "physical host paging out during sample interval": 1
+    },
+    "positive_paging_pages": 12603,
+    "negative_counter_deltas": 0,
+    "protected_identity_change_observed": false,
+    "limit": "Stable protected identities do not establish absence of interference."
+  },
+  "evaluations": {
+    "noop-qualification.json": {
+      "target": {
+        "total": 8,
+        "counts": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0
+        },
+        "by_kind": {
+          "direct": {
+            "recovered": 4,
+            "not_recovered": 0,
+            "ambiguous": 0,
+            "missing": 0,
+            "correct": 4,
+            "total": 4,
+            "recovery_rate": "1"
+          },
+          "paraphrase": {
+            "recovered": 4,
+            "not_recovered": 0,
+            "ambiguous": 0,
+            "missing": 0,
+            "correct": 4,
+            "total": 4,
+            "recovery_rate": "1"
+          }
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0
+        },
+        "by_kind": {
+          "retain": {
+            "recovered": 8,
+            "not_recovered": 0,
+            "ambiguous": 0,
+            "missing": 0,
+            "correct": 8,
+            "total": 8,
+            "recovery_rate": "1"
+          }
+        }
+      },
+      "perplexity": "64.00652063548204055896541934",
+      "perplexity_tokens": 60
+    },
+    "source-qualification.json": {
+      "target": {
+        "total": 8,
+        "counts": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0
+        },
+        "by_kind": {
+          "direct": {
+            "recovered": 4,
+            "not_recovered": 0,
+            "ambiguous": 0,
+            "missing": 0,
+            "correct": 4,
+            "total": 4,
+            "recovery_rate": "1"
+          },
+          "paraphrase": {
+            "recovered": 4,
+            "not_recovered": 0,
+            "ambiguous": 0,
+            "missing": 0,
+            "correct": 4,
+            "total": 4,
+            "recovery_rate": "1"
+          }
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0
+        },
+        "by_kind": {
+          "retain": {
+            "recovered": 8,
+            "not_recovered": 0,
+            "ambiguous": 0,
+            "missing": 0,
+            "correct": 8,
+            "total": 8,
+            "recovery_rate": "1"
+          }
+        }
+      },
+      "perplexity": "64.00652063548204055896541934",
+      "perplexity_tokens": 60
+    },
+    "untouched-qualification.json": {
+      "target": {
+        "total": 8,
+        "counts": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0
+        },
+        "by_kind": {
+          "direct": {
+            "recovered": 4,
+            "not_recovered": 0,
+            "ambiguous": 0,
+            "missing": 0,
+            "correct": 4,
+            "total": 4,
+            "recovery_rate": "1"
+          },
+          "paraphrase": {
+            "recovered": 4,
+            "not_recovered": 0,
+            "ambiguous": 0,
+            "missing": 0,
+            "correct": 4,
+            "total": 4,
+            "recovery_rate": "1"
+          }
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0
+        },
+        "by_kind": {
+          "retain": {
+            "recovered": 8,
+            "not_recovered": 0,
+            "ambiguous": 0,
+            "missing": 0,
+            "correct": 8,
+            "total": 8,
+            "recovery_rate": "1"
+          }
+        }
+      },
+      "perplexity": "64.00652063548204055896541934",
+      "perplexity_tokens": 60
+    }
+  },
+  "candidates": [],
+  "source_kind": "pretrained",
+  "planting_performed": false,
+  "retain_only_pretraining_reference": "absent",
+  "limits": [
+    "Finite lexical tests do not prove knowledge absence.",
+    "Signed evidence proves integrity, not scientific truth.",
+    "Receiver payload hashes are not independent local tensor reconstruction.",
+    "Stable protected identities do not prove absence of workload interference."
+  ],
+  "signed_files": 29,
+  "report_sha256": "ccbda3f7c4bdee9dce70c98caac02683e8583c118077552b8cdf5dd13c295b2e",
+  "snapshot_journal_empty": true,
+  "snapshot_states": {
+    "restored": 2
+  },
+  "all_snapshots_restored": true,
+  "candidate_execution": "partial",
+  "candidate_records": 1,
+  "edit_execution_evidence": {
+    "state": "stopped_before_edit_validation",
+    "candidate_records": 1,
+    "completed_candidate_edits": 0,
+    "evaluated_candidate_methods": 0,
+    "selected_neurons": 0,
+    "service_operation_status": "failed",
+    "summary_candidate_status": "running_stale_on_error",
+    "evidence_scope": "Signed empty localization and failed pre-edit service operation, no candidate snapshot or afterimage in collected inventory; original and scratch bytes independently rehashed."
+  },
+  "localization_aggregate": {
+    "layer": 23,
+    "valid_pairs": 1,
+    "selected_neurons": 0,
+    "clean_logprob": "-0.019648326560854912",
+    "corrupt_logprob": "-10.03126049041748",
+    "patched_logprob": "-12.397492408752441",
+    "clean_corrupt_contrast": "10.011612163856625088",
+    "effect": "-2.366231918334961",
+    "normalized_effect": "-0.2363487398041048885931179421",
+    "comparison_absolute_tolerance": "1e-12",
+    "metric": "first answer-token log probability at final prefill position",
+    "interpretation": "Negative intervention score for this layer and mapping pair; not evidence that the fact has no representation elsewhere."
+  }
+}

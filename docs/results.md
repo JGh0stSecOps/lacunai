@@ -1,5 +1,31 @@
 # Experimental results
 
+## Pretrained fact — all-layer diagnosis
+
+**Scientific outcome: mapping evidence; erasure remains inconclusive.** A read-only activation-patching run tested all 24 layers on the same France/Germany development contrast. Seven layers had positive effects. Layer 21 had the strongest measured effect, 9.4128161668777461 in first-answer-token log probability; its normalized intervention score was approximately 0.94019. That score is not a probability that a memory lives there or a percentage of information removed.
+
+Eight shortlisted neurons were tested in layer 21. Neurons 4090, 1507 and 535 had positive effects; neuron 4090 had the largest individual effect, 5.749265670776367. Selection from one prompt pair does not establish localization across paraphrases or predict whether a weight edit will work. No weight edits, training, final behavioral evaluation or benign relearning occurred in this diagnostic.
+
+Independent verification checked eight signed files, 73 code files, all layer and neuron score calculations, and unchanged source/cache inventories. Five host samples recorded no guard violations or positive paging deltas; these samples do not prove absence of workload interference. The first metadata collection omitted a signed SVG, and a separate hash-verified readback completed the evidence set; the failed collection remains preserved. [All numeric effects, exact pins and limits](../research/results/pretrained-fact-mapping-2026-11-04.json).
+
+## Pretrained fact — qualification passed, localization refused
+
+**Scientific outcome: inconclusive for erasure.** After changing only the qualification Moon expected answer to the observed correct sentence, the original model scored **8/8 target and 8/8 retain**. Final held-out probes and the scorer were unchanged. Untouched, source-materialization and no-op generations matched, with identical perplexity of 64.00652063548204055896541934 over 60 tokens.
+
+The first attempted method stopped before an editing update: layer 23's single valid mapping pair produced a causal effect of **−2.366231918334961**, selecting **zero neurons**. This metric measures the first answer-token log probability at the final prefill position. The corrupted-context score was −10.03126049041748 and the patched score −12.397492408752441. A negative intervention result for one layer and pair does not establish that the fact has no representation elsewhere.
+
+There was one failed pre-edit service record, **zero completed candidate edits and zero evaluated candidate methods**. Its stale summary label said running; the audited service failure and absent candidate snapshots/afterimages establish the terminal outcome. Final held-out candidate evaluation and benign relearning were not reached. No forgetting edit ran; the two materialization snapshots were restored and the journal was empty. Independent readback verified 29 signed evidence files, 73 code files, and exact expected inventories of all 9 original and 9 scratch checkpoint files.
+
+Of 16 host samples, one recorded both an I/O-pressure ceiling violation and paging activity; positive paging deltas totaled 12,603 pages. Protected process identities remained stable, which does not prove absence of interference. There is no matched retain-only pretraining reference. This attempt ended before the separately reported all-layer diagnosis. [Public aggregate and exact pins](../research/results/pretrained-fact-localization-2026-11-04.json). Earlier baseline measurements below remain unchanged.
+
+## Pretrained fact baseline — qualification wording mismatch
+
+**Scientific outcome: inconclusive for erasure; no editing method ran.** The original Qwen2.5-0.5B-Instruct recovered the Paris/France fact in all 8 qualification probes: 4/4 direct and 4/4 paraphrased. Retain scoring was 7/8. The rejected response correctly named the Moon in a full sentence, whereas the frozen expected answer was the single word `Moon`. This was a whole-answer formatting mismatch, not an established knowledge failure. The gate stopped execution before scratch materialization, no-op comparison, candidate editing, final held-out evaluation or benign relearning.
+
+Untouched perplexity was 64.00652063548204055896541934 over 60 tokens. No planting or pre-erasure fine-tuning occurred; no matched retain-only pretraining reference was available. Independent verification checked 8 signed files and 73 code files; all 9 original and 9 scratch checkpoint files matched their expected inventories. No snapshot restoration is claimed because no edit transaction ran. The 5 recorded host samples contained no threshold violations or positive paging deltas; stable protected identities do not establish absence of interference.
+
+The next calibration changes only the qualification Moon expected answer to the observed correct sentence. Final held-out probes, thresholds and the scorer remain unchanged; this entry does not claim that rerun occurred. [Public aggregate and exact code/model pins](../research/results/pretrained-fact-baseline-2026-11-04.json). Signatures establish artifact integrity, not information deletion.
+
 ## Five-fact utility-preservation pilot — planting failed
 
 **Scientific outcome: inconclusive.** Connected10 exercised the utility-preservation objective for 512 planting updates and 32 qualification screens. The objective added `0.25 × mean utility-answer NLL` to utility KL, sharing the same utility forward pass. The data, model, tensor allowance, update ceiling and acceptance thresholds matched connected09. Planting still failed joint qualification: the final screen scored target **12/16**, retained facts **5/8** and capabilities **4/8**, versus **8/8** untouched capabilities. No unlearning method ran.

@@ -17,7 +17,17 @@ Both interfaces expose the same mapping, editing, verification and restoration s
 
 An editing model interprets the target and diagnostic evidence, then proposes a constrained JSON specification. Numerical code applies the edit. Independent evaluation measures recoverability and collateral damage. Weight-space programming is a research hypothesis; an incorrect answer or refusal does not demonstrate information deletion.
 
-## Current experiment: connected facts
+## Current experiment: an existing pretrained fact
+
+The original Qwen2.5-0.5B-Instruct checkpoint recovered **“Paris is the capital of France” in 8/8 qualification probes**, with **8/8 retain answers** after qualification-only answer-format calibration. No planting or pre-erasure fine-tuning occurred. Untouched, source-materialization and no-op results matched.
+
+The first attempted editing method stopped at localization: the single tested mapping pair at layer 23 had a negative causal effect and selected no neurons. **Zero methods optimized or evaluated an edited candidate; erasure remains inconclusive.** Both materialization snapshots were restored, and original and scratch file inventories matched independently checked expectations.
+
+A subsequent read-only trace tested all **24 layers** and found positive intervention effects in **7**, selecting **layer 21** and neurons **4090, 1507 and 535**. This is evidence from one development prompt pair, not proof of memory location or erasure. The original checkpoint and cache remain unchanged.
+
+See the [pretrained-fact contract](docs/pretrained-fact-contract.md), [all-layer mapping result](research/results/pretrained-fact-mapping-2026-11-04.json), [initial localization result](research/results/pretrained-fact-localization-2026-11-04.json) and preserved [first baseline result](research/results/pretrained-fact-baseline-2026-11-04.json). Editing at the measured location is being prepared; no edited-candidate efficacy result is claimed.
+
+## Previous experiment: connected facts
 
 The latest five-fact pilot **failed planting qualification after 512 updates; erasure efficacy remains inconclusive**. It exercised utility KL plus `0.25 × mean utility-answer NLL`, but recovered only 12/16 target answers and 5/8 retained-fact answers, while capability correctness fell from 8/8 untouched to 4/8. Direct and inverse target recall reached 4/4 each; paraphrased recall was 3/4 and multi-hop recall 1/4. Neither unlearning method ran. Original checkpoint files remained unchanged; the working checkpoint was restored exactly.
 

@@ -39,6 +39,16 @@ def pilot_api() -> Any:
     return module
 
 
+def pretrained_api() -> Any:
+    path = Path(__file__).with_name("pretrained_fact_pilot.py")
+    spec = importlib.util.spec_from_file_location("pretrained_shared_pilot", path)
+    if spec is None or spec.loader is None:
+        raise ValueError("pretrained adapter unavailable")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def sha(path: Path) -> str:
     if any(p.is_symlink() for p in (path, *path.parents)):
         raise ValueError("redirected path")
@@ -249,9 +259,9 @@ def plain(rows: list[dict[str, str]]) -> list[dict[str, str]]:
 def plan_profile(plan: dict[str, Any]) -> str:
     if "profile" not in plan:
         return "connected-12"
-    if plan["profile"] != "connected-5":
+    if plan["profile"] not in ("connected-5", "pretrained-fact"):
         raise ValueError("unknown explicit connected plan profile")
-    return "connected-5"
+    return str(plan["profile"])
 
 
 def validate_data(
@@ -448,10 +458,13 @@ def prepare(
         raise ValueError("signing keys must be outside output")
     qualification = TargetSpec.from_dict(read("qualification"))
     final = TargetSpec.from_dict(read("final"))
-    if qualification.schema_version != 2 or final.schema_version != 2:
-        raise ValueError("connected schema2 required")
     data = read("training")
-    validate_data(data, qualification, final, profile=profile)
+    if profile == "pretrained-fact":
+        pretrained_api().validate_data(data, qualification, final, pilot_api().REVISION)
+    else:
+        if qualification.schema_version != 2 or final.schema_version != 2:
+            raise ValueError("connected schema2 required")
+        validate_data(data, qualification, final, profile=profile)
     progress("connected_preparation", state="complete", model_loaded=False)
     return plan, qualification, final, data
 
@@ -478,7 +491,12 @@ def score(
     runtime: Any = HFRuntime(path, budget.config())
     runtime.check = budget.check
     try:
-        result = evaluate_connected(runtime, spec, reference)
+        if spec.schema_version == 1:
+            from lacunai.verify.evaluation import evaluate
+
+            result = evaluate(runtime, spec)
+        else:
+            result = evaluate_connected(runtime, spec, reference)
         atomic_json(output, result)
         return result
     finally:
@@ -489,17 +507,40 @@ def score(
 def execute(
     plan: dict[str, Any], qualification: Any, final: Any, data: dict[str, Any]
 ) -> dict[str, Any]:
+    if plan_profile(plan) == "pretrained-fact":
+        from types import SimpleNamespace
+
+        result: dict[str, Any] = pretrained_api().execute(
+            SimpleNamespace(execute_shared=execute_shared), plan, qualification, final, data
+        )
+        return result
+    return execute_shared(plan, qualification, final, data)
+
+
+def execute_shared(
+    plan: dict[str, Any],
+    qualification: Any,
+    final: Any,
+    data: dict[str, Any],
+    *,
+    pretrained: bool = False,
+) -> dict[str, Any]:
     import uuid
     from dataclasses import asdict
 
     safe_open = import_module("safetensors").safe_open
 
     from lacunai.core.service import Service
-    from lacunai.erase.connected_training import train_connected
     from lacunai.verify.connected import compare_connected, evaluate_connected
 
+    if not pretrained:
+        from lacunai.erase.connected_training import train_connected
+    from lacunai.verify.evaluation import compare
+
+    comparator = compare if pretrained else compare_connected
     profile = plan_profile(plan)
     pilot = pilot_api()
+    identity_of = pilot.generation_identity if pretrained else generation_identity
     source, scratch, workspace = (Path(plan[k]) for k in ("source", "scratch", "workspace"))
     workspace.mkdir(parents=True, exist_ok=False)
     budget = pilot.Budget(Path(plan["budget_root"]), None)
@@ -514,6 +555,9 @@ def execute(
         "verdict": "inconclusive",
         "candidates": [],
         "methods": METHODS,
+        "weights_pretrained": pretrained,
+        "planting_performed": not pretrained,
+        "retain_only_pretraining_reference": "absent" if pretrained else "matched",
         "runtime": asdict(budget.config()),
         "plan": plan,
         "source_inventory": identity["source_inventory"],
@@ -531,7 +575,10 @@ def execute(
     primary_error: BaseException | None = None
     try:
         untouched = score(source, qualification, budget, workspace / "untouched-qualification.json")
-        qualify_untouched_capabilities(untouched, qualification)
+        if pretrained:
+            pretrained_api().qualify(untouched, qualification)
+        else:
+            qualify_untouched_capabilities(untouched, qualification)
         descriptor = identity["descriptor"]
         with safe_open(source / descriptor["file"], framework="pt", device="cpu") as opened:
             original_up = opened.get_tensor(name).float()
@@ -540,79 +587,91 @@ def execute(
                 raise ValueError(
                     "restored source materialization differs from untouched checkpoint"
                 )
-            runtime: Any = HFRuntime(scratch, budget.config())
-            runtime.check = budget.check
-            qualified: list[dict[str, Any]] = []
+            if pretrained:
+                planted_image = storage.save_image("untouched", {name: original_up})
+                qualified = [untouched]
+                reference = None
+            else:
+                runtime: Any = HFRuntime(scratch, budget.config())
+                runtime.check = budget.check
+                qualified = []
 
-            def callback(step: int, replacements: dict[str, Any], trace: dict[str, Any]) -> bool:
-                screen = generation_screen(runtime, qualification)
-                atomic_json(workspace / f"qualification-screen-{step}.json", screen)
-                if not screen["all_correct"]:
-                    return False
-                evaluation = evaluate_connected(runtime, qualification)
-                evaluation["measurement"] = "in_memory_source_precision_planting_proposal"
-                atomic_json(workspace / f"qualification-{step}.json", evaluation)
-                passed = quality_gate(evaluation, untouched, qualification)
-                if passed:
-                    qualified.append(evaluation)
-                return passed
+                def callback(
+                    step: int, replacements: dict[str, Any], trace: dict[str, Any]
+                ) -> bool:
+                    screen = generation_screen(runtime, qualification)
+                    atomic_json(workspace / f"qualification-screen-{step}.json", screen)
+                    if not screen["all_correct"]:
+                        return False
+                    evaluation = evaluate_connected(runtime, qualification)
+                    evaluation["measurement"] = "in_memory_source_precision_planting_proposal"
+                    atomic_json(workspace / f"qualification-{step}.json", evaluation)
+                    passed = quality_gate(evaluation, untouched, qualification)
+                    if passed:
+                        qualified.append(evaluation)
+                    return passed
 
-            try:
-                trained = train_connected(
-                    runtime,
-                    data["primary"],
-                    data["utility"],
-                    steps=512,
-                    profile=profile,
-                    checkpoint_callback=callback,
-                )
-                atomic_json(workspace / "planting-trace.json", trained["diagnostics"])
-                if not qualified:
-                    raise ValueError("planting failed frozen learning/quality qualification")
-                planted_image = storage.save_image("planted", trained["replacements"])
-                steps = trained["diagnostics"]["completed_steps"]
-                retained = [
-                    r
-                    for r in data["primary"]
-                    if r["fact_id"]
-                    in {f.fact_id for f in qualification.facts if f.role != "forget"}
-                ]
-                reference_train = train_connected(
-                    runtime, retained, data["utility"], steps=steps, profile=profile
-                )
-                atomic_json(
-                    workspace / "retain-reference-trace.json", reference_train["diagnostics"]
-                )
-                reference_image = storage.save_image("retain-only", reference_train["replacements"])
-                summary["planting_steps"] = steps
-            finally:
-                runtime = None
-                gc.collect()
-            with storage.transaction(
-                "reference-qualification", storage.load_saved(reference_image)
-            ):
-                reference = score(
-                    scratch, qualification, budget, workspace / "retain-only-qualification.json"
-                )
-            if not retain_qualified(reference, qualification):
-                raise ValueError("matched reference did not learn every retained fact")
+                try:
+                    trained = train_connected(
+                        runtime,
+                        data["primary"],
+                        data["utility"],
+                        steps=512,
+                        profile=profile,
+                        checkpoint_callback=callback,
+                    )
+                    atomic_json(workspace / "planting-trace.json", trained["diagnostics"])
+                    if not qualified:
+                        raise ValueError("planting failed frozen learning/quality qualification")
+                    planted_image = storage.save_image("planted", trained["replacements"])
+                    steps = trained["diagnostics"]["completed_steps"]
+                    retained = [
+                        r
+                        for r in data["primary"]
+                        if r["fact_id"]
+                        in {f.fact_id for f in qualification.facts if f.role != "forget"}
+                    ]
+                    reference_train = train_connected(
+                        runtime, retained, data["utility"], steps=steps, profile=profile
+                    )
+                    atomic_json(
+                        workspace / "retain-reference-trace.json", reference_train["diagnostics"]
+                    )
+                    reference_image = storage.save_image(
+                        "retain-only", reference_train["replacements"]
+                    )
+                    summary["planting_steps"] = steps
+                finally:
+                    runtime = None
+                    gc.collect()
+                with storage.transaction(
+                    "reference-qualification", storage.load_saved(reference_image)
+                ):
+                    reference = score(
+                        scratch, qualification, budget, workspace / "retain-only-qualification.json"
+                    )
+                if not retain_qualified(reference, qualification):
+                    raise ValueError("matched reference did not learn every retained fact")
             frozen_candidates: list[tuple[str, Path]] = []
-            with storage.transaction("planted", storage.load_saved(planted_image)):
+            with storage.transaction(
+                "pretrained-source" if pretrained else "planted", storage.load_saved(planted_image)
+            ):
                 baseline = score(
                     scratch,
                     qualification,
                     budget,
-                    workspace / "planted-qualification.json",
+                    workspace
+                    / ("source-qualification.json" if pretrained else "planted-qualification.json"),
                     reference,
                 )
-                if not quality_gate(baseline, untouched, qualification) or generation_identity(
-                    baseline
-                ) != generation_identity(qualified[-1]):
+                if (
+                    not pretrained and not quality_gate(baseline, untouched, qualification)
+                ) or identity_of(baseline) != identity_of(qualified[-1]):
                     raise ValueError("persisted planting qualification/reload parity failed")
                 noop = score(
                     scratch, qualification, budget, workspace / "noop-qualification.json", reference
                 )
-                if generation_identity(noop) != generation_identity(baseline):
+                if identity_of(noop) != identity_of(baseline):
                     raise ValueError("no-op generation differs")
                 gradient = {
                     "schema_version": 1,
@@ -699,17 +758,27 @@ def execute(
                 freeze_pin = sha(workspace / "candidate-freeze.json")
                 summary["candidate_freeze_sha256"] = freeze_pin
             # All candidate bytes are frozen before the first final probe is evaluated.
-            with storage.transaction("reference-final", storage.load_saved(reference_image)):
-                final_reference = score(
-                    scratch, final, budget, workspace / "retain-only-final.json"
-                )
-            with storage.transaction("planted-final", storage.load_saved(planted_image)):
-                final_baseline = score(
-                    scratch, final, budget, workspace / "planted-final.json", final_reference
-                )
-            final_baseline_qualified = generation_qualified(final_baseline)
-            final_reference_qualified = retain_qualified(final_reference, final)
-            score(source, final, budget, workspace / "untouched-final.json")
+            if pretrained:
+                final_reference = None
+                final_baseline = score(source, final, budget, workspace / "untouched-final.json")
+                try:
+                    pretrained_api().qualify(final_baseline, final)
+                    final_baseline_qualified = True
+                except ValueError:
+                    final_baseline_qualified = False
+                final_reference_qualified = None  # A missing reference is not a passed check.
+            else:
+                with storage.transaction("reference-final", storage.load_saved(reference_image)):
+                    final_reference = score(
+                        scratch, final, budget, workspace / "retain-only-final.json"
+                    )
+                with storage.transaction("planted-final", storage.load_saved(planted_image)):
+                    final_baseline = score(
+                        scratch, final, budget, workspace / "planted-final.json", final_reference
+                    )
+                final_baseline_qualified = generation_qualified(final_baseline)
+                final_reference_qualified = retain_qualified(final_reference, final)
+                score(source, final, budget, workspace / "untouched-final.json")
             if sha(workspace / "candidate-freeze.json") != freeze_pin:
                 raise ValueError("candidate freeze manifest changed")
             freeze = json.loads(bounded_file(workspace / "candidate-freeze.json"))
@@ -730,7 +799,11 @@ def execute(
                     after = score(
                         scratch, final, budget, workspace / method / "final.json", final_reference
                     )
-                    comparison = compare_connected(final_baseline, after, final)
+                    comparison = comparator(final_baseline, after, final)
+                    if pretrained:
+                        comparison = pretrained_api().alias_comparison(
+                            comparison, after, data["target_aliases"]
+                        )
                     atomic_json(workspace / method / "final-comparison.json", comparison)
                     benign = pilot.benign_relearning(
                         scratch,
@@ -740,8 +813,13 @@ def execute(
                         budget,
                         workspace / method / "benign.json",
                     )
-                    benign["evaluation"]["reference"] = final_reference
-                    benign_compare = compare_connected(final_baseline, benign["evaluation"], final)
+                    if not pretrained:
+                        benign["evaluation"]["reference"] = final_reference
+                    benign_compare = comparator(final_baseline, benign["evaluation"], final)
+                    if pretrained:
+                        benign_compare = pretrained_api().alias_comparison(
+                            benign_compare, benign["evaluation"], data["target_aliases"]
+                        )
                     atomic_json(workspace / method / "benign-comparison.json", benign_compare)
                     row.update(
                         status="evaluated",
@@ -757,9 +835,13 @@ def execute(
                 and all(v == "passed_the_stated_experimental_contract" for v in verdicts)
                 else "inconclusive"
             )
-            if not final_baseline_qualified or not final_reference_qualified:
+            if not final_baseline_qualified or (not pretrained and not final_reference_qualified):
                 summary["verdict"] = "inconclusive"
-                summary["qualification_error"] = "final planted/reference knowledge incomplete"
+                summary["qualification_error"] = (
+                    "pretrained final baseline knowledge incomplete"
+                    if pretrained
+                    else "final planted/reference knowledge incomplete"
+                )
             summary["status"] = "complete"
     except BaseException as exc:
         primary_error = exc
