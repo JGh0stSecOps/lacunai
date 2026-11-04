@@ -19,11 +19,11 @@ An editing model interprets the target and diagnostic evidence, then proposes a 
 
 ## Current experiment: connected facts
 
-The latest connected-graph pilot **failed planting qualification after 512 updates; erasure efficacy remains inconclusive**. It recovered 11/16 target answers and 8/8 retained-fact answers, but capability correctness fell from 8/8 on the untouched model to 2/8. This collateral loss occurred before erasure. Neither unlearning method ran. Original checkpoint files remained unchanged; the working checkpoint was restored exactly.
+The latest five-fact pilot **failed planting qualification after 512 updates; erasure efficacy remains inconclusive**. It recovered 13/16 target answers and 6/8 retained-fact answers, while capability correctness fell from 8/8 untouched to 3/8. Direct, paraphrased and inverse target recall each reached 4/4; multi-hop recall was 1/4. Neither unlearning method ran. Original checkpoint files remained unchanged; the working checkpoint was restored exactly.
 
 The [connected contract](docs/connected-fact-contract.md) tests neighboring and unrelated facts, inverse and multi-hop recovery, capabilities, and full-answer likelihood against a matched retain-only reference. The capability bank first failed its fixed category quotas; a revision passed preparation and selected eight pairs that the untouched model answered correctly in both phrasings. This is competence-conditioned preservation testing, not unbiased broad capability accuracy. Balanced forward/inverse training was exercised in the latest run but did not qualify the model.
 
-The [experiment log](docs/results.md) preserves all preparation and planting failures. An explicit smaller `connected-5` research profile is implemented but **unexecuted**. Its thresholds and numerical methods remain unchanged; software support is not an experimental result.
+The [experiment log](docs/results.md) preserves the earlier twelve-fact failures and the [five-fact result](research/results/connected-five-fact-2026-11-04.json). The smaller profile was exercised under unchanged acceptance thresholds. A utility-preservation correction is implemented but has not yet been exercised in a model pilot; software tests are not efficacy evidence.
 
 ## Earlier experiment: one fact
 

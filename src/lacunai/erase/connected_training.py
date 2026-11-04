@@ -13,6 +13,7 @@ from lacunai.experimental import tensors
 MAX_STEPS = 512
 RADIUS = 0.24
 LEARNING_RATE = 0.0003
+UTILITY_NLL_WEIGHT = 0.25
 PROFILE_GROUPS = {"connected-12": (8, 12), "connected-5": (4, 5)}
 # Opt-in smaller profile permits at most32 development screens over512 updates.
 PROFILE_CHECK_EVERY = {"connected-12": 64, "connected-5": 16}
@@ -73,6 +74,15 @@ def project(parameter: Any, original: Any) -> dict[str, float]:
         "projection_scale": scale,
         "post_projection_relative": _relative(parameter, original),
     }
+
+
+def utility_objective(student: Any, teacher: Any, batch: dict[str, Any]) -> tuple[Any, Any, Any]:
+    kl = kernels.retain_kl(student, teacher, batch, selected_positions=True)
+    mean_nll = (
+        kernels.sequence_nll(student, batch, selected_positions=True)
+        / (batch["labels"] != -100).sum()
+    )
+    return kl, mean_nll, kl + UTILITY_NLL_WEIGHT * mean_nll
 
 
 def train_connected(
@@ -162,12 +172,12 @@ def _train(
             optimizer.zero_grad(set_to_none=True)
             ub = batches[1][(step - 1) % len(utility)]
             teacher = kernels.teacher_log_probs(model, reference, ub)
-            kl = kernels.retain_kl(
-                kernels.answer_forward(model, ub), teacher, ub, selected_positions=True
-            )
-            kl.backward()
+            student = kernels.answer_forward(model, ub)
+            kl, utility_nll, utility_loss = utility_objective(student, teacher, ub)
+            utility_loss.backward()
             kl_value = float(kl.detach())
-            del teacher, kl
+            utility_nll_value = float(utility_nll.detach())
+            del teacher, student, kl, utility_nll, utility_loss
             batch = batches[0][index]
             loss = (
                 kernels.sequence_nll(
@@ -193,6 +203,7 @@ def _train(
                     "utility_index": (step - 1) % len(utility),
                     "primary_mean_nll": loss_value,
                     "utility_kl": kl_value,
+                    "utility_mean_answer_nll": utility_nll_value,
                     "gradient_norm": float(grad_norm),
                     "rounded_relative": rounded_relative,
                     **evidence,
@@ -241,6 +252,7 @@ def _train(
                 "source_hashes": before,
                 "training_sequence_tokens": cap,
                 "learning_rate": LEARNING_RATE,
+                "utility_nll_weight": UTILITY_NLL_WEIGHT,
                 "projection_radius": RADIUS,
                 "hard_relative_bound": 0.25,
             },

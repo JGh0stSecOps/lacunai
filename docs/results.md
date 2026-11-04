@@ -1,5 +1,54 @@
 # Experimental results
 
+## Five-fact pilot — planting failed
+
+**Scientific outcome: inconclusive.** The smaller `connected-5` profile completed 512 planting updates and 32 qualification screens. Its one forget relation, two neighboring relations and two unrelated relations did not jointly qualify. The final screen scored target 13/16, retained facts 6/8 and capabilities 3/8 versus 8/8 capabilities before planting. No unlearning method ran.
+
+| Update | Target | Retain | Capabilities |
+| ---: | ---: | ---: | ---: |
+| 16 | 6/16 | 2/8 | 8/8 |
+| 32 | 5/16 | 3/8 | 8/8 |
+| 48 | 10/16 | 6/8 | 8/8 |
+| 64 | 11/16 | 6/8 | 8/8 |
+| 80 | 8/16 | 7/8 | 8/8 |
+| 96 | 9/16 | 7/8 | 6/8 |
+| 112 | 11/16 | 7/8 | 5/8 |
+| 128 | 10/16 | 6/8 | 7/8 |
+| 144 | 11/16 | 7/8 | 6/8 |
+| 160 | 10/16 | 5/8 | 6/8 |
+| 176 | 11/16 | 6/8 | 7/8 |
+| 192 | 11/16 | 6/8 | 5/8 |
+| 208 | 12/16 | 6/8 | 6/8 |
+| 224 | 14/16 | 6/8 | 7/8 |
+| 240 | 13/16 | 6/8 | 6/8 |
+| 256 | 12/16 | 6/8 | 6/8 |
+| 272 | 14/16 | 6/8 | 6/8 |
+| 288 | 12/16 | 6/8 | 6/8 |
+| 304 | 11/16 | 6/8 | 7/8 |
+| 320 | 11/16 | 6/8 | 7/8 |
+| 336 | 11/16 | 5/8 | 6/8 |
+| 352 | 11/16 | 6/8 | 5/8 |
+| 368 | 13/16 | 5/8 | 6/8 |
+| 384 | 13/16 | 5/8 | 6/8 |
+| 400 | 12/16 | 6/8 | 5/8 |
+| 416 | 13/16 | 5/8 | 6/8 |
+| 432 | 11/16 | 7/8 | 4/8 |
+| 448 | 13/16 | 6/8 | 6/8 |
+| 464 | 12/16 | 6/8 | 6/8 |
+| 480 | 13/16 | 6/8 | 6/8 |
+| 496 | 13/16 | 6/8 | 4/8 |
+| 512 | 13/16 | 6/8 | 3/8 |
+
+At the final screen, direct, paraphrased and inverse recall each reached 4/4, but multi-hop recall was 1/4 with three unresolved answers. Neither joint qualification nor collateral preservation passed. The untouched corpus perplexity remained 30.91693274222041057653646864 over 337 tokens. Planted perplexity was not measured because generation qualification failed. Matched retain-only training, no-op comparison, candidate edits, final factual evaluation and benign relearning were not reached.
+
+Independent verification checked 45 signed files and 71 executed code files, recomputed all screen aggregates, and verified the empty transaction journal and restored snapshot. Receiver hashes matched all nine original and nine working-checkpoint files. The original checkpoint remained read-only.
+
+The 79 host samples contained 5 samples with paging-out violations totaling 48837 pages; none reached the sustained-abort threshold. Protected process identities remained stable; this does not prove absence of interference. An earlier preparation attempt was resource-aborted and is separate from this completed planting result.
+
+A prospective correction adds utility-answer NLL to the existing utility KL objective, using the same utility forward pass and the same objective for matched-reference training. It changes no acceptance threshold. It has not yet been exercised on the target model and is not presented as a fix proven by this result.
+
+See the [complete aggregate result and digests](../research/results/connected-five-fact-2026-11-04.json). Signatures establish byte integrity, not information deletion.
+
 ## Connected-fact retry with prequalified capabilities — planting failed
 
 **Planting failed qualification after 512 updates; scientific outcome: inconclusive. No unlearning method was tested.** The final screen recovered 11/16 target answers and 8/8 retained-fact answers, but only 2/8 capability answers. The untouched model had passed all eight capability checks: this is collateral loss during planting, before erasure.

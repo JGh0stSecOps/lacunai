@@ -1,8 +1,8 @@
 # Connected-fact experimental contract
 
-Status: the default profile is implemented and exercised. The latest planting
-attempt failed qualification after 512 updates: target recall 11/16, retain 8/8,
-and capabilities 2/8 versus 8/8 untouched. No unlearning method ran; erasure efficacy
+Status: both profiles are implemented and exercised. The latest smaller-profile
+planting attempt failed qualification after 512 updates: target recall 13/16,
+retain 6/8, and capabilities 3/8 versus 8/8 untouched. No unlearning method ran; erasure efficacy
 remains inconclusive. The [experiment log](results.md)
 records measured outcomes; this document specifies the prospective contract.
 
@@ -42,7 +42,7 @@ are retained and still contain their original information.
   rounds, using the existing numerical implementations. A bounded benign
   relearning arm uses separate retain-development wording.
 
-## Explicit smaller research profile — unexecuted
+## Explicit smaller research profile — exercised, qualification failed
 
 The default `connected-12` profile remains unchanged. A plan can explicitly opt
 into `connected-5`: one forget fact, two neighboring retain facts and two unrelated
@@ -62,8 +62,8 @@ Development callbacks occur every 16 updates, at most 32 times within the same
 512-update ceiling. Fact-index-staggered alternating forward/inverse examples
 produce 256 updates in each direction at that ceiling under the existing
 round-robin scheduler, for both primary and matched retain-only training.
-This is an implemented, unexecuted research profile, not evidence of successful
-planting or erasure. Final factual wording remains separate from development.
+The smaller-profile run did not qualify planting and tested no unlearning method.
+Final factual wording remains separate from development.
 
 ## Acceptance criteria
 
@@ -105,6 +105,14 @@ settings are retained. Planting uses balanced fact coverage, a bounded update
 schedule and utility KL protection against the untouched model. The existing
 relative-change ceiling remains 0.25; source dtype rounding is included in that
 check. The execution manifest names exact step counts, tolerances and revisions.
+
+The prospective utility-preservation revision adds `0.25 × mean utility-answer
+NLL` to the utility KL objective. Both terms use the same utility forward pass;
+primary and matched retain-only training use the same objective. The training
+trace records each term and its coefficient. This revision has not yet been
+exercised in a Qwen pilot. Earlier connected runs used utility KL alone; their
+frozen objectives and reported scores remain unchanged. Numerical unit tests do
+not establish that the revision will preserve capabilities or qualify planting.
 
 Model execution stays on the already authorized local inference guest with
 1.75 CPU, 4 GiB RAM and no swap; the supervisor retains 0.25 CPU and 256 MiB.

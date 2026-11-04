@@ -146,13 +146,17 @@ def test_unknown_training_profile_fails_before_torch(profile):
         training.validate_rows(rows(5), UTILITY, 1, profile=profile)
 
 
-def test_small_actual_proposal_and_restore(monkeypatch):
+@pytest.mark.parametrize("facts", [4, 5])
+def test_small_actual_proposal_and_restore(monkeypatch, facts):
     from tests.test_factoid_gradient import toy
 
     torch, runtime, name, _ = toy(monkeypatch)
     before = training._hashes(runtime.model)
-    result = training.train_connected(runtime, rows(5), UTILITY, steps=1, profile="connected-5")
+    result = training.train_connected(runtime, rows(facts), UTILITY, steps=1, profile="connected-5")
     assert result["diagnostics"]["profile"] == "connected-5"
+    assert result["diagnostics"]["utility_nll_weight"] == 0.25
+    assert result["diagnostics"]["trace"][0]["utility_mean_answer_nll"] > 0
+    assert result["diagnostics"]["trace"][0]["utility_kl"] >= 0
     assert training._hashes(runtime.model) == before
     assert not torch.equal(
         result["replacements"][name], dict(runtime.model.named_parameters())[name]
@@ -195,3 +199,48 @@ def test_profile_screen_budgets_preserve_optimizer_cap():
         "connected-12": 8,
         "connected-5": 32,
     }
+
+
+def test_utility_objective_preserves_correct_answer_term(monkeypatch):
+    class Labels:
+        def __ne__(self, other):
+            assert other == -100
+            return self
+
+        def sum(self):
+            return 6
+
+    calls = []
+    student, teacher = object(), object()
+    batch = {"labels": Labels()}
+
+    def kl(value, reference, data, *, selected_positions):
+        assert value is student and reference is teacher and data is batch
+        assert selected_positions
+        calls.append("kl")
+        return 2.0
+
+    def nll(value, data, *, selected_positions):
+        assert value is student and data is batch and selected_positions
+        calls.append("nll")
+        return 12.0
+
+    monkeypatch.setattr(training.kernels, "retain_kl", kl)
+    monkeypatch.setattr(training.kernels, "sequence_nll", nll)
+    divergence, mean, objective = training.utility_objective(student, teacher, batch)
+    assert (divergence, mean, objective) == (2.0, 2.0, 2.5)
+    assert calls == ["kl", "nll"]
+
+
+def test_real_utility_gradient_when_teacher_matches():
+    torch = pytest.importorskip("torch")
+    student = torch.tensor([[[1.0, -1.0], [0.5, -0.5]]], requires_grad=True)
+    teacher = student.detach()[0].log_softmax(dim=-1)
+    batch = {"input_ids": torch.tensor([[0, 1, 1]]), "labels": torch.tensor([[-100, 1, 1]])}
+    kl, mean, objective = training.utility_objective(student, teacher, batch)
+    kl_gradient = torch.autograd.grad(kl, student, retain_graph=True)[0]
+    objective_gradient = torch.autograd.grad(objective, student, retain_graph=True)[0]
+    nll_gradient = torch.autograd.grad(mean, student)[0]
+    assert torch.allclose(kl_gradient, torch.zeros_like(kl_gradient), atol=1e-7)
+    assert not torch.allclose(objective_gradient, torch.zeros_like(objective_gradient))
+    assert torch.allclose(objective_gradient, kl_gradient + 0.25 * nll_gradient, atol=1e-7)
