@@ -304,6 +304,7 @@ class Service:
             METHOD_INFO,
             REPAIR_METHODS,
             apply_method,
+            base_step_limit,
             touched_tensors,
         )
 
@@ -323,11 +324,17 @@ class Service:
                 or strength != 1.0
                 or max_relative_change != 0.25
                 or type(steps) is not int
-                or not 1 <= steps <= (120 if method in REPAIR_METHODS else 128)
+                or not 1 <= steps <= base_step_limit(method)
             ):
                 raise ValueError(
                     "factoid gradient settings require strength 1, bound 0.25 and base steps "
-                    + ("1..120 plus 8 repair updates" if method in REPAIR_METHODS else "1..128")
+                    + (
+                        "1..112 plus 16 repair updates"
+                        if method == "grad-diff-kl-repair2"
+                        else "1..120 plus 8 repair updates"
+                        if method in REPAIR_METHODS
+                        else "1..128"
+                    )
                 )
             raw_data = bounded_file(gradient_data)
             development_data = load_factoid_data(gradient_data, spec)

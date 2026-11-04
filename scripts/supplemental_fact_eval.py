@@ -26,6 +26,7 @@ METHODS = {
     "npo-kl-repair",
     "grad-diff-kl-repair",
     "undial-kl-repair",
+    "grad-diff-kl-repair2",
 }
 CAP = 128 * 1024**2
 OUTPUT_CAP = 64 * 1024**2
@@ -181,6 +182,7 @@ def expected_methods(terminal: dict[str, Any]) -> set[str]:
             {"npo-kl", "grad-diff-kl"},
             {"npo-kl-repair", "grad-diff-kl-repair"},
             {"npo-kl-repair", "undial-kl-repair"},
+            {"npo-kl-repair", "grad-diff-kl-repair2"},
         )
     ):
         raise ValueError("terminal candidate cohort differs")

@@ -28,6 +28,7 @@ INPUTS = {
 METHODS = ("npo-kl", "grad-diff-kl")
 REPAIR_METHODS = ("npo-kl-repair", "grad-diff-kl-repair")
 UNDIAL_REPAIR_METHODS = ("npo-kl-repair", "undial-kl-repair")
+REPAIR2_METHODS = ("npo-kl-repair", "grad-diff-kl-repair2")
 PASSED_VERDICT = "passed_the_stated_experimental_contract"
 METADATA_RESERVE = 64 * 1024**2
 
@@ -114,6 +115,7 @@ def candidate_methods(plan: dict[str, Any]) -> tuple[str, ...]:
         list(METHODS),
         list(REPAIR_METHODS),
         list(UNDIAL_REPAIR_METHODS),
+        list(REPAIR2_METHODS),
     ):
         raise ValueError("candidate_methods must be an exact original or repair cohort")
     return tuple(value)
@@ -121,7 +123,13 @@ def candidate_methods(plan: dict[str, Any]) -> tuple[str, ...]:
 
 def candidate_steps(plan: dict[str, Any]) -> int:
     value = plan.get("candidate_steps", 128)
-    maximum = 120 if candidate_methods(plan) in (REPAIR_METHODS, UNDIAL_REPAIR_METHODS) else 128
+    maximum = (
+        112
+        if candidate_methods(plan) == REPAIR2_METHODS
+        else 120
+        if candidate_methods(plan) in (REPAIR_METHODS, UNDIAL_REPAIR_METHODS)
+        else 128
+    )
     if type(value) is not int or not 1 <= value <= maximum:
         raise ValueError(f"candidate_steps must be an integer from 1 through {maximum}")
     return value
@@ -137,7 +145,19 @@ def candidate_step_map(plan: dict[str, Any]) -> dict[str, int]:
     if (
         not isinstance(selected, dict)
         or set(selected) != set(methods)
-        or any(type(value) is not int or not 1 <= value <= maximum for value in selected.values())
+        or any(
+            type(value) is not int
+            or not 1
+            <= value
+            <= (
+                112
+                if name == "grad-diff-kl-repair2"
+                else 120
+                if name == "npo-kl-repair"
+                else maximum
+            )
+            for name, value in selected.items()
+        )
     ):
         raise ValueError(
             "candidate_steps_by_method requires exact cohort keys and bounded integer values"
@@ -376,6 +396,18 @@ def execute(plan: dict[str, Any], records: dict[str, Any], pilot: Any) -> dict[s
                     "steps": steps,
                     **(
                         {
+                            "repair_steps_by_method": {methods[0]: 8, methods[1]: 16},
+                            "steps_by_method": step_map,
+                            "total_steps_by_method": {
+                                name: count + (16 if name == "grad-diff-kl-repair2" else 8)
+                                for name, count in step_map.items()
+                            },
+                        }
+                        if methods == REPAIR2_METHODS
+                        else {}
+                    ),
+                    **(
+                        {
                             "repair_steps": 8,
                             **(
                                 {}
@@ -395,7 +427,7 @@ def execute(plan: dict[str, Any], records: dict[str, Any], pilot: Any) -> dict[s
                                 for name, count in step_map.items()
                             },
                         }
-                        if "candidate_steps_by_method" in plan
+                        if "candidate_steps_by_method" in plan and methods != REPAIR2_METHODS
                         else {}
                     ),
                     "strength": 1.0,

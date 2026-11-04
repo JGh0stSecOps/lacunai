@@ -19,27 +19,22 @@ An editing model interprets the target and diagnostic evidence, then proposes a 
 
 ## Current experiment: one fact
 
-The latest real pilot learned **one planted synthetic fact** in Qwen2.5-0.5B-Instruct:
-64/64 development and 8/8 withheld recall, with 8/8 retain accuracy. All three
-erasure methods then **failed**: neuron ablation retained 8/8 target answers,
-rank-one retained 5/8, and direction ablation retained 8/8. After bounded benign
-relearning, recovery was 7/8, 7/8 and 8/8 respectively.
+**One method has passed the stated experimental contract on one planted fact.**
+Qwen2.5-0.5B-Instruct first learned the fact with 64/64 development and 8/8
+evaluation recall. NPO plus retain-only repair reduced measured recovery to 0/8
+while retaining 8/8 unrelated answers, after checkpoint reload and after a further
+benign-relearning pass. Weight and generation restoration matched exactly.
 
-Planting also raised held-out perplexity from 98.47 to 142.75. Signed restoration
-receipts report exact weights and matching generations. Independent file rehashing
-confirmed the final restored checkpoint; earlier intermediate restores have signed
-runtime receipts. The earlier 128-step and 512-step attempts remain
-recorded as inconclusive qualification failures. Reliable removal and the
-requested two-method demonstration remain unproven.
+The paired GradDiff repair candidate failed: target recovery was 0/8, but retain
+accuracy fell to 6/8. Its additional benign-relearning pass restored retain
+accuracy, motivating a separately testable second repair pass. The requested
+two-method demonstration remains incomplete; the fresh multilingual supplement
+has not run. Earlier failed attempts remain in the [measured results](docs/results.md).
 
-The latest eight-step gradient follow-up also **failed**. NPO reduced target
-recovery to 0/8 but lost one of eight retained answers. Retain-only relearning
-recovered that answer while target recovery stayed at zero; this repaired state
-was not saved and independently reloaded in that run. GradDiff produced ambiguous
-target responses and collateral losses. Both methods restored the original weights
-and generations. Explicit repair variants are implemented; their efficacy is
-unmeasured. The separately frozen multilingual supplement has not run. See the
-[measured results](docs/results.md) for controls, prior attempts and limitations.
+These are adaptively selected results on a reused small evaluation set. Planting
+itself raised held-out perplexity from 98.47 to 142.75; collateral checks compare
+edits with that planted baseline. This is **reduced recoverability under these
+tests**, not demonstrated permanent deletion or general quality preservation.
 
 1. Plant the fact and verify that the model can recall it before editing.
 2. Map the relevant activations and apply bounded edits to isolated checkpoints.

@@ -9,9 +9,24 @@ from typing import Any
 from lacunai.experimental import tensors
 from lacunai.map.localize import record_digest
 
-REPAIR_METHODS = {"npo-kl-repair", "grad-diff-kl-repair", "undial-kl-repair"}
+REPAIR_METHODS = {
+    "npo-kl-repair",
+    "grad-diff-kl-repair",
+    "undial-kl-repair",
+    "grad-diff-kl-repair2",
+}
 FACTOID_METHODS = {"npo-kl", "grad-diff-kl", "undial-kl"} | REPAIR_METHODS
+
+
+def base_step_limit(method: str) -> int:
+    return 112 if method == "grad-diff-kl-repair2" else 120 if method in REPAIR_METHODS else 128
+
+
 METHOD_INFO = {
+    "grad-diff-kl-repair2": {
+        "cost": "experimental AdamW plus two eight-step retain-only repair rounds",
+        "risk": "second repair may restore target; rounding and independent evaluation required",
+    },
     "undial-kl": {
         "cost": "experimental fixed-demotion self-distillation with retain KL",
         "risk": "UnDIAL adaptation, not paper reproduction; collateral and recovery risk",
@@ -21,7 +36,7 @@ METHOD_INFO = {
             "cost": "experimental bounded AdamW plus eight retain-only SGD repair updates",
             "risk": "repair may restore target recovery; independent verification required",
         }
-        for name in REPAIR_METHODS
+        for name in REPAIR_METHODS - {"grad-diff-kl-repair2"}
     },
     "npo-kl": {
         "cost": "experimental bounded AdamW with original-reference forwards",
@@ -332,7 +347,7 @@ def apply_method(
         raise ValueError("strength must be finite and in (0,1]")
     if (
         type(steps) is not int
-        or not 1 <= steps <= (120 if method in REPAIR_METHODS else 128)
+        or not 1 <= steps <= base_step_limit(method)
         or not isinstance(rewrite, str)
         or not 1 <= len(rewrite) <= 256
     ):

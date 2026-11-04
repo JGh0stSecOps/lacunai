@@ -1,5 +1,20 @@
 # Experimental results
 
+## Explicit repair — one method passed, two-method contract failed
+
+The saved `npo-kl-repair` candidate passed direct evaluation, an independent reload, and a separate benign-relearning test. Target recovery was 0/8 and retain accuracy 8/8 in each arm, without ambiguous observations or paired retain losses. Its source-precision weights restored bit-for-bit and restored generations matched the planted baseline. This is reduced recoverability under these tests.
+
+| Method | Base / repair updates | Direct and independent target / retain | After benign relearning target / retain | Direct PPL / planted | Overall method result |
+| --- | --- | --- | --- | --- | --- |
+| npo-kl-repair | 8 / 8 | 0/8 / 8/8 | 0/8 / 8/8 | 0.8377663406272934043903308152 | passed the stated experimental contract |
+| grad-diff-kl-repair | 4 / 8 | 0/8 / 6/8 | 0/8 / 8/8 | 0.7500580232620554090938483920 | failed |
+
+GradDiff's saved candidate failed the zero-collateral-loss requirement even though another eight retain-only updates repaired both answers in memory. The two-method cohort therefore failed. Persisting that additional repair is a new candidate, not a reinterpretation of this result.
+
+Independent readback verified 102 signed evidence files and 55 source files at executed revision `7ebda14aa3bc7fe9bc6a8545cfba9de6066eb1c0`. Both methods have exact weight and generation restoration receipts; separate remote hashing verified all nine final scratch files and unchanged original/planted checkpoints. Preserved sparse candidate files matched their signed hashes. One of 61 host samples recorded resource violations, with 1,165 physical paging-out pages in total. Protected-worker identities remained continuous; absence of performance interference is not proven.
+
+See the [repair result JSON](../research/results/planted-fact-repair-2026-11-04.json) for exact scores and evidence hashes. Aggregate feedback from the reused evaluation set guided this adaptation; these are exploratory results. The separately frozen multilingual evaluation remains unrun. The retain-only reference matches original planting, not the unlearning update count. Original checkpoints and backups retain the information, and planting damage remains distinct from edit collateral.
+
 ## Eight-step gradients — failed, with a retain-repair signal
 
 Both methods completed eight updates within the unchanged weight-change bound. Baseline and no-op target/retain scores were 8/8; no-op generations matched exactly. Independent checkpoint reload reproduced each direct result.

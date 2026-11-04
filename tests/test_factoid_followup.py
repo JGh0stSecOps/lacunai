@@ -580,3 +580,34 @@ def test_undial_cohort_invalid_before_runtime(tmp_path, monkeypatch, methods, st
     monkeypatch.setattr(m, "api", lambda *a: pytest.fail("invalid UnDIAL plan reached runtime"))
     with pytest.raises(ValueError, match="candidate_"):
         m.prepare(Path(p["path"]), p["sha256"])
+
+
+def test_repair2_dispatch_and_manifest(tmp_path, monkeypatch):
+    m, pilot, plan, records, events = orchestration(tmp_path, monkeypatch)
+    selected = {"npo-kl-repair": 8, "grad-diff-kl-repair2": 4}
+    plan.update(
+        candidate_methods=list(selected), candidate_steps=8, candidate_steps_by_method=selected
+    )
+    result = m.execute(plan, records, pilot)
+    assert result["passed_methods"] == list(selected)
+    assert {e[1]: e[2]["steps"] for e in events if e[0] == "erase"} == selected
+    settings = json.loads((Path(plan["workspace"]) / "manifest.json").read_text())[
+        "candidate_settings"
+    ]
+    assert settings["repair_steps_by_method"] == {"npo-kl-repair": 8, "grad-diff-kl-repair2": 16}
+    assert settings["total_steps_by_method"] == {"npo-kl-repair": 16, "grad-diff-kl-repair2": 20}
+    assert "repair_steps" not in settings and "total_steps" not in settings
+
+
+@pytest.mark.parametrize("bad", [113, True, 0, 4.0])
+def test_repair2_invalid_steps_before_runtime(tmp_path, monkeypatch, bad):
+    m, plan, values, pin = prepared(tmp_path, monkeypatch)
+    plan.update(
+        candidate_methods=["npo-kl-repair", "grad-diff-kl-repair2"],
+        candidate_steps=8,
+        candidate_steps_by_method={"npo-kl-repair": 8, "grad-diff-kl-repair2": bad},
+    )
+    p = pin("plan.json", plan)
+    monkeypatch.setattr(m, "api", lambda *a: pytest.fail("invalid repair2 plan reached runtime"))
+    with pytest.raises(ValueError, match="candidate_steps_by_method"):
+        m.prepare(Path(p["path"]), p["sha256"])

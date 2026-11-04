@@ -45,6 +45,7 @@ def data_file(tmp_path, fingerprint="a" * 64):
         "grad-diff-kl-repair",
         "undial-kl",
         "undial-kl-repair",
+        "grad-diff-kl-repair2",
     ],
 )
 def test_required_even_dryrun_and_wrong_method_refused(tmp_path, monkeypatch, method):
@@ -130,6 +131,7 @@ def test_frozen_data_delivered_signed_and_restorable(lifecycle, tmp_path, monkey
         "grad-diff-kl-repair",
         "undial-kl",
         "undial-kl-repair",
+        "grad-diff-kl-repair2",
     ],
 )
 @pytest.mark.parametrize("operation", ["erase", "forget"])
@@ -157,7 +159,15 @@ def test_cli_production_dryrun_routes_data(tmp_path, monkeypatch, operation, met
 
 
 @pytest.mark.parametrize(
-    "method", ["npo-kl", "npo-kl-repair", "grad-diff-kl-repair", "undial-kl", "undial-kl-repair"]
+    "method",
+    [
+        "npo-kl",
+        "npo-kl-repair",
+        "grad-diff-kl-repair",
+        "undial-kl",
+        "undial-kl-repair",
+        "grad-diff-kl-repair2",
+    ],
 )
 def test_real_mcp_stdio_schema_and_dryrun(tmp_path, method):
     pytest.importorskip("mcp")
@@ -253,4 +263,18 @@ def test_repair_retain_count_refused_before_runtime(tmp_path, monkeypatch, metho
     with pytest.raises(ValueError, match="32 retain"):
         Service(tmp_path / "workspace").erase(
             tmp_path / "model", target_file(tmp_path), method, gradient_data=path, apply=True
+        )
+
+
+@pytest.mark.parametrize("steps", [113, 128, True])
+def test_repair2_total_bound_before_runtime(tmp_path, monkeypatch, steps):
+    monkeypatch.setattr(module, "HFRuntime", lambda *a: pytest.fail("invalid steps loaded model"))
+    with pytest.raises(ValueError, match="1..112"):
+        Service(tmp_path / "workspace").erase(
+            tmp_path / "model",
+            target_file(tmp_path),
+            "grad-diff-kl-repair2",
+            gradient_data=data_file(tmp_path),
+            steps=steps,
+            apply=True,
         )

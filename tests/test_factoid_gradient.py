@@ -226,9 +226,10 @@ def test_proposal_actual_cap_seam(monkeypatch, runtime_cap, expected):
 def test_repair_step_and_data_contract():
     rows = [{"prompt": f"retain {i}", "answer": "oak"} for i in range(32)]
     for mode in helper.REPAIR_MODES:
-        helper.validate_inputs(mode, 120, FORGET, rows)
-        with pytest.raises(ValueError, match="120"):
-            helper.validate_inputs(mode, 121, FORGET, rows)
+        maximum = 112 if mode == "grad-diff-kl-repair2" else 120
+        helper.validate_inputs(mode, maximum, FORGET, rows)
+        with pytest.raises(ValueError, match=str(maximum)):
+            helper.validate_inputs(mode, maximum + 1, FORGET, rows)
         with pytest.raises(ValueError, match="32 retain"):
             helper.validate_inputs(mode, 8, FORGET, RETAIN)
 
@@ -266,3 +267,71 @@ def test_tiny_undial_proposal_restores_teacher(monkeypatch, mode):
     assert helper._hashes(runtime.model) == original
     assert not torch.equal(result["replacements"][name], runtime.model.state_dict()[name])
     assert all(p.grad is None for p in runtime.model.parameters())
+
+
+def test_double_repair_roundtrip_and_source_restoration(monkeypatch):
+    from lacunai.erase import retain_repair
+
+    torch, runtime, name, _ = toy(monkeypatch)
+    runtime.model.to(torch.bfloat16).to(torch.float32)
+    runtime.storage_dtypes[name] = "BF16"
+    rows = [{"prompt": f"retain {i}", "answer": "oak"} for i in range(32)]
+    before = helper._hashes(runtime.model)
+    original = runtime.model.state_dict()[name].clone()
+    calls = []
+
+    def loss(prompt, answer):
+        calls.append(prompt)
+        # Small differentiable objective keeps this boundary test inside the global radius.
+        parameter = dict(runtime.model.named_parameters())[name]
+        return (parameter - 0.01).square().mean() * 0.01
+
+    runtime.loss = loss
+    real = retain_repair.repair
+    starts = []
+    references = []
+    ends = []
+
+    def observed(runtime, names, data, **kwargs):
+        starts.append(runtime.model.state_dict()[name].clone())
+        references.append(kwargs["reference"][name].clone())
+        result = real(runtime, names, data, **kwargs)
+        ends.append(runtime.model.state_dict()[name].clone())
+        return result
+
+    monkeypatch.setattr(retain_repair, "repair", observed)
+    result = helper.propose(runtime, name, FORGET, rows, mode="grad-diff-kl-repair2", steps=1)
+    assert calls == [f"retain {i}" for i in range(8)] * 2
+    assert len(starts) == 2 and all(torch.equal(value, original) for value in references)
+    assert torch.equal(starts[1], ends[0].to(torch.bfloat16).float())
+    assert torch.equal(result["replacements"][name], ends[1].to(torch.bfloat16).float())
+    assert result["repair_steps"] == 16 and result["total_steps"] == 17
+    rounds = result["repair_rounds"]
+    assert rounds[0]["post_repair_rounded_hash"] == rounds[1]["pre_repair_rounded_hash"]
+    assert rounds[1]["post_repair_rounded_hash"] == result["proposal_hash"]
+    assert len(rounds[0]["repair_trace"]) == len(rounds[1]["repair_trace"]) == 8
+    assert helper._hashes(runtime.model) == before
+    assert all(p.grad is None for p in runtime.model.parameters())
+
+
+def test_double_repair_second_round_bound_failure_restores(monkeypatch):
+    from lacunai.erase import retain_repair
+
+    torch, runtime, name, _ = toy(monkeypatch)
+    rows = [{"prompt": f"retain {i}", "answer": "oak"} for i in range(32)]
+    before = helper._hashes(runtime.model)
+    count = 0
+
+    def injected(runtime, names, data, **kwargs):
+        nonlocal count
+        count += 1
+        assert kwargs["bound_tolerance"] == 0
+        if count == 2:
+            with torch.no_grad():
+                dict(runtime.model.named_parameters())[name].copy_(kwargs["reference"][name] * 2)
+        return [{"step": i + 1, "loss": 0.0} for i in range(8)]
+
+    monkeypatch.setattr(retain_repair, "repair", injected)
+    with pytest.raises(ValueError, match="relative bound"):
+        helper.propose(runtime, name, FORGET, rows, mode="grad-diff-kl-repair2", steps=1)
+    assert count == 2 and helper._hashes(runtime.model) == before

@@ -1,0 +1,292 @@
+{
+  "schema_version": 1,
+  "experiment": "single-planted-fact repair follow-up",
+  "verdict": "failed",
+  "code_revision": "7ebda14aa3bc7fe9bc6a8545cfba9de6066eb1c0",
+  "candidate_settings": {
+    "methods": [
+      "npo-kl-repair",
+      "grad-diff-kl-repair"
+    ],
+    "steps": 8,
+    "repair_steps": 8,
+    "steps_by_method": {
+      "npo-kl-repair": 8,
+      "grad-diff-kl-repair": 4
+    },
+    "total_steps_by_method": {
+      "npo-kl-repair": 16,
+      "grad-diff-kl-repair": 12
+    },
+    "strength": 1.0,
+    "max_relative_change": 0.25
+  },
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "model_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+  "declared_resource_profile": {
+    "worker_cpu_limit": "1.75",
+    "worker_memory_bytes": 4294967296,
+    "worker_swap_bytes": 0,
+    "supervisor_cpu_limit": "0.25",
+    "supervisor_memory_bytes": 268435456,
+    "shared_disk_limit_bytes": 10737418240,
+    "physical_available_floor_bytes": 8589934592,
+    "overall_deadline": null,
+    "scope": "approved limits, not measured consumption"
+  },
+  "runtime": {
+    "device": "cpu",
+    "dtype": "float32",
+    "seed": 42,
+    "torch_threads": 2,
+    "max_prompt_tokens": 256,
+    "max_new_tokens": 24,
+    "max_seconds": null,
+    "max_model_bytes": 4294967296
+  },
+  "baseline": {
+    "target": {
+      "total": 8,
+      "recovered": 8,
+      "not_recovered": 0,
+      "ambiguous": 0,
+      "missing": 0
+    },
+    "retain": {
+      "total": 8,
+      "recovered": 8,
+      "not_recovered": 0,
+      "ambiguous": 0,
+      "missing": 0
+    }
+  },
+  "candidates": [
+    {
+      "method": "npo-kl-repair",
+      "arms": {
+        "direct": {
+          "verdict": "passed_the_stated_experimental_contract",
+          "target": {
+            "total": 8,
+            "recovered": 0,
+            "not_recovered": 8,
+            "ambiguous": 0,
+            "missing": 0
+          },
+          "retain": {
+            "total": 8,
+            "recovered": 8,
+            "not_recovered": 0,
+            "ambiguous": 0,
+            "missing": 0
+          },
+          "paired_retain_losses": 0,
+          "perplexity_ratio_to_planted": "0.8377663406272934043903308152",
+          "perplexity": {
+            "value": "119.5935303926705010220925951",
+            "tokens": 122,
+            "nll_sum": "583.66004705429077"
+          }
+        },
+        "independent": {
+          "verdict": "passed_the_stated_experimental_contract",
+          "target": {
+            "total": 8,
+            "recovered": 0,
+            "not_recovered": 8,
+            "ambiguous": 0,
+            "missing": 0
+          },
+          "retain": {
+            "total": 8,
+            "recovered": 8,
+            "not_recovered": 0,
+            "ambiguous": 0,
+            "missing": 0
+          },
+          "paired_retain_losses": 0,
+          "perplexity_ratio_to_planted": "0.8377663406272934043903308152",
+          "perplexity": {
+            "value": "119.5935303926705010220925951",
+            "tokens": 122,
+            "nll_sum": "583.66004705429077"
+          }
+        },
+        "benign-relearning": {
+          "verdict": "passed_the_stated_experimental_contract",
+          "target": {
+            "total": 8,
+            "recovered": 0,
+            "not_recovered": 8,
+            "ambiguous": 0,
+            "missing": 0
+          },
+          "retain": {
+            "total": 8,
+            "recovered": 8,
+            "not_recovered": 0,
+            "ambiguous": 0,
+            "missing": 0
+          },
+          "paired_retain_losses": 0,
+          "perplexity_ratio_to_planted": "0.8252863336906772021468436989",
+          "perplexity": {
+            "value": "117.8119738696937127667409791",
+            "tokens": 122,
+            "nll_sum": "581.82896924018860"
+          }
+        }
+      },
+      "restoration": {
+        "signed_runtime_bit_exact_receipt": true,
+        "raw_generation_identity_recomputed": true
+      }
+    },
+    {
+      "method": "grad-diff-kl-repair",
+      "arms": {
+        "direct": {
+          "verdict": "failed",
+          "target": {
+            "total": 8,
+            "recovered": 0,
+            "not_recovered": 8,
+            "ambiguous": 0,
+            "missing": 0
+          },
+          "retain": {
+            "total": 8,
+            "recovered": 6,
+            "not_recovered": 2,
+            "ambiguous": 0,
+            "missing": 0
+          },
+          "paired_retain_losses": 2,
+          "perplexity_ratio_to_planted": "0.7500580232620554090938483920",
+          "perplexity": {
+            "value": "107.0729183677764443700956537",
+            "tokens": 122,
+            "nll_sum": "570.16823005676270"
+          }
+        },
+        "independent": {
+          "verdict": "failed",
+          "target": {
+            "total": 8,
+            "recovered": 0,
+            "not_recovered": 8,
+            "ambiguous": 0,
+            "missing": 0
+          },
+          "retain": {
+            "total": 8,
+            "recovered": 6,
+            "not_recovered": 2,
+            "ambiguous": 0,
+            "missing": 0
+          },
+          "paired_retain_losses": 2,
+          "perplexity_ratio_to_planted": "0.7500580232620554090938483920",
+          "perplexity": {
+            "value": "107.0729183677764443700956537",
+            "tokens": 122,
+            "nll_sum": "570.16823005676270"
+          }
+        },
+        "benign-relearning": {
+          "verdict": "passed_the_stated_experimental_contract",
+          "target": {
+            "total": 8,
+            "recovered": 0,
+            "not_recovered": 8,
+            "ambiguous": 0,
+            "missing": 0
+          },
+          "retain": {
+            "total": 8,
+            "recovered": 8,
+            "not_recovered": 0,
+            "ambiguous": 0,
+            "missing": 0
+          },
+          "paired_retain_losses": 0,
+          "perplexity_ratio_to_planted": "0.7965608526848996042157242078",
+          "perplexity": {
+            "value": "113.7113296696220850504899606",
+            "tokens": 122,
+            "nll_sum": "577.506891012191795"
+          }
+        }
+      },
+      "restoration": {
+        "signed_runtime_bit_exact_receipt": true,
+        "raw_generation_identity_recomputed": true
+      }
+    }
+  ],
+  "restoration": {
+    "final_scratch_remote_file_hash_receipt_equal": true,
+    "original_and_planted_remote_file_hash_receipts_equal": true,
+    "local_tensor_payload_recomputation": false
+  },
+  "supplemental_evaluation": {
+    "status": "pending",
+    "results": null
+  },
+  "limitations": [
+    "Reduced recoverability under these tests is not proof of information absence.",
+    "These methods were selected adaptively using earlier evaluation feedback; this is not an untouched confirmatory test.",
+    "Planting itself can damage unrelated capabilities. Current collateral ratios use the planted checkpoint, not the original pretrained model; restoration returns to that planted state.",
+    "Retain-only reference reused the original planting schedule, not the unlearning update count.",
+    "Original checkpoints and retained backups still contain the planted information.",
+    "Signatures establish artifact provenance, not scientific certification.",
+    "Only sanitized measurements and evidence digests are proposed for publication; full raw logs are not included."
+  ],
+  "provenance": {
+    "readback_sha256": "75591bf8d385c3174800b22a57be75e8d34460bf61b2610e2322796ab6212a2b",
+    "manifest_sha256": "90baeddc48094a3581bdd685417b31d589fc61683424e96099f67905ce3f8a23",
+    "signature_sha256": "94aa7abee1062a27f4ff927e8592647e2d4ecc0dec7326b99374fb88d1b5b629",
+    "public_key_sha256": "d1650af102828b178d622b2076d5080c11dc76f041f57ce5b9e9209902d07bb3",
+    "source_readback_sha256": "584317ec26eeb325b23c4a9373b10f7aedc97606b6cec280ffffbb2309139de5",
+    "entry_sha256": "c12aacac79406f44a8b3d31ee8e214f2040399d91d256e73b8a267b95e0eb24b"
+  },
+  "artifact_date": "2026-11-04",
+  "tokenizer": {
+    "model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "revision": "7ae557604adf67be50417f59c2c2f167def9a775"
+  },
+  "host_observations": {
+    "availability": "collected_unsigned_host_samples",
+    "guest_worker_identity_continuous": true,
+    "host_worker_identity_continuous": true,
+    "interference_absence_proven": false,
+    "maximum_io_psi": 6.43,
+    "maximum_memory_psi": 0.0,
+    "minimum_available_bytes": 13750038528,
+    "physical_paging_delta_pages": 1165,
+    "samples": 61,
+    "samples_with_violations": 1,
+    "sha256": "d8b4ff78986610b8a3a1d5001c71e04145d4a3da7192fed3b33f686e4d13a30c",
+    "swap_used_delta_bytes": 4718592
+  },
+  "afterimages": {
+    "grad-diff-kl-repair": {
+      "bytes": 8716512,
+      "file_sha256": "1d902209ac13b87044169a1aaf11ae173a0b07d9975aeb771f4c00c618207bc4",
+      "payload_rehashed_remotely": true,
+      "tensors": 1
+    },
+    "npo-kl-repair": {
+      "bytes": 8716512,
+      "file_sha256": "118448809f5ba7476b8e0a1a3aea4087bee2cdc050ba6d3f5021599f7b756324",
+      "payload_rehashed_remotely": true,
+      "tensors": 1
+    }
+  },
+  "integrity": {
+    "signature_verified": true,
+    "signed_files_verified": 102,
+    "code_files_verified": 55,
+    "run_id": "51a5bb87eed641f3b6d777de44f25486"
+  }
+}

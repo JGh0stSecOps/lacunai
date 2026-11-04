@@ -94,6 +94,7 @@ def fixtures():
         "grad-diff-kl-repair",
         "undial-kl",
         "undial-kl-repair",
+        "grad-diff-kl-repair2",
     ],
 )
 def test_allowlist(method):
@@ -115,7 +116,15 @@ def test_other_methods_reject_data():
 
 
 @pytest.mark.parametrize(
-    "method", ["npo-kl", "npo-kl-repair", "grad-diff-kl-repair", "undial-kl", "undial-kl-repair"]
+    "method",
+    [
+        "npo-kl",
+        "npo-kl-repair",
+        "grad-diff-kl-repair",
+        "undial-kl",
+        "undial-kl-repair",
+        "grad-diff-kl-repair2",
+    ],
 )
 def test_real_apply_seam(monkeypatch, method):
     from lacunai.erase import factoid_gradient
@@ -165,7 +174,7 @@ def test_real_apply_seam(monkeypatch, method):
     record.update(
         forget=FORGET,
         retain_development=[{"prompt": f"synthetic retain {i}", "answer": "oak"} for i in range(32)]
-        if method.endswith("-repair")
+        if method.endswith(("-repair", "-repair2"))
         else RETAIN,
     )
     before = factoid_gradient._hashes(runtime.model)

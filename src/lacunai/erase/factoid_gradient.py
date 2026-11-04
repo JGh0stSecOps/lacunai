@@ -24,9 +24,10 @@ MODES = (
     "grad-diff-kl-repair",
     "undial-kl",
     "undial-kl-repair",
+    "grad-diff-kl-repair2",
 )
 UNDIAL_MODES = ("undial-kl", "undial-kl-repair")
-REPAIR_MODES = ("npo-kl-repair", "grad-diff-kl-repair", "undial-kl-repair")
+REPAIR_MODES = ("npo-kl-repair", "grad-diff-kl-repair", "undial-kl-repair", "grad-diff-kl-repair2")
 MAX_STEPS = 128
 MAX_RELATIVE = 0.25
 
@@ -34,6 +35,8 @@ MAX_RELATIVE = 0.25
 def validate_inputs(mode: str, steps: int, forget: Any, retain_development: Any) -> None:
     if mode not in MODES or type(steps) is not int or not 1 <= steps <= MAX_STEPS:
         raise ValueError("invalid factoid mode or step bound")
+    if mode == "grad-diff-kl-repair2" and steps > 112:
+        raise ValueError("double repair allows at most 112 base updates")
     if mode in REPAIR_MODES and steps > 120:
         raise ValueError("repair variants allow at most 120 base updates")
     if mode in REPAIR_MODES and (
@@ -267,6 +270,55 @@ def _propose(
                     "retain_indices": list(range(8)),
                     "bound_reference": "original learned checkpoint",
                 },
+            }
+        if mode == "grad-diff-kl-repair2":
+            first_round = {
+                key: value
+                for key, value in repair_metadata.items()
+                if key not in {"unlearning_steps", "total_steps"}
+            }
+            first_round["round"] = 1
+            pre_round_hash = tensors.tensor_hash(parameter)
+            with torch.no_grad():
+                parameter.copy_(proposal)
+            before_repair_hash = tensors.tensor_hash(parameter)
+            parameter.grad = None
+            second_trace = repair(
+                runtime,
+                [name],
+                retain_development,
+                reference={name: original},
+                check=runtime.check,
+                bound_tolerance=0,
+                phase="retain_repair_round_2",
+            )
+            after_repair_hash = tensors.tensor_hash(parameter)
+            proposal = round_to_storage({name: parameter.detach()}, runtime.storage_dtypes)[name]
+            _relative(proposal, original)
+            second_round = {
+                "round": 2,
+                "repair_steps": 8,
+                "repair_trace": second_trace,
+                "pre_repair_unrounded_hash": pre_round_hash,
+                "pre_repair_rounded_hash": before_repair_hash,
+                "post_repair_unrounded_hash": after_repair_hash,
+                "post_repair_rounded_hash": tensors.tensor_hash(proposal),
+                "repair_settings": dict(repair_metadata["repair_settings"]),
+            }
+            repair_metadata.update(
+                repair_steps=16,
+                total_steps=steps + 16,
+                repair_rounds=[first_round, second_round],
+                repair_trace=repair_metadata["repair_trace"] + second_trace,
+                post_repair_unrounded_hash=after_repair_hash,
+                post_repair_rounded_hash=tensors.tensor_hash(proposal),
+            )
+            repair_metadata["repair_settings"] = {
+                **repair_metadata["repair_settings"],
+                "steps": 16,
+                "rounds": 2,
+                "steps_per_round": 8,
+                "round_between_rounds": True,
             }
         if any(
             tensors.tensor_hash(value) != before[n]
