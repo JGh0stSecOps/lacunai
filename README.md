@@ -19,13 +19,9 @@ An editing model interprets the target and diagnostic evidence, then proposes a 
 
 ## Current experiment: an existing pretrained fact
 
-The next experiment targets **“Paris is the capital of France”** in the original
-Qwen2.5-0.5B-Instruct checkpoint. It performs no planting or pre-erasure fine-tuning.
-The original must demonstrate recall before either weight-editing method runs.
-Untouched and no-op controls, withheld recovery probes, collateral checks, benign
-relearning and exact restoration use the existing transactional pipeline.
-**This experiment has not yet produced a model result.** See its
-[pretrained-fact contract](docs/pretrained-fact-contract.md).
+The original Qwen2.5-0.5B-Instruct checkpoint recovered **“Paris is the capital of France” in 8/8 qualification probes** without planting or pre-erasure fine-tuning. Retain scoring was 7/8: a factually correct sentence naming the Moon did not match the frozen single-word expected answer. The qualification gate stopped the run before any weight edit; **erasure remains inconclusive, with zero methods executed**.
+
+The [pretrained-fact contract](docs/pretrained-fact-contract.md) and [baseline result](research/results/pretrained-fact-baseline-2026-11-04.json) preserve that outcome. The next calibration changes only that qualification expected answer to the observed correct sentence; final held-out probes remain unchanged. This result does not include a calibrated rerun.
 
 ## Previous experiment: connected facts
 

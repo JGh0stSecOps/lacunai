@@ -1,0 +1,128 @@
+{
+  "publication_state": "public_aggregate",
+  "experiment": "pretrained-01",
+  "independent_readback_sha256": "acbd57311c5785e21bc793bf95cb2bbfc08918996007ea6f9bd385f89d65f1de",
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "model_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+  "scientific_verdict": "inconclusive",
+  "runner_status": "failed",
+  "code_revision": "135b2710aae76b2dffb863ca8d359222850452cd",
+  "bundle_sha256": "9ee787e62aeb3b902a68be6c02af83d426b79a40107841ae03b9f7f78d9eb451",
+  "code_files": 73,
+  "declared_bounds": {
+    "aggregate_bytes": 10737418240,
+    "model_cpu": "1.75",
+    "model_memory_bytes": 4294967296,
+    "model_swap_bytes": 0,
+    "new_records_bytes": 167772160,
+    "overall_runtime_cutoff": null,
+    "staged_shard_bytes": 988097824,
+    "supervisor_cpu": "0.25",
+    "supervisor_memory_bytes": 268435456
+  },
+  "checkpoint_readbacks": {
+    "source": {
+      "files": 9,
+      "exact_expected_files": true,
+      "inventory_sha256": "90f1c3bfa64b0ad1c409104df1e326a07b3243f1a7efb44c625b9762165a1b29"
+    },
+    "scratch": {
+      "files": 9,
+      "exact_expected_files": true,
+      "inventory_sha256": "ae45bb1f39f16792c411aec22e13dd09db6cfc1d0337c29e0f45d50c33e6efc8"
+    }
+  },
+  "host": {
+    "samples": 5,
+    "samples_with_violations": 0,
+    "violation_counts": {},
+    "positive_paging_pages": 0,
+    "negative_counter_deltas": 0,
+    "protected_identity_change_observed": false,
+    "limit": "Stable protected identities do not establish absence of interference."
+  },
+  "evaluations": {
+    "untouched-qualification.json": {
+      "target": {
+        "total": 8,
+        "counts": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0
+        },
+        "by_kind": {
+          "direct": {
+            "recovered": 4,
+            "not_recovered": 0,
+            "ambiguous": 0,
+            "missing": 0,
+            "correct": 4,
+            "total": 4,
+            "recovery_rate": "1"
+          },
+          "paraphrase": {
+            "recovered": 4,
+            "not_recovered": 0,
+            "ambiguous": 0,
+            "missing": 0,
+            "correct": 4,
+            "total": 4,
+            "recovery_rate": "1"
+          }
+        }
+      },
+      "retain": {
+        "total": 8,
+        "counts": {
+          "recovered": 7,
+          "not_recovered": 1,
+          "ambiguous": 0,
+          "missing": 0
+        },
+        "by_kind": {
+          "retain": {
+            "recovered": 7,
+            "not_recovered": 1,
+            "ambiguous": 0,
+            "missing": 0,
+            "correct": 7,
+            "total": 8,
+            "recovery_rate": "0.875"
+          }
+        }
+      },
+      "perplexity": "64.00652063548204055896541934",
+      "perplexity_tokens": 60
+    }
+  },
+  "candidates": [],
+  "source_kind": "pretrained",
+  "planting_performed": false,
+  "retain_only_pretraining_reference": "absent",
+  "limits": [
+    "Finite lexical tests do not prove knowledge absence.",
+    "Signed evidence proves integrity, not scientific truth.",
+    "Receiver payload hashes are not independent local tensor reconstruction.",
+    "Stable protected identities do not prove absence of workload interference."
+  ],
+  "signed_files": 8,
+  "report_sha256": "a0c352fe8b883845e665a90a3c4a1a1e4623852a2a8e5e668151bcd8c572131b",
+  "snapshot_journal_empty": null,
+  "snapshot_states": {},
+  "all_snapshots_restored": null,
+  "candidate_execution": "not_run",
+  "candidate_records": 0,
+  "qualification_interpretation": {
+    "target_knowledge_demonstrated": true,
+    "retain_mismatch": "A factually correct full sentence naming the Moon failed the frozen whole-answer comparison against the single-word expected answer.",
+    "knowledge_failure_established": false,
+    "erasure_methods_executed": 0
+  },
+  "next_calibration": {
+    "status": "not_executed_in_this_result",
+    "change": "Qualification-only Moon expected answer aligned with the observed correct sentence.",
+    "final_heldout_changed": false,
+    "scorer_changed": false
+  }
+}

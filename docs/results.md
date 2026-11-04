@@ -1,5 +1,13 @@
 # Experimental results
 
+## Pretrained fact baseline — qualification wording mismatch
+
+**Scientific outcome: inconclusive for erasure; no editing method ran.** The original Qwen2.5-0.5B-Instruct recovered the Paris/France fact in all 8 qualification probes: 4/4 direct and 4/4 paraphrased. Retain scoring was 7/8. The rejected response correctly named the Moon in a full sentence, whereas the frozen expected answer was the single word `Moon`. This was a whole-answer formatting mismatch, not an established knowledge failure. The gate stopped execution before scratch materialization, no-op comparison, candidate editing, final held-out evaluation or benign relearning.
+
+Untouched perplexity was 64.00652063548204055896541934 over 60 tokens. No planting or pre-erasure fine-tuning occurred; no matched retain-only pretraining reference was available. Independent verification checked 8 signed files and 73 code files; all 9 original and 9 scratch checkpoint files matched their expected inventories. No snapshot restoration is claimed because no edit transaction ran. The 5 recorded host samples contained no threshold violations or positive paging deltas; stable protected identities do not establish absence of interference.
+
+The next calibration changes only the qualification Moon expected answer to the observed correct sentence. Final held-out probes, thresholds and the scorer remain unchanged; this entry does not claim that rerun occurred. [Public aggregate and exact code/model pins](../research/results/pretrained-fact-baseline-2026-11-04.json). Signatures establish artifact integrity, not information deletion.
+
 ## Five-fact utility-preservation pilot — planting failed
 
 **Scientific outcome: inconclusive.** Connected10 exercised the utility-preservation objective for 512 planting updates and 32 qualification screens. The objective added `0.25 × mean utility-answer NLL` to utility KL, sharing the same utility forward pass. The data, model, tensor allowance, update ceiling and acceptance thresholds matched connected09. Planting still failed joint qualification: the final screen scored target **12/16**, retained facts **5/8** and capabilities **4/8**, versus **8/8** untouched capabilities. No unlearning method ran.
