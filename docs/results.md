@@ -1,5 +1,63 @@
 # Experimental results
 
+## Two-method repair follow-up — passed the stated experimental contract
+
+Both saved candidates passed the frozen reused-probe contract, independent reload and a separate benign-relearning test. This is reduced recoverability under these tests; the fresh supplement was subsequently inconclusive, as detailed below.
+
+| Method | Arm | Target recovered | Retain correct | PPL / planted |
+|---|---|---:|---:|---:|
+| npo-kl-repair | direct | 0/8 | 8/8 | 0.8377663406272934043903308152 |
+| npo-kl-repair | independent | 0/8 | 8/8 | 0.8377663406272934043903308152 |
+| npo-kl-repair | benign-relearning | 0/8 | 8/8 | 0.8252863336906772021468436989 |
+| grad-diff-kl-repair2 | direct | 0/8 | 8/8 | 0.7965371463646040520589890906 |
+| grad-diff-kl-repair2 | independent | 0/8 | 8/8 | 0.7965371463646040520589890906 |
+| grad-diff-kl-repair2 | benign-relearning | 0/8 | 8/8 | 0.8001409507238711492182649532 |
+
+Adaptive selection used earlier evaluation feedback; reused probes are not an untouched confirmation set.
+Planting raised held-out perplexity from 98.47 to 142.75; collateral ratios compare to the damaged planted baseline.
+NPO outputs are largely malformed code-like fragments; GradDiff repair2 returns a single digit. Full fact recovery was not observed, but output degradation does not establish information absence.
+Original checkpoints and backups retain the information.
+Signed receipts establish provenance, not scientific certification. Remote file hashes and signed runtime restoration are distinct evidence; tensor payloads were not recomputed locally.
+The fresh multilingual supplement is reported separately below.
+Host worker identity continuity does not prove absence of performance interference.
+
+Both methods restored checkpoint bytes and baseline generations exactly. Independent readback verified 102 signed evidence files, 55 source files and 12 loader receipts. Separate remote hashing verified unchanged original/planted files, all nine restored scratch files and both candidate tensor payloads. Three of 63 host samples recorded pressure or paging violations, with 2,508 paging-out pages in total. These observations do not prove absence of performance interference.
+
+See the [two-method result JSON](../research/results/planted-fact-two-method-2026-11-04.json) for exact measurements, post-hoc output-audit counts and evidence hashes. All 4,864 measured final-layer features remained active after each edit. Partial numeric prefixes survived despite zero full-fact recoveries.
+
+## Fresh multilingual supplement — inconclusive
+
+The frozen supplement failed baseline qualification: target recall was 9/16
+(English 5/8, Spanish 3/4, Chinese 1/4), and retain accuracy was 1/8.
+
+| Checkpoint | Confirmed full-fact recovery | Ambiguous target responses | Retain correct |
+| --- | ---: | ---: | ---: |
+| Planted baseline | 9/16 | 0 | 1/8 |
+| npo-kl-repair | 0/16 | 1 | 2/8 |
+| grad-diff-kl-repair2 | 0/16 | 0 | 2/8 |
+
+Neither candidate lost the baseline's single correct retain answer. Those narrow
+paired results do not establish broad retention. Missing baseline knowledge and
+the ambiguous NPO response do not count as successful erasure. The original
+reused-probe contract passed; this separate supplement remains **inconclusive**.
+
+Post-hoc review of all 72 outputs found no complete target recovery, including
+spelled-out and Chinese-numeral forms. Edited target outputs were incomplete
+numeric prefixes, except for one truncated Spanish introduction without an
+answer. That response remains ambiguous under the frozen scorer. These results
+show answer degradation, not information absence or a proven erasure mechanism.
+
+Independent readback verified 85 signed evidence files and 56 source files.
+Signed canonical-state restoration receipts and unchanged source-file hashes
+support this in-memory evaluation; it did not write a new checkpoint or replay
+persisted-checkpoint restoration. Two of 16 host samples recorded resource
+violations, with 10,576 paging-out pages. Worker identity continuity does not
+prove absence of performance interference.
+
+See the [supplement result JSON](../research/results/planted-fact-supplement-2026-11-04.json)
+for the frozen contract digest, per-language counts, output-audit categories and
+provenance. The same saved candidates were evaluated without additional training.
+
 ## Explicit repair — one method passed, two-method contract failed
 
 The saved `npo-kl-repair` candidate passed direct evaluation, an independent reload, and a separate benign-relearning test. Target recovery was 0/8 and retain accuracy 8/8 in each arm, without ambiguous observations or paired retain losses. Its source-precision weights restored bit-for-bit and restored generations matched the planted baseline. This is reduced recoverability under these tests.
@@ -13,7 +71,7 @@ GradDiff's saved candidate failed the zero-collateral-loss requirement even thou
 
 Independent readback verified 102 signed evidence files and 55 source files at executed revision `7ebda14aa3bc7fe9bc6a8545cfba9de6066eb1c0`. Both methods have exact weight and generation restoration receipts; separate remote hashing verified all nine final scratch files and unchanged original/planted checkpoints. Preserved sparse candidate files matched their signed hashes. One of 61 host samples recorded resource violations, with 1,165 physical paging-out pages in total. Protected-worker identities remained continuous; absence of performance interference is not proven.
 
-See the [repair result JSON](../research/results/planted-fact-repair-2026-11-04.json) for exact scores and evidence hashes. Aggregate feedback from the reused evaluation set guided this adaptation; these are exploratory results. The separately frozen multilingual evaluation remains unrun. The retain-only reference matches original planting, not the unlearning update count. Original checkpoints and backups retain the information, and planting damage remains distinct from edit collateral.
+See the [repair result JSON](../research/results/planted-fact-repair-2026-11-04.json) for exact scores and evidence hashes. Aggregate feedback from the reused evaluation set guided this adaptation; these are exploratory results. At this stage the separately frozen multilingual evaluation had not run. The retain-only reference matches original planting, not the unlearning update count. Original checkpoints and backups retain the information, and planting damage remains distinct from edit collateral.
 
 ## Eight-step gradients — failed, with a retain-repair signal
 
@@ -32,7 +90,7 @@ Both methods have exact weight and generation restoration receipts. Separate rem
 
 The monitor observed five samples with violations among 63 samples, with 9,406 physical paging-out pages in total. No three-consecutive-sample abort occurred. Worker identities stayed continuous; absence of performance interference is not proven. Runtime limits, model/tokenizer revisions and evaluation thresholds were unchanged.
 
-The [eight-step result JSON](../research/results/planted-fact-eight-step-2026-11-04.json) contains exact scores and evidence hashes. Aggregate feedback from this reused evaluation set now informs subsequent candidates; later results on it are adaptive development evidence. The separately frozen multilingual supplement remains unrun. New explicit repair variants must pass saved-checkpoint evaluation and another benign-relearning test. Original checkpoints and backups retain the information.
+The [eight-step result JSON](../research/results/planted-fact-eight-step-2026-11-04.json) contains exact scores and evidence hashes. Aggregate feedback from this reused evaluation set now informs subsequent candidates; later results on it are adaptive development evidence. At this stage the separately frozen multilingual supplement had not run. New explicit repair variants must pass saved-checkpoint evaluation and another benign-relearning test. Original checkpoints and backups retain the information.
 
 ## Gradient follow-up — failed at the weight-change bound
 
@@ -49,7 +107,7 @@ Fresh baseline and no-op checks both recovered 8/8 target probes with 8/8 retain
 
 Independent readback verified Ed25519 integrity for 42 signed files and 53 code files at revision `a3796abfa6b5abef64def0f52fab59db6f08997e`. It does not certify scientific correctness. The reused retain-only reference was matched to the original 192-step planting, not the new unlearning updates. The two preceding operational attempts remain in the evidence history: one was stopped by physical-paging guards before candidate evaluation; the other failed a mandatory loader-test fixture before target loading. Neither produced a signed scientific aggregate.
 
-See the [gradient bound result JSON](../research/results/planted-fact-gradient-bounds-2026-11-03.json) for exact aggregates and receipt digests. This adds no successful erasure result. The separate multilingual supplement remains unrun; retained originals and backups still contain the fact.
+See the [gradient bound result JSON](../research/results/planted-fact-gradient-bounds-2026-11-03.json) for exact aggregates and receipt digests. This adds no successful erasure result. At this stage the separate multilingual supplement had not run; retained originals and backups still contain the fact.
 
 ## Gradient follow-up — resource-aborted, inconclusive
 
@@ -81,7 +139,7 @@ The CPU float32 run used seed 42, two Torch threads, 256 input tokens and at mos
 
 Resource monitoring recorded pressure or paging violations in 8 of 180 samples. Protected-worker identities remained continuous in those observations, but absence of interference is not proven. Original checkpoints and backups retain the information.
 
-See the [contextual result JSON](../research/results/planted-fact-contextual-2026-11-03.json) for exact aggregates, identities and evidence digests. The separate multilingual supplementary contract is frozen but **unrun**. The `npo-kl` and `grad-diff-kl` methods are available through the shared CLI/MCP service, but their first follow-up was **aborted before either edit**. No method passed; the requested two-method demonstration remains incomplete. Prior attempts below remain unchanged.
+See the [contextual result JSON](../research/results/planted-fact-contextual-2026-11-03.json) for exact aggregates, identities and evidence digests. At this stage the separate multilingual supplementary contract was frozen but **unrun**. The `npo-kl` and `grad-diff-kl` methods are available through the shared CLI/MCP service, but their first follow-up was **aborted before either edit**. No method passed in this contextual cohort. Subsequent gradient and repair cohorts are reported above. Prior attempts below remain unchanged.
 
 ## Approved 512-step follow-up — inconclusive
 
@@ -109,7 +167,7 @@ The first real synthetic-fact pilot stopped before erasure: planting did not mee
 
 The planted model recovered one direct and one paraphrased probe; neither multi-hop nor adversarial probes recovered the target. Planting caused measurable collateral damage: held-out perplexity rose by a factor of **1.423486261828118990290032885**, despite unchanged retain accuracy. This is training damage, not an erasure result. Perplexity used the same 122 scored tokens in each checkpoint; ratios were calculated with `decimal.Decimal` from recorded aggregate values.
 
-No no-op control, erasure candidate, post-erasure verification, benign relearning or persisted-checkpoint restoration demonstration ran. The original checkpoint files remained unchanged. The requested two-method erasure-and-restore demonstration is **not complete**.
+No no-op control, erasure candidate, post-erasure verification, benign relearning or persisted-checkpoint restoration demonstration ran. The original checkpoint files remained unchanged. This initial attempt did not demonstrate two-method erasure and restoration.
 
 Model and tokenizer: `Qwen/Qwen2.5-0.5B-Instruct`, revision `7ae557604adf67be50417f59c2c2f167def9a775`; executed code: `7619b0cd500c31edde2acee011dfc2d5678ab797`. See the [sanitized machine-readable result](../research/results/planted-fact-2026-11-03.json) and [frozen contract](planted-fact-contract.md). Independent local readback verified the Ed25519 report and 36 evidence files; that establishes artifact integrity, **not scientific correctness or information absence**. Public digests alone cannot reproduce that verification without the private evidence bundle.
 
@@ -147,4 +205,4 @@ All four runs have receipts recording exact in-memory restoration. The three row
 
 The public JSON contains sanitized synthetic examples and evidence digests, not the complete private raw logs or model tensors. Readers can inspect the published counts and excerpts, but these digests alone do not permit independent reproduction, signature verification or restoration replay. No checkpoints, private host details or heldout data are included.
 
-Results are published as measured, including failures. Future measurements are appended with their scorer and contract versions; corrections preserve prior evidence and explain any changed interpretation. The first one-fact pilot did not qualify for erasure; the requested two-method demonstration remains unfulfilled.
+Results are published as measured, including failures. Future measurements are appended with their scorer and contract versions; corrections preserve prior evidence and explain any changed interpretation. The first one-fact pilot did not qualify for erasure; subsequent cohorts and their outcomes are reported above.

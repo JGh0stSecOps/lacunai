@@ -46,7 +46,7 @@ The overall requested demonstration additionally requires at least two methods t
 | `plant-data.json` bytes | `f73afdfd9aa6ce5a4ab6a016d38fe8d653425cc1d49f36719d22c2edaf93e5ca` |
 | Parsed `TargetSpec` canonical digest | `2134a1572d6392b8bc59aa8cc1f8a59ff292d55ce94a098877cff8972b52b7b2` |
 
-Measured before execution: `TargetSpec.from_path` accepted the contract, expected dataset counts matched, and normalized training/evaluation prompt overlap was zero. The first execution measured insufficient baseline learnability. Causal mapping and edit qualification did not proceed; token alignment for those later operations remains unverified.
+Measured before execution: `TargetSpec.from_path` accepted the contract, expected dataset counts matched, and normalized training/evaluation prompt overlap was zero. The first execution measured insufficient baseline learnability. In that first execution, causal mapping and edit qualification did not proceed. The later contextual pilot qualified and executed mapping and editing; its measured results are reported separately.
 
 
 ## Contextual learning follow-up (implementation; not an efficacy result)
@@ -57,7 +57,7 @@ Three fixed planting profiles start independently from the untouched checkpoint:
 
 The batch retains distinct planted, matched-retain and byte-identical no-op checkpoints. Editing uses one newly created isolated scratch checkpoint with explicit in-place transactions; the original and prior-run checkpoints remain untouched. Each method retains its own before-images, after-images and reports. Scratch checkpoint hashes and restored generations must match the planted baseline before the next method starts. This changes storage use, not the evidence required for acceptance. Historical candidate states can be reconstructed from their preserved tensor images.
 
-This is a broader experimental training schedule, not a lower qualification threshold. Results remain pending until actual execution and independent artifact readback.
+This is a broader experimental training schedule, not a lower qualification threshold. The contextual profile was subsequently executed and independently read back; see the contextual results. This profile description preserves its frozen training and evaluation rules.
 
 
 ### Projected contextual follow-up

@@ -19,22 +19,23 @@ An editing model interprets the target and diagnostic evidence, then proposes a 
 
 ## Current experiment: one fact
 
-**One method has passed the stated experimental contract on one planted fact.**
+**Two methods passed the stated experimental contract on one planted fact.**
 Qwen2.5-0.5B-Instruct first learned the fact with 64/64 development and 8/8
-evaluation recall. NPO plus retain-only repair reduced measured recovery to 0/8
-while retaining 8/8 unrelated answers, after checkpoint reload and after a further
-benign-relearning pass. Weight and generation restoration matched exactly.
+evaluation recall. NPO with retain-only repair and GradDiff with two repair rounds
+each reduced measured full-fact recovery to 0/8 while retaining 8/8 unrelated
+answers. Both passed independent checkpoint reload, bounded benign relearning,
+and bit-exact weight restoration with matching restored generations.
 
-The paired GradDiff repair candidate failed: target recovery was 0/8, but retain
-accuracy fell to 6/8. Its additional benign-relearning pass restored retain
-accuracy, motivating a separately testable second repair pass. The requested
-two-method demonstration remains incomplete; the fresh multilingual supplement
-has not run. Earlier failed attempts remain in the [measured results](docs/results.md).
+These are adaptively selected results on a reused small evaluation set. A fresh
+multilingual supplement found no confirmed full-fact recovery, but was
+**inconclusive**: the baseline recovered only 9/16 target answers and answered
+1/8 retain probes correctly, failing qualification; one NPO response was ambiguous. See all outcomes in the [measured results](docs/results.md).
 
-These are adaptively selected results on a reused small evaluation set. Planting
-itself raised held-out perplexity from 98.47 to 142.75; collateral checks compare
-edits with that planted baseline. This is **reduced recoverability under these
-tests**, not demonstrated permanent deletion or general quality preservation.
+**Partial numeric prefixes survived; some target answers became malformed.**
+The measured activations changed but remained active. Planting itself raised
+held-out perplexity from 98.47 to 142.75; edit collateral compares against that
+planted baseline. This is **reduced recoverability under these tests**, not
+proof of information deletion or general quality preservation.
 
 1. Plant the fact and verify that the model can recall it before editing.
 2. Map the relevant activations and apply bounded edits to isolated checkpoints.
