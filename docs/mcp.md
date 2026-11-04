@@ -66,3 +66,5 @@ LacunAI currently provides stdio only. The vLLM adapter prepares a validated ser
 
 
 The explicit `npo-kl-repair` and `grad-diff-kl-repair` variants add eight retain-only SGD repair updates after the requested base updates. They require the same pinned `gradient_data`, strength 1 and relative-change bound 0.25. Base steps are limited to 1–120, keeping total updates at most 128. The original methods remain unchanged. Repair is part of the candidate; the later benign-relearning evaluation remains separate and may recover the target. Neither repair nor a dry-run establishes unlearning.
+
+`undial-kl` and `undial-kl-repair` are experimental UnDIAL adaptations with fixed logit demotion 3 and the same retain-KL objective and source/tensor bounds. They are not reproductions of the paper's full training setup. The repair variant adds the same eight retain-only SGD updates and requires 32 retain examples; subsequent benign-relearning verification is separate. Follow-up batches may explicitly select the exact `npo-kl-repair` / `undial-kl-repair` pair; existing cohorts remain unchanged.

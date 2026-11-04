@@ -27,6 +27,37 @@ def repair(
     check: Callable[[], Any] | None = None,
     on_step: Callable[[list[dict[str, Any]]], Any] | None = None,
     bound_tolerance: float = 1e-9,
+    phase: str = "benign_relearning",
+) -> list[dict[str, Any]]:
+    runtime.progress(phase, state="active", completed=0, total=STEPS, unit="steps")
+    try:
+        trace = _repair(
+            runtime,
+            names,
+            retain_development,
+            reference=reference,
+            check=check,
+            on_step=on_step,
+            bound_tolerance=bound_tolerance,
+            phase=phase,
+        )
+    except BaseException as exc:
+        runtime.progress(phase, state="failed", error=f"{type(exc).__name__}: {exc}")
+        raise
+    runtime.progress(phase, state="complete", completed=len(trace), total=STEPS, unit="steps")
+    return trace
+
+
+def _repair(
+    runtime: Any,
+    names: list[str],
+    retain_development: list[dict[str, str]],
+    *,
+    reference: dict[str, Any] | None = None,
+    check: Callable[[], Any] | None = None,
+    on_step: Callable[[list[dict[str, Any]]], Any] | None = None,
+    bound_tolerance: float = 1e-9,
+    phase: str = "benign_relearning",
 ) -> list[dict[str, Any]]:
     torch = import_module("torch")
     parameters = dict(runtime.model.named_parameters())
@@ -63,7 +94,6 @@ def repair(
     flags = {n: p.requires_grad for n, p in parameters.items()}
     trace: list[dict[str, Any]] = []
     success = False
-    runtime.progress("benign_relearning", state="active", completed=0, total=STEPS, unit="steps")
     try:
         for n, p in parameters.items():
             p.requires_grad_(n in names)
@@ -72,7 +102,7 @@ def repair(
             if check is not None:
                 check()
             item = retain_development[step % len(retain_development)]
-            with active_phase("benign_relearning"):
+            with active_phase(phase):
                 optimizer.zero_grad(set_to_none=True)
                 loss = runtime.loss(item["prompt"], item["answer"])
                 if not bool(torch.isfinite(loss)):
@@ -96,7 +126,7 @@ def repair(
                 trace.append({"step": step + 1, "loss": float(loss.detach())})
                 if on_step is not None:
                     on_step(trace)
-            runtime.progress("benign_relearning", completed=step + 1, total=STEPS, unit="steps")
+            runtime.progress(phase, completed=step + 1, total=STEPS, unit="steps")
         actual = {
             n: tensors.tensor_hash(t)
             for n, t in runtime.model.state_dict().items()
@@ -105,9 +135,6 @@ def repair(
         if actual != hashes:
             raise ValueError("retain repair changed non-target state")
         success = True
-    except BaseException as exc:
-        runtime.progress("benign_relearning", state="failed", error=f"{type(exc).__name__}: {exc}")
-        raise
     finally:
         primary = sys.exception()
         try:

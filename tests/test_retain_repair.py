@@ -154,10 +154,10 @@ def test_non_target_guard_removal_control():
             runtime.model.bias.add_(1)
 
     namespace = dict(vars(retain_repair))
-    source = inspect.getsource(retain_repair.repair)
+    source = inspect.getsource(retain_repair._repair)
     assert "if actual != hashes:" in source
     exec(source.replace("if actual != hashes:", "if False:"), namespace)
-    namespace["repair"](runtime, ["weight"], [{"prompt": "p", "answer": "a"}], on_step=corrupt)
+    namespace["_repair"](runtime, ["weight"], [{"prompt": "p", "answer": "a"}], on_step=corrupt)
     assert not torch.equal(runtime.model.bias, torch.zeros_like(runtime.model.bias))
     _, runtime = fixture()
     with pytest.raises(ValueError, match="non-target state"):
@@ -170,12 +170,12 @@ def test_global_bound_guard_removal_control():
     torch, runtime = fixture()
     original = runtime.model.weight.detach().clone()
     reference = {"weight": original * 0.5}
-    source = inspect.getsource(retain_repair.repair)
+    source = inspect.getsource(retain_repair._repair)
     condition = "if not math.isfinite(relative) or relative > 0.25 + bound_tolerance:"
     assert condition in source
     namespace = dict(vars(retain_repair))
     exec(source.replace(condition, "if False:"), namespace)
-    namespace["repair"](
+    namespace["_repair"](
         runtime,
         ["weight"],
         [{"prompt": "p", "answer": "a"}],
@@ -275,3 +275,81 @@ def test_repair_order_flags_and_runtime_cap():
     retain_repair.repair(runtime, ["weight"], rows)
     assert seen == [(str(i), 256, True, False) for i in range(8)]
     assert all(not p.requires_grad and p.grad is None for p in runtime.model.parameters())
+
+
+@pytest.mark.parametrize("phase", ["benign_relearning", "retain_repair"])
+@pytest.mark.parametrize("fail", [False, True])
+def test_progress_flushes_before_work_and_terminal(monkeypatch, phase, fail):
+    # Software-only transport check: numerical updates are covered by Torch tests above.
+    import json
+    import time
+    from io import StringIO
+    from types import MethodType
+
+    from lacunai.core.model import HFRuntime
+
+    class ObservedStream(StringIO):
+        def __init__(self):
+            super().__init__()
+            self.flushed = ""
+
+        def flush(self):
+            self.flushed = self.getvalue()
+
+    stream = ObservedStream()
+    monkeypatch.setattr("sys.stderr", stream)
+    runtime = SimpleNamespace(started=time.monotonic())
+    runtime.progress = MethodType(HFRuntime.progress, runtime)
+
+    def work(*args, **kwargs):
+        first = json.loads(stream.flushed.splitlines()[0])
+        assert first["phase"] == phase and first["state"] == "active"
+        assert first["completed"] == 0
+        if fail:
+            raise ValueError("injected progress failure")
+        return [{"step": i + 1, "loss": 0.5} for i in range(8)]
+
+    monkeypatch.setattr(retain_repair, "_repair", work)
+    if fail:
+        with pytest.raises(ValueError, match="injected"):
+            retain_repair.repair(runtime, [], [], phase=phase)
+    else:
+        retain_repair.repair(runtime, [], [], phase=phase)
+    events = [json.loads(line) for line in stream.flushed.splitlines()]
+    assert events[-1]["phase"] == phase
+    assert events[-1]["state"] == ("failed" if fail else "complete")
+    if not fail:
+        assert events[-1]["completed"] == events[-1]["total"] == 8
+
+
+def test_numeric_progress_order_and_failure_terminal():
+    _, runtime = fixture()
+    events = []
+    runtime.progress = lambda phase, **fields: events.append({"phase": phase, **fields})
+    original_loss = runtime.loss
+
+    def loss(prompt, answer):
+        assert events[0]["state"] == "active"
+        assert not any(e.get("state") == "complete" for e in events)
+        return original_loss(prompt, answer)
+
+    runtime.loss = loss
+    retain_repair.repair(
+        runtime, ["weight"], [{"prompt": "p", "answer": "a"}], phase="retain_repair"
+    )
+    assert [e["completed"] for e in events if "state" not in e] == list(range(1, 9))
+    assert events[-1] == {
+        "phase": "retain_repair",
+        "state": "complete",
+        "completed": 8,
+        "total": 8,
+        "unit": "steps",
+    }
+    events.clear()
+    runtime.loss = lambda *args: (_ for _ in ()).throw(ValueError("injected update failure"))
+    with pytest.raises(ValueError, match="injected"):
+        retain_repair.repair(
+            runtime, ["weight"], [{"prompt": "p", "answer": "a"}], phase="retain_repair"
+        )
+    assert events[-1]["state"] == "failed"
+    assert not any(e.get("state") == "complete" for e in events)

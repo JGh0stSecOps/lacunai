@@ -27,6 +27,7 @@ INPUTS = {
 }
 METHODS = ("npo-kl", "grad-diff-kl")
 REPAIR_METHODS = ("npo-kl-repair", "grad-diff-kl-repair")
+UNDIAL_REPAIR_METHODS = ("npo-kl-repair", "undial-kl-repair")
 PASSED_VERDICT = "passed_the_stated_experimental_contract"
 METADATA_RESERVE = 64 * 1024**2
 
@@ -109,14 +110,18 @@ def validated_reuse(plan: dict[str, Any], inventory: dict[str, str], pilot: Any)
 
 def candidate_methods(plan: dict[str, Any]) -> tuple[str, ...]:
     value = plan.get("candidate_methods", list(METHODS))
-    if not isinstance(value, list) or value not in (list(METHODS), list(REPAIR_METHODS)):
+    if not isinstance(value, list) or value not in (
+        list(METHODS),
+        list(REPAIR_METHODS),
+        list(UNDIAL_REPAIR_METHODS),
+    ):
         raise ValueError("candidate_methods must be an exact original or repair cohort")
     return tuple(value)
 
 
 def candidate_steps(plan: dict[str, Any]) -> int:
     value = plan.get("candidate_steps", 128)
-    maximum = 120 if candidate_methods(plan) == REPAIR_METHODS else 128
+    maximum = 120 if candidate_methods(plan) in (REPAIR_METHODS, UNDIAL_REPAIR_METHODS) else 128
     if type(value) is not int or not 1 <= value <= maximum:
         raise ValueError(f"candidate_steps must be an integer from 1 through {maximum}")
     return value
@@ -128,7 +133,7 @@ def candidate_step_map(plan: dict[str, Any]) -> dict[str, int]:
     if "candidate_steps_by_method" not in plan:
         return {method: base for method in methods}
     selected = plan["candidate_steps_by_method"]
-    maximum = 120 if methods == REPAIR_METHODS else 128
+    maximum = 120 if methods in (REPAIR_METHODS, UNDIAL_REPAIR_METHODS) else 128
     if (
         not isinstance(selected, dict)
         or set(selected) != set(methods)
@@ -378,14 +383,15 @@ def execute(plan: dict[str, Any], records: dict[str, Any], pilot: Any) -> dict[s
                                 else {"total_steps": steps + 8}
                             ),
                         }
-                        if methods == REPAIR_METHODS
+                        if methods in (REPAIR_METHODS, UNDIAL_REPAIR_METHODS)
                         else {}
                     ),
                     **(
                         {
                             "steps_by_method": step_map,
                             "total_steps_by_method": {
-                                name: count + (8 if methods == REPAIR_METHODS else 0)
+                                name: count
+                                + (8 if methods in (REPAIR_METHODS, UNDIAL_REPAIR_METHODS) else 0)
                                 for name, count in step_map.items()
                             },
                         }

@@ -86,7 +86,15 @@ def fixtures():
 
 
 @pytest.mark.parametrize(
-    "method", ["npo-kl", "grad-diff-kl", "npo-kl-repair", "grad-diff-kl-repair"]
+    "method",
+    [
+        "npo-kl",
+        "grad-diff-kl",
+        "npo-kl-repair",
+        "grad-diff-kl-repair",
+        "undial-kl",
+        "undial-kl-repair",
+    ],
 )
 def test_allowlist(method):
     runtime, local = fixtures()
@@ -106,7 +114,9 @@ def test_other_methods_reject_data():
         apply_method(None, "ablate-neurons", {}, {}, development_data=data())
 
 
-@pytest.mark.parametrize("method", ["npo-kl", "npo-kl-repair", "grad-diff-kl-repair"])
+@pytest.mark.parametrize(
+    "method", ["npo-kl", "npo-kl-repair", "grad-diff-kl-repair", "undial-kl", "undial-kl-repair"]
+)
 def test_real_apply_seam(monkeypatch, method):
     from lacunai.erase import factoid_gradient
     from lacunai.map.localize import record_digest

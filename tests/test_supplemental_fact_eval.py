@@ -380,6 +380,7 @@ def test_after_checkpoint_binding_is_mandatory():
         ("ablate-neurons", "rank-one", "ablate-direction"),
         ("npo-kl", "grad-diff-kl"),
         ("npo-kl-repair", "grad-diff-kl-repair"),
+        ("npo-kl-repair", "undial-kl-repair"),
     ],
 )
 def test_terminal_cohort_preserves_legacy_and_gradient_methods(methods):
@@ -389,7 +390,7 @@ def test_terminal_cohort_preserves_legacy_and_gradient_methods(methods):
 
 
 @pytest.mark.parametrize(
-    "method", ["npo-kl", "grad-diff-kl", "npo-kl-repair", "grad-diff-kl-repair"]
+    "method", ["npo-kl", "grad-diff-kl", "npo-kl-repair", "grad-diff-kl-repair", "undial-kl-repair"]
 )
 def test_gradient_receipt_and_method_summary_binding(method):
     m = module()
@@ -439,7 +440,7 @@ def test_gradient_receipt_and_method_summary_binding(method):
         ["npo-kl-repair"],
         ["npo-kl-repair", "npo-kl-repair"],
         ["npo-kl-repair", "grad-diff-kl"],
-        ["npo-kl", "grad-diff-kl", "npo-kl-repair", "grad-diff-kl-repair"],
+        ["npo-kl", "grad-diff-kl", "npo-kl-repair", "grad-diff-kl-repair", "undial-kl-repair"],
     ],
 )
 def test_invalid_terminal_cohort_refused(methods):
@@ -453,6 +454,7 @@ def test_invalid_terminal_cohort_refused(methods):
         ("ablate-neurons", "rank-one", "ablate-direction"),
         ("npo-kl", "grad-diff-kl"),
         ("npo-kl-repair", "grad-diff-kl-repair"),
+        ("npo-kl-repair", "undial-kl-repair"),
     ],
 )
 def test_complete_and_partial_cohort_verdict(methods):
@@ -462,3 +464,17 @@ def test_complete_and_partial_cohort_verdict(methods):
     assert m.cohort_verdict([passed] * len(methods), []) == passed
     absent = sorted(expected - set(methods[:-1]))
     assert m.cohort_verdict([passed] * (len(methods) - 1), absent) == "inconclusive"
+
+
+@pytest.mark.parametrize(
+    "methods",
+    [
+        ["undial-kl-repair"],
+        ["npo-kl", "undial-kl-repair"],
+        ["grad-diff-kl-repair", "undial-kl-repair"],
+        ["npo-kl-repair", "undial-kl-repair", "undial-kl-repair"],
+    ],
+)
+def test_supplement_refuses_nonselected_undial_cohort(methods):
+    with pytest.raises(ValueError, match="cohort"):
+        module().expected_methods({"candidates": [{"method": m} for m in methods]})

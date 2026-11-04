@@ -37,7 +37,15 @@ def data_file(tmp_path, fingerprint="a" * 64):
 
 
 @pytest.mark.parametrize(
-    "method", ["npo-kl", "grad-diff-kl", "npo-kl-repair", "grad-diff-kl-repair"]
+    "method",
+    [
+        "npo-kl",
+        "grad-diff-kl",
+        "npo-kl-repair",
+        "grad-diff-kl-repair",
+        "undial-kl",
+        "undial-kl-repair",
+    ],
 )
 def test_required_even_dryrun_and_wrong_method_refused(tmp_path, monkeypatch, method):
     service = Service(tmp_path / "workspace")
@@ -114,7 +122,15 @@ def test_frozen_data_delivered_signed_and_restorable(lifecycle, tmp_path, monkey
 
 
 @pytest.mark.parametrize(
-    "method", ["npo-kl", "grad-diff-kl", "npo-kl-repair", "grad-diff-kl-repair"]
+    "method",
+    [
+        "npo-kl",
+        "grad-diff-kl",
+        "npo-kl-repair",
+        "grad-diff-kl-repair",
+        "undial-kl",
+        "undial-kl-repair",
+    ],
 )
 @pytest.mark.parametrize("operation", ["erase", "forget"])
 def test_cli_production_dryrun_routes_data(tmp_path, monkeypatch, operation, method):
@@ -140,7 +156,9 @@ def test_cli_production_dryrun_routes_data(tmp_path, monkeypatch, operation, met
     assert record["dry_run"] and record["metadata"]["gradient_data"]["content_sha256"]
 
 
-@pytest.mark.parametrize("method", ["npo-kl", "npo-kl-repair", "grad-diff-kl-repair"])
+@pytest.mark.parametrize(
+    "method", ["npo-kl", "npo-kl-repair", "grad-diff-kl-repair", "undial-kl", "undial-kl-repair"]
+)
 def test_real_mcp_stdio_schema_and_dryrun(tmp_path, method):
     pytest.importorskip("mcp")
     import asyncio
@@ -209,7 +227,7 @@ def test_gradient_settings_refused_before_runtime(tmp_path, monkeypatch, setting
     assert service.store.list() == []
 
 
-@pytest.mark.parametrize("method", ["npo-kl-repair", "grad-diff-kl-repair"])
+@pytest.mark.parametrize("method", ["npo-kl-repair", "grad-diff-kl-repair", "undial-kl-repair"])
 @pytest.mark.parametrize("steps", [121, 128, True])
 def test_repair_total_bound_before_runtime(tmp_path, monkeypatch, method, steps):
     monkeypatch.setattr(module, "HFRuntime", lambda *a: pytest.fail("invalid steps loaded model"))
@@ -225,7 +243,7 @@ def test_repair_total_bound_before_runtime(tmp_path, monkeypatch, method, steps)
         )
 
 
-@pytest.mark.parametrize("method", ["npo-kl-repair", "grad-diff-kl-repair"])
+@pytest.mark.parametrize("method", ["npo-kl-repair", "grad-diff-kl-repair", "undial-kl-repair"])
 def test_repair_retain_count_refused_before_runtime(tmp_path, monkeypatch, method):
     monkeypatch.setattr(module, "HFRuntime", lambda *a: pytest.fail("invalid data loaded model"))
     path = data_file(tmp_path)

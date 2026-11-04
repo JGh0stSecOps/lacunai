@@ -9,9 +9,13 @@ from typing import Any
 from lacunai.experimental import tensors
 from lacunai.map.localize import record_digest
 
-REPAIR_METHODS = {"npo-kl-repair", "grad-diff-kl-repair"}
-FACTOID_METHODS = {"npo-kl", "grad-diff-kl"} | REPAIR_METHODS
+REPAIR_METHODS = {"npo-kl-repair", "grad-diff-kl-repair", "undial-kl-repair"}
+FACTOID_METHODS = {"npo-kl", "grad-diff-kl", "undial-kl"} | REPAIR_METHODS
 METHOD_INFO = {
+    "undial-kl": {
+        "cost": "experimental fixed-demotion self-distillation with retain KL",
+        "risk": "UnDIAL adaptation, not paper reproduction; collateral and recovery risk",
+    },
     **{
         name: {
             "cost": "experimental bounded AdamW plus eight retain-only SGD repair updates",

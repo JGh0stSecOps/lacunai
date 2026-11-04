@@ -17,8 +17,16 @@ import lacunai.erase.gradient_objectives as kernels
 from lacunai.erase.methods import round_to_storage
 from lacunai.experimental import tensors
 
-MODES = ("npo-kl", "grad-diff-kl", "npo-kl-repair", "grad-diff-kl-repair")
-REPAIR_MODES = ("npo-kl-repair", "grad-diff-kl-repair")
+MODES = (
+    "npo-kl",
+    "grad-diff-kl",
+    "npo-kl-repair",
+    "grad-diff-kl-repair",
+    "undial-kl",
+    "undial-kl-repair",
+)
+UNDIAL_MODES = ("undial-kl", "undial-kl-repair")
+REPAIR_MODES = ("npo-kl-repair", "grad-diff-kl-repair", "undial-kl-repair")
 MAX_STEPS = 128
 MAX_RELATIVE = 0.25
 
@@ -175,17 +183,27 @@ def _propose(
             (kl + 0.25 * rnll).backward()
             kl_value, retain_value = float(kl.detach()), float(rnll.detach())
             del teacher, logits, kl, rnll
-            nll = kernels.sequence_nll(
-                kernels.answer_forward(model, fb), fb, selected_positions=True
+            forget_teacher = (
+                kernels.teacher_log_probs(model, reference, fb) if mode in UNDIAL_MODES else None
             )
+            forget_logits = kernels.answer_forward(model, fb)
+            nll = kernels.sequence_nll(forget_logits, fb, selected_positions=True)
             objective = (
                 kernels.npo_loss(nll, references[fi], 0.1)
                 if mode in ("npo-kl", "npo-kl-repair")
                 else -nll / (fb["labels"] != -100).sum()
             )
+            if mode in UNDIAL_MODES:
+                objective = kernels.undial_loss(
+                    forget_logits,
+                    forget_teacher,
+                    fb,
+                    runtime.tokenizer.eos_token_id,
+                    selected_positions=True,
+                )
             objective.backward()
             loss_value, nll_value = float(objective.detach()), float(nll.detach())
-            del objective, nll
+            del objective, nll, forget_logits, forget_teacher
             if parameter.grad is None or not bool(torch.isfinite(parameter.grad).all()):
                 raise ValueError("invalid factoid gradient")
             gradient_norm = float(
@@ -226,6 +244,7 @@ def _propose(
                 reference={name: original},
                 check=runtime.check,
                 bound_tolerance=0,
+                phase="retain_repair",
             )
             after_repair_hash = tensors.tensor_hash(parameter)
             proposal = round_to_storage({name: parameter.detach()}, runtime.storage_dtypes)[name]
@@ -258,6 +277,17 @@ def _propose(
         proposal = proposal.clone()
         if torch.equal(proposal, original):
             raise ValueError("factoid proposal rounded to no-op")
+        if mode in UNDIAL_MODES:
+            repair_metadata["undial"] = {
+                "demotion": 3.0,
+                "eos_policy": "undemoted teacher distribution distilled",
+                "positions": "causal answer and EOS only; prefix excluded",
+                "teacher": "frozen planted checkpoint",
+                "objective": "mean token soft-target cross entropy",
+                "adaptation": (
+                    "answer-only single-tensor UnDIAL with retain KL/NLL; not erasure proof"
+                ),
+            }
         result = {
             "replacements": {name: proposal},
             "trace": trace,

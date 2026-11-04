@@ -231,3 +231,38 @@ def test_repair_step_and_data_contract():
             helper.validate_inputs(mode, 121, FORGET, rows)
         with pytest.raises(ValueError, match="32 retain"):
             helper.validate_inputs(mode, 8, FORGET, RETAIN)
+
+
+@pytest.mark.parametrize("mode", ["undial-kl", "undial-kl-repair"])
+def test_tiny_undial_proposal_restores_teacher(monkeypatch, mode):
+    torch, runtime, name, _ = toy(monkeypatch)
+    runtime.tokenizer = SimpleNamespace(eos_token_id=4)
+    rows = [{"prompt": f"retain {i}", "answer": "oak"} for i in range(32)]
+
+    def loss(prompt, answer):
+        batch = helper.kernels.answer_batch(
+            runtime.tokenizer, {"prompts": [prompt], "answer": answer}, 128
+        )
+        return (
+            helper.kernels.sequence_nll(
+                helper.kernels.answer_forward(runtime.model, batch), batch, selected_positions=True
+            )
+            / (batch["labels"] != -100).sum()
+        )
+
+    runtime.loss = loss
+    original = helper._hashes(runtime.model)
+    real_teacher = helper.kernels.teacher_log_probs
+    reference_hashes = []
+
+    def teacher(model, reference, batch):
+        reference_hashes.append(helper.tensors.tensor_hash(reference["original_tensors"][name]))
+        return real_teacher(model, reference, batch)
+
+    monkeypatch.setattr(helper.kernels, "teacher_log_probs", teacher)
+    result = helper.propose(runtime, name, FORGET, rows, mode=mode, steps=1)
+    assert reference_hashes and set(reference_hashes) == {original[name]}
+    assert result["undial"]["demotion"] == 3
+    assert helper._hashes(runtime.model) == original
+    assert not torch.equal(result["replacements"][name], runtime.model.state_dict()[name])
+    assert all(p.grad is None for p in runtime.model.parameters())

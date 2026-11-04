@@ -283,3 +283,67 @@ def test_backend_learning_rate_enum_rejects_unapproved_values(rate):
     spec["learning_rate"] = rate
     with pytest.raises(ValueError, match="learning rate"):
         g.validate_spec(spec, inner)
+
+
+def test_undial_mask_eos_and_raw_logit_equivalence():
+    torch = pytest.importorskip("torch")
+    from lacunai.erase.gradient_objectives import undial_loss
+
+    batch = {
+        "input_ids": torch.tensor([[1, 2, 3, 4]]),
+        "labels": torch.tensor([[-100, -100, 3, 4]]),
+    }
+    raw = torch.tensor([[0.2, 0.1, -0.2, 2.0, 0.3], [0.4, 0.1, 0.2, 0.3, 1.7]])
+    teacher = torch.log_softmax(raw, dim=-1).requires_grad_(True)
+    before = teacher.detach().clone()
+    student = torch.tensor(
+        [[[0.4, 0.2, 0.1, 1.9, 0.3], [0.2, 0.1, 0.3, 0.5, 1.1]]], requires_grad=True
+    )
+    observed = undial_loss(student, teacher, batch, 4, selected_positions=True)
+    adjusted = raw.clone()
+    adjusted[0, 3] -= 3
+    expected_probs = torch.softmax(adjusted, dim=-1)
+    assert torch.allclose(expected_probs[1], torch.softmax(raw[1], dim=-1))
+    expected = -(expected_probs * torch.log_softmax(student[0], dim=-1)).sum(-1).mean()
+    assert torch.allclose(observed, expected, atol=1e-7, rtol=1e-6)
+    full = torch.zeros(1, 4, 5)
+    full[:, 1:3] = student.detach()
+    assert torch.allclose(undial_loss(full, teacher, batch, 4), observed)
+    observed.backward()
+    assert student.grad is not None and teacher.grad is None
+    assert torch.equal(teacher, before)
+    changed = dict(batch, labels=torch.tensor([[-100, -100, -7, 4]]))
+    with pytest.raises(ValueError, match="labels"):
+        undial_loss(student, teacher, changed, 4, selected_positions=True)
+
+
+def test_undial_demotion_guard_removal_control():
+    import inspect
+
+    import lacunai.erase.gradient_objectives as kernels
+
+    torch = pytest.importorskip("torch")
+    batch = {
+        "input_ids": torch.tensor([[1, 2, 3, 4]]),
+        "labels": torch.tensor([[-100, -100, 3, 4]]),
+    }
+    teacher = torch.log_softmax(
+        torch.tensor([[0.2, 0.1, 0.3, 2.0, 0.4], [0.2, 0.3, 0.1, 0.4, 2.0]]), dim=-1
+    )
+    student = torch.tensor([[[0.1, 0.2, 0.3, 2.0, 0.4], [0.2, 0.1, 0.3, 0.4, 2.0]]])
+    actual = kernels.undial_loss(student, teacher, batch, 4, selected_positions=True)
+    source = inspect.getsource(kernels.undial_loss)
+    assert "adjusted[indices[demoted], targets[demoted]] -= 3.0" in source
+    namespace = dict(vars(kernels))
+    exec(source.replace("adjusted[indices[demoted], targets[demoted]] -= 3.0", "pass"), namespace)
+    removed = namespace["undial_loss"](student, teacher, batch, 4, selected_positions=True)
+    assert not torch.allclose(actual, removed, atol=1e-6, rtol=1e-6)
+    exec(
+        source.replace(
+            "demoted = targets != eos_token_id",
+            "demoted = torch.ones_like(targets, dtype=torch.bool)",
+        ),
+        namespace,
+    )
+    wrong_eos = namespace["undial_loss"](student, teacher, batch, 4, selected_positions=True)
+    assert not torch.allclose(actual, wrong_eos, atol=1e-6, rtol=1e-6)
