@@ -123,6 +123,13 @@ def test_real_apply_seam(monkeypatch, method):
     from tests.test_factoid_gradient import FORGET, RETAIN, toy
 
     torch, runtime, name, _ = toy(monkeypatch)
+    # The synthetic forget batch ends with token 4; UnDIAL excludes that EOS
+    # position from demotion, just as the production tokenizer contract requires.
+    runtime.tokenizer = SimpleNamespace(eos_token_id=4)
+    forget_batch = factoid_gradient.kernels.answer_batch(
+        runtime.tokenizer, {"prompts": [FORGET[0]["prompt"]], "answer": FORGET[0]["answer"]}, 128
+    )
+    assert int(forget_batch["labels"][0, -1]) == runtime.tokenizer.eos_token_id
 
     def loss(prompt, answer):
         batch = factoid_gradient.kernels.answer_batch(
