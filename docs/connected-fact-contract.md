@@ -1,8 +1,8 @@
 # Connected-fact experimental contract
 
 Status: both profiles are implemented and exercised. The latest smaller-profile
-planting attempt failed qualification after 512 updates: target recall 13/16,
-retain 6/8, and capabilities 3/8 versus 8/8 untouched. No unlearning method ran; erasure efficacy
+planting attempt failed qualification after 512 updates: target recall 12/16,
+retain 5/8, and capabilities 4/8 versus 8/8 untouched. No unlearning method ran; erasure efficacy
 remains inconclusive. The [experiment log](results.md)
 records measured outcomes; this document specifies the prospective contract.
 
@@ -106,11 +106,11 @@ schedule and utility KL protection against the untouched model. The existing
 relative-change ceiling remains 0.25; source dtype rounding is included in that
 check. The execution manifest names exact step counts, tolerances and revisions.
 
-The prospective utility-preservation revision adds `0.25 × mean utility-answer
+The utility-preservation revision adds `0.25 × mean utility-answer
 NLL` to the utility KL objective. Both terms use the same utility forward pass;
 primary and matched retain-only training use the same objective. The training
-trace records each term and its coefficient. This revision has not yet been
-exercised in a Qwen pilot. Earlier connected runs used utility KL alone; their
+trace records each term and its coefficient. Connected10 exercised this revision for 512 Qwen planting updates but failed
+qualification. Its matched-reference arm was not reached. Earlier connected runs used utility KL alone; their
 frozen objectives and reported scores remain unchanged. Numerical unit tests do
 not establish that the revision will preserve capabilities or qualify planting.
 

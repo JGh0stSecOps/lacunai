@@ -1,5 +1,60 @@
 # Experimental results
 
+## Five-fact utility-preservation pilot — planting failed
+
+**Scientific outcome: inconclusive.** Connected10 exercised the utility-preservation objective for 512 planting updates and 32 qualification screens. The objective added `0.25 × mean utility-answer NLL` to utility KL, sharing the same utility forward pass. The data, model, tensor allowance, update ceiling and acceptance thresholds matched connected09. Planting still failed joint qualification: the final screen scored target **12/16**, retained facts **5/8** and capabilities **4/8**, versus **8/8** untouched capabilities. No unlearning method ran.
+
+| Update | Target | Retain | Capabilities |
+| ---: | ---: | ---: | ---: |
+| 16 | 8/16 | 3/8 | 8/8 |
+| 32 | 5/16 | 4/8 | 8/8 |
+| 48 | 10/16 | 5/8 | 8/8 |
+| 64 | 11/16 | 6/8 | 7/8 |
+| 80 | 10/16 | 6/8 | 7/8 |
+| 96 | 11/16 | 6/8 | 8/8 |
+| 112 | 11/16 | 5/8 | 6/8 |
+| 128 | 11/16 | 6/8 | 7/8 |
+| 144 | 10/16 | 5/8 | 6/8 |
+| 160 | 12/16 | 6/8 | 8/8 |
+| 176 | 12/16 | 5/8 | 6/8 |
+| 192 | 12/16 | 6/8 | 6/8 |
+| 208 | 12/16 | 5/8 | 5/8 |
+| 224 | 10/16 | 5/8 | 6/8 |
+| 240 | 10/16 | 5/8 | 6/8 |
+| 256 | 10/16 | 5/8 | 4/8 |
+| 272 | 11/16 | 5/8 | 5/8 |
+| 288 | 10/16 | 5/8 | 3/8 |
+| 304 | 11/16 | 5/8 | 6/8 |
+| 320 | 11/16 | 5/8 | 3/8 |
+| 336 | 10/16 | 5/8 | 5/8 |
+| 352 | 11/16 | 6/8 | 4/8 |
+| 368 | 12/16 | 6/8 | 5/8 |
+| 384 | 12/16 | 5/8 | 3/8 |
+| 400 | 13/16 | 5/8 | 5/8 |
+| 416 | 12/16 | 5/8 | 3/8 |
+| 432 | 11/16 | 5/8 | 2/8 |
+| 448 | 12/16 | 5/8 | 5/8 |
+| 464 | 12/16 | 5/8 | 2/8 |
+| 480 | 12/16 | 5/8 | 5/8 |
+| 496 | 12/16 | 5/8 | 2/8 |
+| 512 | 12/16 | 5/8 | 4/8 |
+
+At the final screen, direct and inverse target recall were 4/4 each, paraphrased recall was 3/4 and multi-hop recall was 1/4. Four target answers and three retained-fact answers were ambiguous. The untouched perplexity was 30.91693274222041057653646864 over 337 tokens. Planted perplexity was not measured because generation qualification never passed; matched-reference training, no-op comparison, candidate editing, final factual evaluation and benign relearning were not reached.
+
+| Final qualification screen | Connected09: utility KL | Connected10: utility KL + answer NLL |
+| --- | ---: | ---: |
+| Target recall | 13/16 | 12/16 |
+| Retained facts | 6/8 | 5/8 |
+| Capabilities | 3/8 | 4/8 |
+
+This is a descriptive comparison of one run per objective, not evidence of improvement or causation. Independent verification checked the coefficient and finite scalar diagnostics for all 512 updates; it did not independently rerun the gradients. Matched-reference use of the objective remains unexercised in this pilot because qualification failed first.
+
+Independent verification checked 45 signed files and 71 executed code files. All nine original and nine working-checkpoint file hashes matched their expected inventories; the snapshot was restored and the journal was empty. The original checkpoint remained read-only. Signatures establish integrity and provenance, not scientific certification or information absence.
+
+The 80 host samples contained one paging-out violation totaling 6846 pages. Protected process identities remained stable, which does not prove absence of interference. Resource limits are pinned supervisor/launcher declarations; the independent aggregate does not certify a fresh measurement of cgroup limits.
+
+See the [complete aggregate result and evidence digests](../research/results/connected-five-fact-utility-2026-11-04.json). Earlier results remain below; retained originals and backups still contain their original information.
+
 ## Five-fact pilot — planting failed
 
 **Scientific outcome: inconclusive.** The smaller `connected-5` profile completed 512 planting updates and 32 qualification screens. Its one forget relation, two neighboring relations and two unrelated relations did not jointly qualify. The final screen scored target 13/16, retained facts 6/8 and capabilities 3/8 versus 8/8 capabilities before planting. No unlearning method ran.
@@ -45,7 +100,7 @@ Independent verification checked 45 signed files and 71 executed code files, rec
 
 The 79 host samples contained 5 samples with paging-out violations totaling 48837 pages; none reached the sustained-abort threshold. Protected process identities remained stable; this does not prove absence of interference. An earlier preparation attempt was resource-aborted and is separate from this completed planting result.
 
-A prospective correction adds utility-answer NLL to the existing utility KL objective, using the same utility forward pass and the same objective for matched-reference training. It changes no acceptance threshold. It has not yet been exercised on the target model and is not presented as a fix proven by this result.
+At the time of this run, the utility-answer NLL correction was prospective. It was subsequently exercised in connected10, reported above, without qualifying planting. The connected09 measurements and frozen objective remain unchanged.
 
 See the [complete aggregate result and digests](../research/results/connected-five-fact-2026-11-04.json). Signatures establish byte integrity, not information deletion.
 

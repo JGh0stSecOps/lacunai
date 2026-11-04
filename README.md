@@ -19,11 +19,11 @@ An editing model interprets the target and diagnostic evidence, then proposes a 
 
 ## Current experiment: connected facts
 
-The latest five-fact pilot **failed planting qualification after 512 updates; erasure efficacy remains inconclusive**. It recovered 13/16 target answers and 6/8 retained-fact answers, while capability correctness fell from 8/8 untouched to 3/8. Direct, paraphrased and inverse target recall each reached 4/4; multi-hop recall was 1/4. Neither unlearning method ran. Original checkpoint files remained unchanged; the working checkpoint was restored exactly.
+The latest five-fact pilot **failed planting qualification after 512 updates; erasure efficacy remains inconclusive**. It exercised utility KL plus `0.25 × mean utility-answer NLL`, but recovered only 12/16 target answers and 5/8 retained-fact answers, while capability correctness fell from 8/8 untouched to 4/8. Direct and inverse target recall reached 4/4 each; paraphrased recall was 3/4 and multi-hop recall 1/4. Neither unlearning method ran. Original checkpoint files remained unchanged; the working checkpoint was restored exactly.
 
-The [connected contract](docs/connected-fact-contract.md) tests neighboring and unrelated facts, inverse and multi-hop recovery, capabilities, and full-answer likelihood against a matched retain-only reference. The capability bank first failed its fixed category quotas; a revision passed preparation and selected eight pairs that the untouched model answered correctly in both phrasings. This is competence-conditioned preservation testing, not unbiased broad capability accuracy. Balanced forward/inverse training was exercised in the latest run but did not qualify the model.
+The [connected contract](docs/connected-fact-contract.md) tests neighboring and unrelated facts, inverse and multi-hop recovery, capabilities, and full-answer likelihood against a matched retain-only reference. Capability probes were selected for untouched-model competence; this is preservation testing, not unbiased broad capability accuracy.
 
-The [experiment log](docs/results.md) preserves the earlier twelve-fact failures and the [five-fact result](research/results/connected-five-fact-2026-11-04.json). The smaller profile was exercised under unchanged acceptance thresholds. A utility-preservation correction is implemented but has not yet been exercised in a model pilot; software tests are not efficacy evidence.
+The [experiment log](docs/results.md) preserves the earlier twelve-fact and five-fact failures alongside the [utility-preservation result](research/results/connected-five-fact-utility-2026-11-04.json). The latest objective was exercised under unchanged acceptance thresholds. Comparing these individual runs does not establish improvement; software tests and artifact signatures are not efficacy evidence.
 
 ## Earlier experiment: one fact
 
