@@ -61,3 +61,10 @@ The next explicit `contextual-kl` profile tests varied development wording and a
 The fixed exploratory schedule opens 128, 512, then all 4,864 rows of the final MLP up-projection, each starting from the untouched checkpoint. AdamW learning rates are 0.002, 0.001 and 0.0003, with a maximum of 256 updates per profile. The target multi-token answer/EOS loss is combined with retain KL and retain-answer NLL. Proposed weights are rounded to source precision before development and qualification checks. No full candidate checkpoint is persisted unless learning qualifies; failed profiles retain their evidence.
 
 The evaluation thresholds stay fixed. Selecting among planting profiles using a reused qualification contract is exploratory; it does not turn this public developer-designed test into an independent secret benchmark. Passing still requires actual recovery suppression, collateral checks, bounded benign relearning and exact restoration for at least two editing methods. Original checkpoints and backups retain the information.
+
+
+### Projected contextual profile
+
+The separately selectable `contextual-kl-projected` follow-up tests whether constraining each training update avoids termination at the existing norm bound while still learning the fact. It uses only the full-width final up-projection, learning rate 0.0003 and at most 512 updates. Each update projects the delta to relative radius 0.24; optimizer moments remain unprojected, and source-rounded proposals must still satisfy the unchanged 0.25 validation bound. This is a projected optimization hypothesis, not evidence that a suitable solution exists inside that ball.
+
+The original training schedules, synthetic development data and evaluation thresholds remain unchanged. The matched retain-only reference inherits the actual completed steps and projection profile. This follow-up is unexecuted; its preparation does not revise historical failed or inconclusive outcomes or establish unlearning.

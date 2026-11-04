@@ -56,24 +56,24 @@ def normalized(value: str) -> str:
 def load_training(path: Path, spec: TargetSpec, *, profile: str = "legacy") -> dict[str, Any]:
     value = json.loads(bounded_file(path))
     fields = {"schema_version", "model_revision", "development", "retain_development"}
-    if profile == "contextual-kl":
+    if profile in {"contextual-kl", "contextual-kl-projected"}:
         fields.add("provenance")
     if set(value) != fields:
         raise ValueError("unexpected planting data fields")
-    if profile not in {"legacy", "contextual-kl"}:
+    if profile not in {"legacy", "contextual-kl", "contextual-kl-projected"}:
         raise ValueError("unknown planting profile")
-    expected_schema = 2 if profile == "contextual-kl" else 1
+    expected_schema = 2 if profile in {"contextual-kl", "contextual-kl-projected"} else 1
     if value["schema_version"] != expected_schema or value["model_revision"] != REVISION:
         raise ValueError("planting data version/revision mismatch")
     development, retain = value["development"], value["retain_development"]
-    expected_development = 64 if profile == "contextual-kl" else 16
+    expected_development = 64 if profile in {"contextual-kl", "contextual-kl-projected"} else 16
     if not isinstance(development, list) or len(development) != expected_development:
         raise ValueError("planting development count differs from selected profile")
     if not isinstance(retain, list) or not 1 <= len(retain) <= 256:
         raise ValueError("retain development must be nonempty and bounded")
-    if profile == "contextual-kl" and len(retain) != 32:
+    if profile in {"contextual-kl", "contextual-kl-projected"} and len(retain) != 32:
         raise ValueError("contextual planting requires exactly thirty-two retain prompts")
-    if profile == "contextual-kl" and (
+    if profile in {"contextual-kl", "contextual-kl-projected"} and (
         not isinstance(value["provenance"], str) or not value["provenance"].strip()
     ):
         raise ValueError("contextual provenance must be nonempty")
@@ -375,12 +375,21 @@ def contextual_helper() -> Any:
     return helper
 
 
-def contextual_manifest() -> dict[str, Any]:
+def contextual_manifest(*, projected: bool = False) -> dict[str, Any]:
+    helper = contextual_helper()
+    widths = (4864,) if projected else CONTEXTUAL_WIDTHS
     return {
-        "widths": list(CONTEXTUAL_WIDTHS),
-        "max_steps_per_attempt": 256,
+        "profile": "contextual-kl-projected" if projected else "contextual-kl",
+        "projection": {
+            "enabled": projected,
+            "radius": helper.PROJECTED_RADIUS if projected else None,
+            "validation_bound": MAX_RELATIVE,
+            "optimizer_state_projected": False,
+        },
+        "widths": list(widths),
+        "max_steps_per_attempt": helper.PROJECTED_MAX_STEPS if projected else 256,
         "optimizer": "AdamW",
-        "learning_rates_by_width": contextual_helper().PROFILES,
+        "learning_rates_by_width": {width: helper.PROFILES[width] for width in widths},
         "retain_kl_weight": "1.0",
         "retain_nll_weight": "0.25",
         "source_each_attempt": "untouched original",
@@ -448,6 +457,7 @@ def contextual_attempt(
     retain_only: bool = False,
     selection: tuple[str, list[int]] | None = None,
     steps: int = 256,
+    projected: bool = False,
 ) -> dict[str, Any]:
     train = contextual_helper().train
 
@@ -469,6 +479,7 @@ def contextual_attempt(
         "tensor": name,
         "rows": rows,
         "width": width,
+        "profile": "contextual-kl-projected" if projected else "contextual-kl",
         "qualified": False,
         "snapshot_id": snapshot["snapshot_id"],
         "source_fingerprint": runtime.fingerprint,
@@ -478,7 +489,15 @@ def contextual_attempt(
     proposed = None
     try:
         proposed, completed = train(
-            runtime, name, rows, data, budget, directory, retain_only=retain_only, steps=steps
+            runtime,
+            name,
+            rows,
+            data,
+            budget,
+            directory,
+            retain_only=retain_only,
+            steps=steps,
+            **({"projected": True} if projected else {}),
         )
         if tensors.tensor_hash(parameter) != original_hash:
             raise ValueError("contextual trainer did not restore original parameter")
@@ -575,12 +594,25 @@ def contextual_plant(
     data: dict[str, Any],
     spec: TargetSpec,
     budget: Budget,
+    *,
+    projected: bool = False,
 ) -> dict[str, Any]:
     attempts = []
     directory.mkdir(parents=True, exist_ok=False)
-    for width in CONTEXTUAL_WIDTHS:
+    for width in (4864,) if projected else CONTEXTUAL_WIDTHS:
         attempt = contextual_attempt(
-            source, destination, directory / f"width-{width}", data, spec, budget, width
+            source,
+            destination,
+            directory / f"width-{width}",
+            data,
+            spec,
+            budget,
+            width,
+            **(
+                {"projected": True, "steps": contextual_helper().PROJECTED_MAX_STEPS}
+                if projected
+                else {}
+            ),
         )
         attempts.append(attempt)
         atomic_json(directory / "attempts.json", attempts)
@@ -870,9 +902,12 @@ def run(
     plant_max_steps: int = MAX_STEPS,
     plant_profile: str = "legacy",
 ) -> dict[str, Any]:
-    if plant_profile not in {"legacy", "contextual-kl"}:
+    if plant_profile not in {"legacy", "contextual-kl", "contextual-kl-projected"}:
         raise ValueError("unknown planting profile")
-    if plant_profile == "contextual-kl" and plant_max_steps != MAX_STEPS:
+    if (
+        plant_profile in {"contextual-kl", "contextual-kl-projected"}
+        and plant_max_steps != MAX_STEPS
+    ):
         raise ValueError("contextual-kl fixes its own step schedule; omit --plant-max-steps")
     if type(plant_max_steps) is not int or plant_max_steps not in (128, 512):
         raise ValueError("plant_max_steps must be exactly 128 or 512")
@@ -881,7 +916,9 @@ def run(
             "status": "planned",
             "verdict": "inconclusive",
             "dry_run": True,
-            "plant_max_steps": 256 if plant_profile == "contextual-kl" else plant_max_steps,
+            "plant_max_steps": (512 if plant_profile == "contextual-kl-projected" else 256)
+            if plant_profile in {"contextual-kl", "contextual-kl-projected"}
+            else plant_max_steps,
             "plant_profile": plant_profile,
             "candidates": list(EDITS),
             "claim": "plan only; pass --apply for numerical execution",
@@ -920,7 +957,7 @@ def run(
             Path(__file__).resolve(),
             *sorted((code_root / "src" / "lacunai").rglob("*.py")),
         ]
-        if plant_profile == "contextual-kl":
+        if plant_profile in {"contextual-kl", "contextual-kl-projected"}:
             code_files.append(Path(__file__).with_name("contextual_planting.py"))
         atomic_json(
             workspace / "manifest.json",
@@ -946,11 +983,15 @@ def run(
                     "candidate_attempts": len(EDITS),
                 },
                 "plant_profile": plant_profile,
-                "contextual_schedule": contextual_manifest()
-                if plant_profile == "contextual-kl"
+                "contextual_schedule": contextual_manifest(
+                    projected=plant_profile == "contextual-kl-projected"
+                )
+                if plant_profile in {"contextual-kl", "contextual-kl-projected"}
                 else None,
-                "planting": contextual_manifest()
-                if plant_profile == "contextual-kl"
+                "planting": contextual_manifest(
+                    projected=plant_profile == "contextual-kl-projected"
+                )
+                if plant_profile in {"contextual-kl", "contextual-kl-projected"}
                 else {
                     "max_steps": plant_max_steps,
                     "rows": ROW_COUNT,
@@ -992,8 +1033,16 @@ def run(
         )
         score_checkpoint(source, spec, budget, workspace / "untouched.json")
         planted = workspace / "checkpoints" / "planted"
-        if plant_profile == "contextual-kl":
-            planting = contextual_plant(source, planted, workspace / "planting", data, spec, budget)
+        if plant_profile in {"contextual-kl", "contextual-kl-projected"}:
+            planting = contextual_plant(
+                source,
+                planted,
+                workspace / "planting",
+                data,
+                spec,
+                budget,
+                **({"projected": True} if plant_profile == "contextual-kl-projected" else {}),
+            )
         else:
             planting = trained_checkpoint(
                 source,
@@ -1008,7 +1057,7 @@ def run(
         summary["planting"] = planting
         atomic_json(workspace / "summary.json", summary)
         reference = workspace / "checkpoints" / "retain-only"
-        if plant_profile == "contextual-kl":
+        if plant_profile in {"contextual-kl", "contextual-kl-projected"}:
             contextual_attempt(
                 source,
                 reference,
@@ -1020,6 +1069,7 @@ def run(
                 retain_only=True,
                 selection=(planting["tensor"], planting["rows"]),
                 steps=planting["steps"],
+                **({"projected": True} if plant_profile == "contextual-kl-projected" else {}),
             )
         else:
             trained_checkpoint(
@@ -1042,7 +1092,7 @@ def run(
         if generation_identity(noop_result) != generation_identity(baseline):
             raise ValueError("byte-identical no-op generation differs from baseline")
         scratch = workspace / "checkpoints" / "scratch"
-        if plant_profile == "contextual-kl":
+        if plant_profile in {"contextual-kl", "contextual-kl-projected"}:
             byte_copy(planted, scratch, budget)
             atomic_json(
                 workspace / "scratch-lineage.json",
@@ -1064,7 +1114,9 @@ def run(
             summary["candidates"].append(record)
             atomic_json(workspace / "summary.json", summary)
             output = (
-                scratch if plant_profile == "contextual-kl" else workspace / "checkpoints" / method
+                scratch
+                if plant_profile in {"contextual-kl", "contextual-kl-projected"}
+                else workspace / "checkpoints" / method
             )
             candidate_dir = workspace / method
             candidate_dir.mkdir()
@@ -1076,17 +1128,19 @@ def run(
                     2 * sum((planted / p).stat().st_size for p in planted_inventory) + 64 * 1024**2
                 )
                 if (
-                    plant_profile == "contextual-kl"
+                    plant_profile in {"contextual-kl", "contextual-kl-projected"}
                     and checkpoint_inventory(scratch, 4 * 1024**3) != planted_inventory
                 ):
                     raise ValueError("scratch is not restored planted source before edit")
                 result = service.erase(
-                    scratch if plant_profile == "contextual-kl" else planted,
+                    scratch
+                    if plant_profile in {"contextual-kl", "contextual-kl-projected"}
+                    else planted,
                     workspace / "target.json",
                     output=output,
                     apply=True,
                     config=budget.config(),
-                    in_place=plant_profile == "contextual-kl",
+                    in_place=plant_profile in {"contextual-kl", "contextual-kl-projected"},
                     **edit,
                 )
                 atomic_json(candidate_dir / "erase.json", result)
@@ -1162,9 +1216,10 @@ def run(
                     except Exception as exc:
                         record.update(status="failed", restore_error=f"{type(exc).__name__}: {exc}")
                         atomic_json(workspace / "summary.json", summary)
-                        if plant_profile == "contextual-kl" or isinstance(
-                            exc, (TimeoutError, OSError, MemoryError)
-                        ):
+                        if plant_profile in {
+                            "contextual-kl",
+                            "contextual-kl-projected",
+                        } or isinstance(exc, (TimeoutError, OSError, MemoryError)):
                             raise
                 atomic_json(workspace / "summary.json", summary)
         if checkpoint_inventory(source, 4 * 1024**3) != source_inventory:
@@ -1222,7 +1277,11 @@ def main() -> int:
     )
     parser.add_argument("--apply", action="store_true", help="authorize the frozen numerical batch")
     parser.add_argument("--plant-max-steps", type=int, choices=(128, 512), default=MAX_STEPS)
-    parser.add_argument("--plant-profile", choices=("legacy", "contextual-kl"), default="legacy")
+    parser.add_argument(
+        "--plant-profile",
+        choices=("legacy", "contextual-kl", "contextual-kl-projected"),
+        default="legacy",
+    )
     args = parser.parse_args()
     with active_phase("planted_fact_pilot"):
         result = run(

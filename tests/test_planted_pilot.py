@@ -439,17 +439,18 @@ def contextual_training() -> dict[str, Any]:
     return value
 
 
-def test_contextual_data_requires_explicit_profile_and_exact_counts(tmp_path):
+@pytest.mark.parametrize("profile", ["contextual-kl", "contextual-kl-projected"])
+def test_contextual_data_requires_explicit_profile_and_exact_counts(tmp_path, profile):
     path = tmp_path / "data.json"
     value = contextual_training()
     path.write_text(json.dumps(value))
     with pytest.raises(ValueError):
         pilot.load_training(path, contract())
-    assert pilot.load_training(path, contract(), profile="contextual-kl") == value
+    assert pilot.load_training(path, contract(), profile=profile) == value
     value["retain_development"].pop()
     path.write_text(json.dumps(value))
     with pytest.raises(ValueError, match="thirty-two"):
-        pilot.load_training(path, contract(), profile="contextual-kl")
+        pilot.load_training(path, contract(), profile=profile)
 
 
 @pytest.mark.parametrize("mutation", ["heldout", "ppl", "duplicate", "retain_answer", "provenance"])
@@ -506,16 +507,18 @@ def test_contextual_schedule_exhaustion_preserves_attempts_without_checkpoint(
     assert not (tmp_path / "dest").exists()
 
 
+@pytest.mark.parametrize("projected", [False, True])
 @pytest.mark.parametrize("development_ok,baseline_ok", [(False, True), (True, False), (True, True)])
 def test_contextual_real_tensor_write_boundary_and_exact_memory_restore(
-    tmp_path, monkeypatch, development_ok, baseline_ok
+    tmp_path, monkeypatch, development_ok, baseline_ok, projected
 ):
     """Real tensors/storage arithmetic; fixture runtime is not model-efficacy evidence."""
     torch = pytest.importorskip("torch")
     pytest.importorskip("safetensors.torch")
     from types import SimpleNamespace
 
-    model = torch.nn.Linear(2, 128, bias=False)
+    width = 4864 if projected else 128
+    model = torch.nn.Linear(2, width, bias=False)
     original = model.weight.detach().clone()
     runtime = SimpleNamespace(
         model=model, inventory={}, storage_dtypes={"weight": "BF16"}, fingerprint="fixture"
@@ -527,11 +530,16 @@ def test_contextual_real_tensor_write_boundary_and_exact_memory_restore(
         "prepare_snapshot",
         lambda *args, **kw: {"snapshot_id": "fixture", "before_files": {}},
     )
-    monkeypatch.setattr(
-        pilot,
-        "contextual_helper",
-        lambda: SimpleNamespace(train=lambda *args, **kw: (original + 0.001, 16)),
-    )
+
+    def trainer(*args, **kwargs):
+        assert kwargs == {
+            "retain_only": False,
+            "steps": 512 if projected else 256,
+            **({"projected": True} if projected else {}),
+        }
+        return original + 0.001, 64
+
+    monkeypatch.setattr(pilot, "contextual_helper", lambda: SimpleNamespace(train=trainer))
     monkeypatch.setattr(
         pilot, "development_recovery", lambda *args: {"all_recovered": development_ok, "rows": []}
     )
@@ -562,8 +570,10 @@ def test_contextual_real_tensor_write_boundary_and_exact_memory_restore(
         contextual_training(),
         contract(),
         budget,
-        128,
-        selection=("weight", list(range(128))),
+        width,
+        selection=("weight", list(range(width))),
+        steps=512 if projected else 256,
+        projected=projected,
     )
     assert torch.equal(model.weight, original)
     assert result["memory_restored_exact"] is True
@@ -585,7 +595,13 @@ def test_contextual_real_tensor_write_boundary_and_exact_memory_restore(
     assert afterimage["representation"] == "source-rounded FP32 representation"
 
 
-def test_contextual_run_matches_reference_to_qualified_width_rows_and_steps(tmp_path, monkeypatch):
+@pytest.mark.parametrize("projected", [False, True])
+def test_contextual_run_matches_reference_to_qualified_width_rows_and_steps(
+    tmp_path, monkeypatch, projected
+):
+    width = 4864 if projected else 512
+    completed = 384 if projected else 192
+    profile = "contextual-kl-projected" if projected else "contextual-kl"
     from dataclasses import asdict
 
     target = tmp_path / "target.json"
@@ -594,17 +610,17 @@ def test_contextual_run_matches_reference_to_qualified_width_rows_and_steps(tmp_
     data.write_text(json.dumps(contextual_training()))
     manifest = tmp_path / "source-manifest.json"
     manifest.write_text(json.dumps({"model_revision": pilot.REVISION, "files": {}}))
-    monkeypatch.setattr(pilot, "checkpoint_inventory", lambda *args: {})
+    monkeypatch.setattr(pilot, "checkpoint_inventory", lambda *args, **kwargs: {})
     monkeypatch.setattr(pilot.importlib.metadata, "version", lambda name: "software-fixture")
-    monkeypatch.setattr(pilot, "score_checkpoint", lambda *args: {})
+    monkeypatch.setattr(pilot, "score_checkpoint", lambda *args, **kwargs: {})
     monkeypatch.setattr(
         pilot,
         "contextual_plant",
-        lambda *args: {
+        lambda *args, **kwargs: {
             "tensor": "fixture.weight",
-            "rows": list(range(512)),
-            "width": 512,
-            "steps": 192,
+            "rows": list(range(width)),
+            "width": width,
+            "steps": completed,
         },
     )
     calls = []
@@ -622,21 +638,26 @@ def test_contextual_run_matches_reference_to_qualified_width_rows_and_steps(tmp_
         manifest,
         None,
         apply=True,
-        plant_profile="contextual-kl",
+        plant_profile=profile,
     )
-    assert calls[0][0][-1] == 512
+    assert calls[0][0][-1] == width
     assert calls[0][1] == {
         "retain_only": True,
-        "selection": ("fixture.weight", list(range(512))),
-        "steps": 192,
+        "selection": ("fixture.weight", list(range(width))),
+        "steps": completed,
+        **({"projected": True} if projected else {}),
     }
     saved = json.loads((tmp_path / "workspace/manifest.json").read_text())
-    assert saved["planting"]["max_steps_per_attempt"] == 256
-    assert saved["planting"]["learning_rates_by_width"] == {
-        "128": 0.002,
-        "512": 0.001,
-        "4864": 0.0003,
-    }
+    assert saved["planting"]["max_steps_per_attempt"] == (512 if projected else 256)
+    assert saved["planting"]["learning_rates_by_width"] == (
+        {"4864": 0.0003}
+        if projected
+        else {
+            "128": 0.002,
+            "512": 0.001,
+            "4864": 0.0003,
+        }
+    )
     assert result["status"] == "failed" and "fixture stops" in result["error"]
 
 
@@ -649,12 +670,13 @@ def test_contextual_profile_is_explicit_and_dryrun_has_no_model_side_effect(tmp_
     assert not any(p.exists() for p in paths)
 
 
-def test_contextual_rejects_conflicting_step_override_before_work(tmp_path):
+@pytest.mark.parametrize("profile", ["contextual-kl", "contextual-kl-projected"])
+def test_contextual_rejects_conflicting_step_override_before_work(tmp_path, profile):
     with pytest.raises(ValueError, match="omit --plant-max-steps"):
         pilot.run(
             *[tmp_path / str(i) for i in range(5)],
             None,
-            plant_profile="contextual-kl",
+            plant_profile=profile,
             plant_max_steps=512,
         )
     assert not list(tmp_path.iterdir())
@@ -708,3 +730,40 @@ def test_contextual_only_restored_norm_rejection_can_continue(tmp_path, monkeypa
             pilot.contextual_attempt(*args, **kwargs)
     assert torch.equal(model.weight, original)
     assert not (tmp_path / "dest").exists()
+
+
+def test_projected_single_attempt_original_source_and_no_resume(tmp_path, monkeypatch):
+    calls = []
+    source = tmp_path / "original"
+    destination = tmp_path / "new-checkpoint"
+
+    def attempt(*args, **kwargs):
+        calls.append((args[0], args[-1], kwargs))
+        return {"qualified": False, "width": args[-1]}
+
+    monkeypatch.setattr(pilot, "contextual_attempt", attempt)
+    directory = tmp_path / "attempts"
+    with pytest.raises(ValueError, match="no full checkpoint"):
+        pilot.contextual_plant(source, destination, directory, {}, contract(), None, projected=True)
+    assert calls == [(source, 4864, {"projected": True, "steps": 512})]
+    evidence = (directory / "attempts.json").read_bytes()
+    with pytest.raises(FileExistsError):
+        pilot.contextual_plant(source, destination, directory, {}, contract(), None, projected=True)
+    assert len(calls) == 1 and (directory / "attempts.json").read_bytes() == evidence
+    assert not destination.exists()
+
+
+def test_projected_dryrun_and_manifest_keep_validation_bound(tmp_path):
+    paths = [tmp_path / str(i) for i in range(5)]
+    plan = pilot.run(*paths, None, plant_profile="contextual-kl-projected")
+    assert plan["plant_max_steps"] == 512 and plan["dry_run"]
+    manifest = pilot.contextual_manifest(projected=True)
+    assert manifest["widths"] == [4864]
+    assert manifest["learning_rates_by_width"] == {4864: 0.0003}
+    assert manifest["projection"] == {
+        "enabled": True,
+        "radius": 0.24,
+        "validation_bound": 0.25,
+        "optimizer_state_projected": False,
+    }
+    assert not any(p.exists() for p in paths)

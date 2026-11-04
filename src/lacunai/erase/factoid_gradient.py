@@ -44,6 +44,13 @@ def validate_inputs(mode: str, steps: int, forget: Any, retain_development: Any)
         raise ValueError("forget and retain development prompts overlap")
 
 
+def training_cap(runtime_cap: int) -> int:
+    """Keep inference configuration intact while bounding training sequences."""
+    if type(runtime_cap) is not int or not 16 <= runtime_cap <= 1024:
+        raise ValueError("runtime prompt cap must be an integer within 16..1024")
+    return min(runtime_cap, 128)
+
+
 def _hashes(model: Any) -> dict[str, str]:
     return {name: tensors.tensor_hash(value) for name, value in model.state_dict().items()}
 
@@ -108,9 +115,8 @@ def _propose(
     parameter = parameters[name]
     if parameter.ndim != 2:
         raise ValueError("up projection must be a matrix")
-    cap = runtime.config.max_prompt_tokens
-    if type(cap) is not int or not 1 <= cap <= 128:
-        raise ValueError("runtime answer token cap must be an integer within 1..128")
+    inference_prompt_cap = runtime.config.max_prompt_tokens
+    cap = training_cap(inference_prompt_cap)
     runtime.check()
     before = _hashes(model)
     original = parameter.detach().clone()
@@ -225,6 +231,8 @@ def _propose(
                 "retain_nll": 0.25,
                 "max_relative": MAX_RELATIVE,
                 "sequence_tokens": cap,
+                "trainingsequence_tokens": cap,
+                "inference_prompt_cap": inference_prompt_cap,
             },
         }
     finally:

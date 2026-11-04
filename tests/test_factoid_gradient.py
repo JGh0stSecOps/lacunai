@@ -126,7 +126,7 @@ def test_retain_gradient_control(monkeypatch):
     logits = helper.kernels.answer_forward(runtime.model, batch)
     kl = helper.kernels.retain_kl(logits, teacher, batch, selected_positions=True)
     grad = torch.autograd.grad(kl, p)[0]
-    assert float(kl) > 0 and float(grad.abs().max()) > 1e-8
+    assert float(kl.detach()) > 0 and float(grad.abs().max()) > 1e-8
 
 
 def test_preparation_failure_terminal(monkeypatch):
@@ -187,3 +187,37 @@ def test_restoration_failure_preserves_primary(monkeypatch):
         "restoration hash failure",
     ]
     assert events[-1]["state"] == "failed"
+
+
+def test_runtime_default_training_cap():
+    from lacunai.core.spec import RuntimeConfig
+
+    assert helper.training_cap(RuntimeConfig().max_prompt_tokens) == 128
+    assert helper.training_cap(RuntimeConfig(max_prompt_tokens=16).max_prompt_tokens) == 16
+    assert helper.training_cap(1024) == 128
+
+
+@pytest.mark.parametrize("cap", [True, 128.0, "128", 0, 15, 1025, None])
+def test_unsupported_runtime_cap(cap):
+    with pytest.raises(ValueError, match="runtime prompt cap"):
+        helper.training_cap(cap)
+
+
+@pytest.mark.parametrize("runtime_cap, expected", [(256, 128), (16, 16)])
+def test_proposal_actual_cap_seam(monkeypatch, runtime_cap, expected):
+    from lacunai.core.spec import RuntimeConfig
+
+    _, runtime, name, _ = toy(monkeypatch)
+    runtime.config = RuntimeConfig(max_prompt_tokens=runtime_cap)
+    real = helper.kernels.answer_batch
+    seen = []
+
+    def capture(tokenizer, item, cap):
+        seen.append(cap)
+        return real(tokenizer, item, cap)
+
+    monkeypatch.setattr(helper.kernels, "answer_batch", capture)
+    result = helper.propose(runtime, name, FORGET, RETAIN, mode="npo-kl", steps=1)
+    assert seen and set(seen) == {expected}
+    assert result["settings"]["inference_prompt_cap"] == runtime_cap
+    assert result["settings"]["trainingsequence_tokens"] == expected

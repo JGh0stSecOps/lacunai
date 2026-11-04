@@ -58,3 +58,12 @@ Three fixed planting profiles start independently from the untouched checkpoint:
 The batch retains distinct planted, matched-retain and byte-identical no-op checkpoints. Editing uses one newly created isolated scratch checkpoint with explicit in-place transactions; the original and prior-run checkpoints remain untouched. Each method retains its own before-images, after-images and reports. Scratch checkpoint hashes and restored generations must match the planted baseline before the next method starts. This changes storage use, not the evidence required for acceptance. Historical candidate states can be reconstructed from their preserved tensor images.
 
 This is a broader experimental training schedule, not a lower qualification threshold. Results remain pending until actual execution and independent artifact readback.
+
+
+### Projected contextual follow-up
+
+`--plant-profile contextual-kl-projected` is a separate, unexecuted follow-up profile. It starts from the untouched source, opens only the full 4,864-row final up-projection, and permits at most 512 AdamW updates at learning rate 0.0003. It reuses the same 64 development and 32 retain-development examples, objectives, source-precision checks and frozen evaluation contract. At each 64-step boundary, all development examples must recover before early stopping. The matched retain-only reference uses the identical rows, profile and actual completed update count. `--plant-max-steps` overrides are refused for this profile.
+
+After every optimizer update, the tensor delta is projected into a relative Frobenius-radius 0.24 ball around the untouched source. AdamW moments are not projected. The independent pre/post-storage validation bound remains 0.25; projection is not permission to relax it. Traces record projection scale, pre-projection distance, cumulative projection count and measured post-rounding distance. This constrains training rather than establishing learning or forgetting.
+
+Existing `legacy` and `contextual-kl` schedules remain unchanged. The follow-up uses a new workspace, does not resume failed attempts, and preserves previous results. Compact attempt evidence, qualification before full checkpoint persistence, reload parity, matched controls, serial scratch edits and exact restoration retain the existing requirements. No additional erase methods or acceptance thresholds are introduced.
