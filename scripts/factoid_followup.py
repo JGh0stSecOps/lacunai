@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import os
 import sys
 from dataclasses import asdict
 from pathlib import Path
@@ -70,11 +71,46 @@ def api(code: Path) -> Any:
     return module
 
 
+def validated_reuse(plan: dict[str, Any], inventory: dict[str, str], pilot: Any) -> Path | None:
+    """Explicit source-bound scratch reuse; never infer permission from existing bytes."""
+    if "reuse_scratch" not in plan:
+        return None
+    declaration = plan["reuse_scratch"]
+    if not isinstance(declaration, dict) or set(declaration) != {
+        "path",
+        "prior_run",
+        "source_fingerprint",
+    }:
+        raise ValueError("scratch reuse declaration differs")
+    scratch, prior = path(declaration["path"]), path(declaration["prior_run"])
+    if scratch != prior / "scratch" or not prior.is_dir() or not scratch.is_dir():
+        raise ValueError("scratch reuse must identify an existing prior run scratch")
+    protected = [path(plan[k]) for k in ("planted", "code", "workspace")]
+    if any(prior == item or prior in item.parents or item in prior.parents for item in protected):
+        raise ValueError("reused scratch lineage overlaps protected paths")
+    if declaration["source_fingerprint"] != pilot.digest(inventory):
+        raise ValueError("scratch reuse source pin differs")
+    progress("scratch_reuse_verification", state="active")
+    try:
+        if pilot.checkpoint_inventory(scratch, 4 * 1024**3) != inventory:
+            raise ValueError("reused scratch bytes differ from planted source")
+        source = path(plan["planted"])
+        for name in inventory:
+            reused_file = path(str(scratch / name))
+            if reused_file.stat().st_nlink != 1 or os.path.samefile(source / name, reused_file):
+                raise ValueError("reused scratch aliases protected checkpoint bytes")
+    except BaseException as exc:
+        progress("scratch_reuse_verification", state="failed", error_type=type(exc).__name__)
+        raise
+    progress("scratch_reuse_verification", state="complete", files=len(inventory))
+    return scratch
+
+
 def prepare(plan_path: Path, plan_sha256: str) -> tuple[dict[str, Any], dict[str, Any], Any]:
     progress("followup_preparation", state="active")
     plan = pinned({"path": str(plan_path), "sha256": plan_sha256})
     if (
-        set(plan)
+        set(plan) - {"reuse_scratch"}
         != {"schema_version", "code", "bundle", "workspace", "budget_root", "planted", "inputs"}
         or type(plan["schema_version"]) is not int
         or plan["schema_version"] != 1
@@ -158,6 +194,7 @@ def prepare(plan_path: Path, plan_sha256: str) -> tuple[dict[str, Any], dict[str
     if baseline.get("checkpoint_fingerprint") != fingerprint:
         raise ValueError("baseline is not the pinned planted checkpoint")
     pilot.Service._qualify(baseline, spec)
+    validated_reuse(plan, inventory, pilot)
     if pilot.generation_identity(records["noop"]) != pilot.generation_identity(baseline):
         raise ValueError("original no-op differs from baseline")
     for name in ("untouched", "retain_only", "noop", "planted_baseline"):
@@ -263,6 +300,8 @@ def execute(plan: dict[str, Any], records: dict[str, Any], pilot: Any) -> dict[s
     source, workspace = path(plan["planted"]), path(plan["workspace"])
     budget = pilot.Budget(path(plan["budget_root"]), None)
     spec, inventory = records["spec"], records["planted_inventory"]
+    pilot.Service._qualify(records["planted_baseline"], spec)
+    reused_scratch = validated_reuse(plan, inventory, pilot)
     budget.check(METADATA_RESERVE)
     workspace.mkdir(mode=0o700, parents=False, exist_ok=False)
     summary: dict[str, Any] = {
@@ -308,8 +347,11 @@ def execute(plan: dict[str, Any], records: dict[str, Any], pilot: Any) -> dict[s
             records["planted_baseline"]
         ):
             raise ValueError("fresh baseline differs from original planted baseline")
-        scratch = workspace / "scratch"
-        pilot.byte_copy(source, scratch, budget)
+        scratch = reused_scratch or workspace / "scratch"
+        if reused_scratch is None:
+            pilot.byte_copy(source, scratch, budget)
+        else:
+            validated_reuse(plan, inventory, pilot)
         noop = pilot.score_checkpoint(scratch, spec, budget, workspace / "noop.json")
         if pilot.generation_identity(noop) != pilot.generation_identity(baseline):
             raise ValueError("fresh byte-identical no-op differs")
@@ -318,7 +360,13 @@ def execute(plan: dict[str, Any], records: dict[str, Any], pilot: Any) -> dict[s
             {
                 "source": str(source),
                 "inventory": inventory,
-                "role": "fresh no-op control then sequential restored candidate scratch",
+                "role": "no-op control then sequential restored candidate scratch",
+                "copied_this_run": reused_scratch is None,
+                "scratch": str(scratch),
+                "prior_owner": plan.get("reuse_scratch"),
+                "lineage_basis": (
+                    "explicit prior-run declaration plus independently checked file hashes"
+                ),
             },
         )
         service = pilot.Service(workspace / "operations")

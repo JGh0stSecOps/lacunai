@@ -33,8 +33,9 @@ recorded as inconclusive qualification failures. Reliable removal and the
 requested two-method demonstration remain unproven.
 
 The separate multilingual supplement has not run. `npo-kl` and `grad-diff-kl`
-are exposed through the shared CLI/MCP service; their factoid follow-up is not yet
-executed. See the [measured results](docs/results.md) for controls and limitations.
+are exposed through the shared CLI/MCP service. Their first follow-up was stopped
+by the physical paging guard after baseline evaluation and scratch copying, before
+either edit ran. See the [measured results](docs/results.md) for controls and limitations.
 
 1. Plant the fact and verify that the model can recall it before editing.
 2. Map the relevant activations and apply bounded edits to isolated checkpoints.

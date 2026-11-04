@@ -171,3 +171,114 @@ def test_write_budget_boundary_and_removal(monkeypatch: pytest.MonkeyPatch) -> N
         with pytest.raises(pytest.fail.Exception, match="DID NOT RAISE"):
             assertion()
     assertion()
+
+
+def test_low_memory_loader_contract(monkeypatch, tmp_path):
+    from types import SimpleNamespace
+
+    calls = []
+    model = SimpleNamespace(
+        config=SimpleNamespace(tie_word_embeddings=False), to=lambda _: None, eval=lambda: None
+    )
+
+    def load(path, **kwargs):
+        calls.append(kwargs)
+        return model, {}
+
+    fake = SimpleNamespace(
+        AutoModelForCausalLM=SimpleNamespace(from_pretrained=load),
+        AutoTokenizer=SimpleNamespace(
+            from_pretrained=lambda *a, **kw: SimpleNamespace(eos_token_id=1)
+        ),
+    )
+    monkeypatch.setattr(
+        tensors,
+        "import_module",
+        lambda name: SimpleNamespace(float32="float32") if name == "torch" else fake,
+    )
+    monkeypatch.setattr(tensors, "configure_runtime", lambda _: None)
+    tensors.load_target(tmp_path, {"editor": {"files": []}}, role="editor")
+    assert calls[0]["low_cpu_mem_usage"] is True
+    assert calls[0]["local_files_only"] is True
+    assert calls[0]["trust_remote_code"] is False
+    assert calls[0]["use_safetensors"] is True
+    assert calls[0]["output_loading_info"] is True
+    fake.AutoModelForCausalLM.from_pretrained = lambda *a, **kw: (model, {"missing_keys": ["bad"]})
+    with pytest.raises(tensors.TensorError, match="strictly"):
+        tensors.load_target(tmp_path, {"editor": {"files": []}}, role="editor")
+
+
+@pytest.mark.parametrize("storage_dtype", ["float32", "bfloat16"])
+def test_tiny_qwen_low_memory_equivalent_to_default(monkeypatch, tmp_path, storage_dtype):
+    from types import SimpleNamespace
+
+    torch = pytest.importorskip("torch")
+    transformers = pytest.importorskip("transformers")
+    torch.manual_seed(42)
+    model = transformers.Qwen2ForCausalLM(
+        transformers.Qwen2Config(
+            vocab_size=32,
+            hidden_size=8,
+            intermediate_size=16,
+            num_hidden_layers=1,
+            num_attention_heads=2,
+            num_key_value_heads=2,
+            tie_word_embeddings=True,
+        )
+    )
+    model.to(dtype=getattr(torch, storage_dtype))
+    model.save_pretrained(tmp_path, safe_serialization=True)
+    del model
+    files = [
+        {"path": p.name, "size": p.stat().st_size, "sha256": tensors.file_hash(p)}
+        for p in tmp_path.iterdir()
+        if p.is_file()
+    ]
+    contract = {
+        "editor": {"files": files},
+        "runtime": {
+            "seed": 42,
+            "device": "cpu",
+            "dtype": "float32",
+            "torch_threads": 2,
+            "interop_threads": 1,
+        },
+    }
+    monkeypatch.setattr(
+        transformers.AutoTokenizer,
+        "from_pretrained",
+        lambda *a, **kw: SimpleNamespace(eos_token_id=2),
+    )
+    loaded, _ = tensors.load_target(tmp_path, contract, role="editor")
+    ids = torch.tensor([[1, 4, 7]])
+    with torch.no_grad():
+        output = loaded.generate(
+            ids,
+            attention_mask=torch.ones_like(ids),
+            do_sample=False,
+            max_new_tokens=4,
+            pad_token_id=0,
+            eos_token_id=2,
+        )
+    hashes = {n: tensors.tensor_hash(t) for n, t in loaded.state_dict().items()}
+    del loaded
+    legacy = transformers.AutoModelForCausalLM.from_pretrained(
+        tmp_path,
+        local_files_only=True,
+        trust_remote_code=False,
+        use_safetensors=True,
+        torch_dtype=torch.float32,
+        attn_implementation="eager",
+    ).eval()
+    assert hashes == {n: tensors.tensor_hash(t) for n, t in legacy.state_dict().items()}
+    with torch.no_grad():
+        other = legacy.generate(
+            ids,
+            attention_mask=torch.ones_like(ids),
+            do_sample=False,
+            max_new_tokens=4,
+            pad_token_id=0,
+            eos_token_id=2,
+        )
+    assert torch.equal(output, other)
+    tensors._verify_source_files(tmp_path, contract, "editor")

@@ -25,8 +25,8 @@ dependencies = ["typer>=0.12", "rich>=13", "cryptography>=43,<50"]
 dev = ["ruff>=0.6", "mypy>=1.11", "pytest>=8", "pytest-cov>=5"]
 mcp = ["mcp>=2,<3"]
 state = ["neurailyzer @ git+https://github.com/JGh0stSecOps/neurailyzer.git@7e1a92f8fda837968c32f63b217754a3aa16eb70"]
-model = ["torch==2.9.1", "transformers==4.51.3", "safetensors==0.5.3", "numpy==2.2.6"]
-experimental = ["torch==2.9.1", "transformers==4.51.3", "safetensors==0.5.3", "numpy==2.2.6"]
+model = ["torch==2.9.1", "transformers==4.51.3", "safetensors==0.5.3", "numpy==2.2.6", "accelerate==1.13.0"]
+experimental = ["torch==2.9.1", "transformers==4.51.3", "safetensors==0.5.3", "numpy==2.2.6", "accelerate==1.13.0"]
 
 [project.scripts]
 lacunai = "lacunai.cli:app"

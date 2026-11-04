@@ -1,5 +1,13 @@
 # Experimental results
 
+## Gradient follow-up — resource-aborted, inconclusive
+
+The first gradient follow-up reproduced 8/8 target and 8/8 retain baseline scores, then copied an isolated scratch checkpoint. The physical host supervisor stopped its owned model container after three consecutive paging violations; neither NPO nor GradDiff executed. The container reported exit 137 with `OOMKilled=false`. No signed scientific aggregate was produced before interruption.
+
+Terminal readback verified the original checkpoint unchanged and all nine scratch files equal to the planted baseline. The 3,179,224-byte metadata archive has SHA-256 `47beefbb15b864f56627037ffe61d15935460856ae09da5f60c5b7032cdb4c53`; it is transport-verified evidence, not a signed completed experiment. The frozen code was `d43ff05bd0c3ad7de4dfd175036ae3ffaa485095`.
+
+The retry support explicitly reuses only a separately declared scratch checkpoint after complete hash and alias checks. It preserves prior evidence and avoids another full checkpoint copy. Loading requests the existing runtime’s low-memory initialization path; reduced peak memory remains unmeasured. Resource limits and evaluation thresholds are unchanged.
+
 ## Contextual planted-fact pilot — failed
 
 Planting qualified in this attempt: the selected 4,864-row profile reached 64/64 development recovery, 8/8 withheld recovery and 8/8 retain accuracy after 192 updates. Saved-checkpoint reload matched the qualification generations. The matched retain-only reference also ran 192 updates and recovered 0/8 target probes with 8/8 retain accuracy; the no-op control matched planted-baseline generations.
@@ -22,7 +30,7 @@ The CPU float32 run used seed 42, two Torch threads, 256 input tokens and at mos
 
 Resource monitoring recorded pressure or paging violations in 8 of 180 samples. Protected-worker identities remained continuous in those observations, but absence of interference is not proven. Original checkpoints and backups retain the information.
 
-See the [contextual result JSON](../research/results/planted-fact-contextual-2026-11-03.json) for exact aggregates, identities and evidence digests. The separate multilingual supplementary contract is frozen but **unrun**. The `npo-kl` and `grad-diff-kl` methods are available through the shared CLI/MCP service, but their factoid follow-up has **not executed**. No method passed; the requested two-method demonstration remains incomplete. Prior attempts below remain unchanged.
+See the [contextual result JSON](../research/results/planted-fact-contextual-2026-11-03.json) for exact aggregates, identities and evidence digests. The separate multilingual supplementary contract is frozen but **unrun**. The `npo-kl` and `grad-diff-kl` methods are available through the shared CLI/MCP service, but their first follow-up was **aborted before either edit**. No method passed; the requested two-method demonstration remains incomplete. Prior attempts below remain unchanged.
 
 ## Approved 512-step follow-up — inconclusive
 

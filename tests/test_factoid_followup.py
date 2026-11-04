@@ -341,3 +341,76 @@ def test_reservation_uses_actual_shard_and_tensor_bytes(tmp_path):
     budget = Budget()
     m.reserve_transaction(source, budget)
     assert budget.reserves == [shard.stat().st_size + 32 + m.METADATA_RESERVE]
+
+
+def enable_reuse(m, pilot, plan, records, tmp_path):
+    import hashlib
+
+    source = Path(plan["planted"])
+    (source / "model.safetensors").write_bytes(b"software fixture payload")
+    inventory = {
+        "model.safetensors": hashlib.sha256((source / "model.safetensors").read_bytes()).hexdigest()
+    }
+    records["planted_inventory"] = inventory
+    prior = tmp_path / "previous-run"
+    scratch = prior / "scratch"
+    scratch.mkdir(parents=True)
+    (scratch / "model.safetensors").write_bytes((source / "model.safetensors").read_bytes())
+    plan["code"] = str(tmp_path / "code")
+    plan["reuse_scratch"] = {
+        "path": str(scratch),
+        "prior_run": str(prior),
+        "source_fingerprint": digest(inventory),
+    }
+    pilot.digest = digest
+
+    def actual_inventory(root, *args):
+        return {
+            p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in root.iterdir()
+            if p.is_file()
+        }
+
+    pilot.checkpoint_inventory = actual_inventory
+    return scratch
+
+
+def test_explicit_reuse_does_not_copy_and_records_lineage(tmp_path, monkeypatch):
+    m, pilot, plan, records, events = orchestration(tmp_path, monkeypatch)
+    scratch = enable_reuse(m, pilot, plan, records, tmp_path)
+    result = m.execute(plan, records, pilot)
+    assert result["status"] == "complete"
+    assert not any(row[0] == "copy" for row in events)
+    assert all(row[2]["output"] == scratch for row in events if row[0] == "erase")
+    lineage = json.loads((Path(plan["workspace"]) / "scratch-lineage.json").read_text())
+    assert lineage["copied_this_run"] is False and lineage["prior_owner"] == plan["reuse_scratch"]
+
+
+@pytest.mark.parametrize(
+    "mutation", ["tamper", "symlink", "source", "hardlink", "pin", "unqualified"]
+)
+def test_invalid_reuse_refused_before_model_or_workspace(tmp_path, monkeypatch, mutation):
+    import os
+
+    m, pilot, plan, records, events = orchestration(tmp_path, monkeypatch)
+    scratch = enable_reuse(m, pilot, plan, records, tmp_path)
+    if mutation == "tamper":
+        (scratch / "model.safetensors").write_bytes(b"modified")
+    elif mutation == "symlink":
+        alias = tmp_path / "scratch-link"
+        alias.symlink_to(scratch, target_is_directory=True)
+        plan["reuse_scratch"]["path"] = str(alias)
+    elif mutation == "source":
+        plan["planted"] = str(scratch)
+    elif mutation == "hardlink":
+        # Only a newly created software fixture is replaced, never experiment artifacts.
+        (scratch / "model.safetensors").unlink()
+        os.link(Path(plan["planted"]) / "model.safetensors", scratch / "model.safetensors")
+    elif mutation == "pin":
+        plan["reuse_scratch"]["source_fingerprint"] = "b" * 64
+    else:
+        records["planted_baseline"]["qualified"] = False
+    with pytest.raises(ValueError):
+        m.execute(plan, records, pilot)
+    assert not any(row[0] in {"score", "copy", "erase"} for row in events)
+    assert not Path(plan["workspace"]).exists()
