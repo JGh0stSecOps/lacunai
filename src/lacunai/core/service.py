@@ -299,14 +299,20 @@ class Service:
         config: RuntimeConfig | None = None,
         gradient_data: Path | None = None,
     ) -> dict[str, Any]:
-        from lacunai.erase.methods import METHOD_INFO, apply_method, touched_tensors
+        from lacunai.erase.methods import (
+            FACTOID_METHODS,
+            METHOD_INFO,
+            REPAIR_METHODS,
+            apply_method,
+            touched_tensors,
+        )
 
         if method not in METHOD_INFO:
             raise ValueError("unknown erasure method")
         spec, config = TargetSpec.from_path(target), config or RuntimeConfig()
         development_data = None
         development_metadata = None
-        if method in {"npo-kl", "grad-diff-kl"}:
+        if method in FACTOID_METHODS:
             from lacunai.erase.factoid_data import load_factoid_data
 
             if gradient_data is None:
@@ -317,13 +323,19 @@ class Service:
                 or strength != 1.0
                 or max_relative_change != 0.25
                 or type(steps) is not int
-                or not 1 <= steps <= 128
+                or not 1 <= steps <= (120 if method in REPAIR_METHODS else 128)
             ):
                 raise ValueError(
-                    "factoid gradient settings require strength 1, bound 0.25 and steps 1..128"
+                    "factoid gradient settings require strength 1, bound 0.25 and base steps "
+                    + ("1..120 plus 8 repair updates" if method in REPAIR_METHODS else "1..128")
                 )
             raw_data = bounded_file(gradient_data)
             development_data = load_factoid_data(gradient_data, spec)
+            from lacunai.erase.factoid_gradient import validate_inputs
+
+            validate_inputs(
+                method, steps, development_data["forget"], development_data["retain_development"]
+            )
             if bounded_file(gradient_data) != raw_data or digest(json.loads(raw_data)) != digest(
                 development_data
             ):

@@ -375,7 +375,12 @@ def test_after_checkpoint_binding_is_mandatory():
 
 
 @pytest.mark.parametrize(
-    "methods", [("ablate-neurons", "rank-one", "ablate-direction"), ("npo-kl", "grad-diff-kl")]
+    "methods",
+    [
+        ("ablate-neurons", "rank-one", "ablate-direction"),
+        ("npo-kl", "grad-diff-kl"),
+        ("npo-kl-repair", "grad-diff-kl-repair"),
+    ],
 )
 def test_terminal_cohort_preserves_legacy_and_gradient_methods(methods):
     m = module()
@@ -383,7 +388,9 @@ def test_terminal_cohort_preserves_legacy_and_gradient_methods(methods):
     assert m.expected_methods(terminal) == set(methods)
 
 
-@pytest.mark.parametrize("method", ["npo-kl", "grad-diff-kl"])
+@pytest.mark.parametrize(
+    "method", ["npo-kl", "grad-diff-kl", "npo-kl-repair", "grad-diff-kl-repair"]
+)
 def test_gradient_receipt_and_method_summary_binding(method):
     m = module()
     assert method in m.METHODS
@@ -407,7 +414,9 @@ def test_gradient_receipt_and_method_summary_binding(method):
     m.validate_receipts(
         snapshot, after, inventory, {"path": "/tmp/after.safetensors", "sha256": "c" * 64}
     )
-    other = "grad-diff-kl" if method == "npo-kl" else "npo-kl"
+    other = "grad-diff-kl" if method.startswith("npo-kl") else "npo-kl"
+    if method.endswith("-repair"):
+        other += "-repair"
     summary = {
         "candidates": [
             {"method": method, "run_id": "run-1", "afterimages": after},
@@ -420,7 +429,18 @@ def test_gradient_receipt_and_method_summary_binding(method):
 
 
 @pytest.mark.parametrize(
-    "methods", [[], ["npo-kl", "npo-kl"], ["unknown"], ["npo-kl"], ["rank-one"]]
+    "methods",
+    [
+        [],
+        ["npo-kl", "npo-kl"],
+        ["unknown"],
+        ["npo-kl"],
+        ["rank-one"],
+        ["npo-kl-repair"],
+        ["npo-kl-repair", "npo-kl-repair"],
+        ["npo-kl-repair", "grad-diff-kl"],
+        ["npo-kl", "grad-diff-kl", "npo-kl-repair", "grad-diff-kl-repair"],
+    ],
 )
 def test_invalid_terminal_cohort_refused(methods):
     with pytest.raises(ValueError, match="cohort"):
@@ -428,7 +448,12 @@ def test_invalid_terminal_cohort_refused(methods):
 
 
 @pytest.mark.parametrize(
-    "methods", [("ablate-neurons", "rank-one", "ablate-direction"), ("npo-kl", "grad-diff-kl")]
+    "methods",
+    [
+        ("ablate-neurons", "rank-one", "ablate-direction"),
+        ("npo-kl", "grad-diff-kl"),
+        ("npo-kl-repair", "grad-diff-kl-repair"),
+    ],
 )
 def test_complete_and_partial_cohort_verdict(methods):
     m = module()

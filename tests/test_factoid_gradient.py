@@ -17,7 +17,7 @@ def test_step_guard(steps):
 
 
 def test_data_guards():
-    for mode in helper.MODES:
+    for mode in helper.MODES[:2]:
         helper.validate_inputs(mode, 1, FORGET, RETAIN)
     with pytest.raises(ValueError):
         helper.validate_inputs("other", 1, FORGET, RETAIN)
@@ -65,7 +65,7 @@ def toy(monkeypatch):
     return torch, runtime, name, events
 
 
-@pytest.mark.parametrize("mode", helper.MODES)
+@pytest.mark.parametrize("mode", helper.MODES[:2])
 def test_actual_proposal_likelihood_and_restore(monkeypatch, mode):
     torch, runtime, name, events = toy(monkeypatch)
     before = helper._hashes(runtime.model)
@@ -221,3 +221,13 @@ def test_proposal_actual_cap_seam(monkeypatch, runtime_cap, expected):
     assert seen and set(seen) == {expected}
     assert result["settings"]["inference_prompt_cap"] == runtime_cap
     assert result["settings"]["trainingsequence_tokens"] == expected
+
+
+def test_repair_step_and_data_contract():
+    rows = [{"prompt": f"retain {i}", "answer": "oak"} for i in range(32)]
+    for mode in helper.REPAIR_MODES:
+        helper.validate_inputs(mode, 120, FORGET, rows)
+        with pytest.raises(ValueError, match="120"):
+            helper.validate_inputs(mode, 121, FORGET, rows)
+        with pytest.raises(ValueError, match="32 retain"):
+            helper.validate_inputs(mode, 8, FORGET, RETAIN)

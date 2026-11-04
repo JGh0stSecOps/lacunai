@@ -1,5 +1,24 @@
 # Experimental results
 
+## Eight-step gradients — failed, with a retain-repair signal
+
+Both methods completed eight updates within the unchanged weight-change bound. Baseline and no-op target/retain scores were 8/8; no-op generations matched exactly. Independent checkpoint reload reproduced each direct result.
+
+| Method / arm | Confirmed target recovery | Ambiguous target responses | Retain correct | PPL / planted | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| NPO direct and independent | 0/8 | 0 | 7/8 | 0.8154452446794253725374924200 | failed |
+| NPO after benign relearning | 0/8 | 0 | 8/8 | 0.8375067053543070512217007539 | passed this arm only |
+| GradDiff direct and independent | 0/8 | 8 | 4/8 | 0.9544499920945956237895942626 | failed |
+| GradDiff after benign relearning | 0/8 | 8 | 6/8 | 0.8271011527266070415595556361 | failed |
+
+NPO's saved candidate failed the zero-collateral-loss requirement. Its subsequent eight retain-only SGD updates repaired the observed loss without recovering the target, but that repaired state existed only in FP32 memory in this experiment. It was not a separately persisted and independently evaluated candidate. GradDiff's ambiguous responses cannot count as successful forgetting. Neither method passed the complete contract.
+
+Both methods have exact weight and generation restoration receipts. Separate remote file hashing confirmed all nine final scratch files equal the planted checkpoint and the original source unchanged; preserved sparse candidate files matched their signed receipt hashes. Local readback verified 102 signed files and 53 source files for revision `19782d1ca97d7c86bcdaee434e471ba0c0402bdb`.
+
+The monitor observed five samples with violations among 63 samples, with 9,406 physical paging-out pages in total. No three-consecutive-sample abort occurred. Worker identities stayed continuous; absence of performance interference is not proven. Runtime limits, model/tokenizer revisions and evaluation thresholds were unchanged.
+
+The [eight-step result JSON](../research/results/planted-fact-eight-step-2026-11-04.json) contains exact scores and evidence hashes. Aggregate feedback from this reused evaluation set now informs subsequent candidates; later results on it are adaptive development evidence. The separately frozen multilingual supplement remains unrun. New explicit repair variants must pass saved-checkpoint evaluation and another benign-relearning test. Original checkpoints and backups retain the information.
+
 ## Gradient follow-up — failed at the weight-change bound
 
 The qualified planted checkpoint was reused without further planting. Both gradient methods attempted 128 updates under the fixed 0.25 relative-change bound:

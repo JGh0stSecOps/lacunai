@@ -85,7 +85,9 @@ def fixtures():
     return runtime, local
 
 
-@pytest.mark.parametrize("method", ["npo-kl", "grad-diff-kl"])
+@pytest.mark.parametrize(
+    "method", ["npo-kl", "grad-diff-kl", "npo-kl-repair", "grad-diff-kl-repair"]
+)
 def test_allowlist(method):
     runtime, local = fixtures()
     assert "experimental" in METHOD_INFO[method]["cost"]
@@ -104,12 +106,28 @@ def test_other_methods_reject_data():
         apply_method(None, "ablate-neurons", {}, {}, development_data=data())
 
 
-def test_real_apply_seam(monkeypatch):
+@pytest.mark.parametrize("method", ["npo-kl", "npo-kl-repair", "grad-diff-kl-repair"])
+def test_real_apply_seam(monkeypatch, method):
     from lacunai.erase import factoid_gradient
     from lacunai.map.localize import record_digest
     from tests.test_factoid_gradient import FORGET, RETAIN, toy
 
     torch, runtime, name, _ = toy(monkeypatch)
+
+    def loss(prompt, answer):
+        batch = factoid_gradient.kernels.answer_batch(
+            runtime.tokenizer, {"prompts": [prompt], "answer": answer}, 128
+        )
+        return (
+            factoid_gradient.kernels.sequence_nll(
+                factoid_gradient.kernels.answer_forward(runtime.model, batch),
+                batch,
+                selected_positions=True,
+            )
+            / (batch["labels"][:, 1:] != -100).sum()
+        )
+
+    runtime.loss = loss
     runtime.fingerprint = "a" * 64
     runtime.layer_ids = [0]
     runtime.mlp = lambda layer: runtime.model.model.layers[layer].mlp
@@ -127,9 +145,14 @@ def test_real_apply_seam(monkeypatch):
         "layers": [{"layer": 0, "mean_effect": 0.5, "neurons": []}],
     }
     record = data()
-    record.update(forget=FORGET, retain_development=RETAIN)
+    record.update(
+        forget=FORGET,
+        retain_development=[{"prompt": f"synthetic retain {i}", "answer": "oak"} for i in range(32)]
+        if method.endswith("-repair")
+        else RETAIN,
+    )
     before = factoid_gradient._hashes(runtime.model)
-    result = apply_method(runtime, "npo-kl", local, fingerprint, steps=1, development_data=record)
+    result = apply_method(runtime, method, local, fingerprint, steps=1, development_data=record)
     assert set(result["replacements"]) == {name}
     assert result["diagnostics"]["tensor_diffs"][name]["delta_norm_squared"] > 0
     assert factoid_gradient._hashes(runtime.model) == before

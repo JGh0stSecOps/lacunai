@@ -455,3 +455,91 @@ def test_prepare_accepts_explicit_candidate_steps(tmp_path, monkeypatch):
     p = pin("plan.json", plan)
     accepted, _, _ = m.prepare(Path(p["path"]), p["sha256"])
     assert accepted["candidate_steps"] == 8
+
+
+@pytest.mark.parametrize("steps", [8, 120])
+def test_repair_cohort_routes_base_steps_and_records_total(tmp_path, monkeypatch, steps):
+    m, pilot, plan, records, events = orchestration(tmp_path, monkeypatch)
+    plan.update(candidate_methods=list(m.REPAIR_METHODS), candidate_steps=steps)
+    result = m.execute(plan, records, pilot)
+    assert result["passed_methods"] == list(m.REPAIR_METHODS)
+    edits = [row for row in events if row[0] == "erase"]
+    assert [row[1] for row in edits] == list(m.REPAIR_METHODS)
+    assert [row[2]["steps"] for row in edits] == [steps, steps]
+    settings = json.loads((Path(plan["workspace"]) / "manifest.json").read_text())[
+        "candidate_settings"
+    ]
+    assert settings == {
+        "methods": list(m.REPAIR_METHODS),
+        "steps": steps,
+        "repair_steps": 8,
+        "total_steps": steps + 8,
+        "strength": 1.0,
+        "max_relative_change": 0.25,
+    }
+
+
+@pytest.mark.parametrize(
+    "methods,steps",
+    [
+        (["npo-kl-repair"], 8),
+        (["npo-kl", "grad-diff-kl-repair"], 8),
+        (["grad-diff-kl-repair", "npo-kl-repair"], 8),
+        (["npo-kl-repair", "grad-diff-kl-repair"], 121),
+        (["npo-kl-repair", "grad-diff-kl-repair"], True),
+    ],
+)
+def test_repair_plan_refuses_partial_mixed_or_excess_before_runtime(
+    tmp_path, monkeypatch, methods, steps
+):
+    m, plan, values, pin = prepared(tmp_path, monkeypatch)
+    plan.update(candidate_methods=methods, candidate_steps=steps)
+    p = pin("plan.json", plan)
+    monkeypatch.setattr(m, "api", lambda *a: pytest.fail("invalid cohort reached runtime"))
+    with pytest.raises(ValueError, match="candidate_"):
+        m.prepare(Path(p["path"]), p["sha256"])
+
+
+def test_per_method_steps_dispatch_and_manifest(tmp_path, monkeypatch):
+    m, pilot, plan, records, events = orchestration(tmp_path, monkeypatch)
+    selected = {"npo-kl-repair": 8, "grad-diff-kl-repair": 4}
+    plan.update(
+        candidate_methods=list(m.REPAIR_METHODS),
+        candidate_steps=8,
+        candidate_steps_by_method=selected,
+    )
+    m.execute(plan, records, pilot)
+    assert {row[1]: row[2]["steps"] for row in events if row[0] == "erase"} == selected
+    settings = json.loads((Path(plan["workspace"]) / "manifest.json").read_text())[
+        "candidate_settings"
+    ]
+    assert settings["steps"] == 8 and settings["repair_steps"] == 8
+    assert settings["steps_by_method"] == selected
+    assert settings["total_steps_by_method"] == {"npo-kl-repair": 16, "grad-diff-kl-repair": 12}
+    assert "total_steps" not in settings
+
+
+@pytest.mark.parametrize(
+    "selected",
+    [
+        None,
+        [],
+        {"npo-kl-repair": 8},
+        {"npo-kl-repair": 8, "other": 4},
+        {"npo-kl-repair": True, "grad-diff-kl-repair": 4},
+        {"npo-kl-repair": 8, "grad-diff-kl-repair": 121},
+        {"npo-kl-repair": 0, "grad-diff-kl-repair": 4},
+        {"npo-kl-repair": 8.0, "grad-diff-kl-repair": 4},
+    ],
+)
+def test_per_method_steps_invalid_before_runtime(tmp_path, monkeypatch, selected):
+    m, plan, values, pin = prepared(tmp_path, monkeypatch)
+    plan.update(
+        candidate_methods=list(m.REPAIR_METHODS),
+        candidate_steps=8,
+        candidate_steps_by_method=selected,
+    )
+    p = pin("plan.json", plan)
+    monkeypatch.setattr(m, "api", lambda *a: pytest.fail("invalid map reached runtime"))
+    with pytest.raises(ValueError, match="candidate_steps_by_method"):
+        m.prepare(Path(p["path"]), p["sha256"])

@@ -17,7 +17,15 @@ from pathlib import Path
 from typing import Any
 
 CONTRACT_SHA = "462c7a875b9b425c22d6c7b20847ff09c4c4ad8c3b44e6aa04a289a54dd1b533"
-METHODS = {"ablate-neurons", "rank-one", "ablate-direction", "npo-kl", "grad-diff-kl"}
+METHODS = {
+    "ablate-neurons",
+    "rank-one",
+    "ablate-direction",
+    "npo-kl",
+    "grad-diff-kl",
+    "npo-kl-repair",
+    "grad-diff-kl-repair",
+}
 CAP = 128 * 1024**2
 OUTPUT_CAP = 64 * 1024**2
 
@@ -167,7 +175,11 @@ def expected_methods(terminal: dict[str, Any]) -> set[str]:
         not methods
         or len(methods) != len(set(methods))
         or set(methods)
-        not in ({"ablate-neurons", "rank-one", "ablate-direction"}, {"npo-kl", "grad-diff-kl"})
+        not in (
+            {"ablate-neurons", "rank-one", "ablate-direction"},
+            {"npo-kl", "grad-diff-kl"},
+            {"npo-kl-repair", "grad-diff-kl-repair"},
+        )
     ):
         raise ValueError("terminal candidate cohort differs")
     return set(methods)

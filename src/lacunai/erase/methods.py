@@ -9,8 +9,16 @@ from typing import Any
 from lacunai.experimental import tensors
 from lacunai.map.localize import record_digest
 
-FACTOID_METHODS = {"npo-kl", "grad-diff-kl"}
+REPAIR_METHODS = {"npo-kl-repair", "grad-diff-kl-repair"}
+FACTOID_METHODS = {"npo-kl", "grad-diff-kl"} | REPAIR_METHODS
 METHOD_INFO = {
+    **{
+        name: {
+            "cost": "experimental bounded AdamW plus eight retain-only SGD repair updates",
+            "risk": "repair may restore target recovery; independent verification required",
+        }
+        for name in REPAIR_METHODS
+    },
     "npo-kl": {
         "cost": "experimental bounded AdamW with original-reference forwards",
         "risk": "answer likelihood suppression may preserve semantic recovery; collateral risk",
@@ -320,7 +328,7 @@ def apply_method(
         raise ValueError("strength must be finite and in (0,1]")
     if (
         type(steps) is not int
-        or not 1 <= steps <= 128
+        or not 1 <= steps <= (120 if method in REPAIR_METHODS else 128)
         or not isinstance(rewrite, str)
         or not 1 <= len(rewrite) <= 256
     ):

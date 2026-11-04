@@ -26,7 +26,9 @@ def data_file(tmp_path, fingerprint="a" * 64):
         "schema_version": 1,
         "source_fingerprint": fingerprint,
         "forget": [{"prompt": "development target only", "answer": "drazel"}],
-        "retain_development": [{"prompt": "development retain only", "answer": "oak"}],
+        "retain_development": [
+            {"prompt": f"development retain only {i}", "answer": "oak"} for i in range(32)
+        ],
         "provenance": "synthetic software routing fixture; no model evidence",
     }
     path = tmp_path / "gradient.json"
@@ -34,7 +36,9 @@ def data_file(tmp_path, fingerprint="a" * 64):
     return path
 
 
-@pytest.mark.parametrize("method", ["npo-kl", "grad-diff-kl"])
+@pytest.mark.parametrize(
+    "method", ["npo-kl", "grad-diff-kl", "npo-kl-repair", "grad-diff-kl-repair"]
+)
 def test_required_even_dryrun_and_wrong_method_refused(tmp_path, monkeypatch, method):
     service = Service(tmp_path / "workspace")
     target = target_file(tmp_path)
@@ -109,7 +113,9 @@ def test_frozen_data_delivered_signed_and_restorable(lifecycle, tmp_path, monkey
     assert restored["status"] == "complete"
 
 
-@pytest.mark.parametrize("method", ["npo-kl", "grad-diff-kl"])
+@pytest.mark.parametrize(
+    "method", ["npo-kl", "grad-diff-kl", "npo-kl-repair", "grad-diff-kl-repair"]
+)
 @pytest.mark.parametrize("operation", ["erase", "forget"])
 def test_cli_production_dryrun_routes_data(tmp_path, monkeypatch, operation, method):
     monkeypatch.setattr(module, "HFRuntime", lambda *a: pytest.fail("dryrun loaded model"))
@@ -134,7 +140,8 @@ def test_cli_production_dryrun_routes_data(tmp_path, monkeypatch, operation, met
     assert record["dry_run"] and record["metadata"]["gradient_data"]["content_sha256"]
 
 
-def test_real_mcp_stdio_schema_and_dryrun(tmp_path):
+@pytest.mark.parametrize("method", ["npo-kl", "npo-kl-repair", "grad-diff-kl-repair"])
+def test_real_mcp_stdio_schema_and_dryrun(tmp_path, method):
     pytest.importorskip("mcp")
     import asyncio
     import os
@@ -170,7 +177,7 @@ def test_real_mcp_stdio_schema_and_dryrun(tmp_path):
                         {
                             "model": str(tmp_path / "nonexistent-model"),
                             "target": str(target),
-                            "method": "npo-kl",
+                            "method": method,
                             "gradient_data": str(data),
                         },
                     )
@@ -200,3 +207,32 @@ def test_gradient_settings_refused_before_runtime(tmp_path, monkeypatch, setting
             tmp_path / "model", target, "npo-kl", gradient_data=data_file(tmp_path), **settings
         )
     assert service.store.list() == []
+
+
+@pytest.mark.parametrize("method", ["npo-kl-repair", "grad-diff-kl-repair"])
+@pytest.mark.parametrize("steps", [121, 128, True])
+def test_repair_total_bound_before_runtime(tmp_path, monkeypatch, method, steps):
+    monkeypatch.setattr(module, "HFRuntime", lambda *a: pytest.fail("invalid steps loaded model"))
+    service = Service(tmp_path / "workspace")
+    with pytest.raises(ValueError, match="1..120"):
+        service.erase(
+            tmp_path / "model",
+            target_file(tmp_path),
+            method,
+            gradient_data=data_file(tmp_path),
+            steps=steps,
+            apply=True,
+        )
+
+
+@pytest.mark.parametrize("method", ["npo-kl-repair", "grad-diff-kl-repair"])
+def test_repair_retain_count_refused_before_runtime(tmp_path, monkeypatch, method):
+    monkeypatch.setattr(module, "HFRuntime", lambda *a: pytest.fail("invalid data loaded model"))
+    path = data_file(tmp_path)
+    data = json.loads(path.read_text())
+    data["retain_development"] = data["retain_development"][:1]
+    path.write_text(json.dumps(data))
+    with pytest.raises(ValueError, match="32 retain"):
+        Service(tmp_path / "workspace").erase(
+            tmp_path / "model", target_file(tmp_path), method, gradient_data=path, apply=True
+        )

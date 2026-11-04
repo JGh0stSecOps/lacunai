@@ -26,6 +26,7 @@ INPUTS = {
     "planted_inventory",
 }
 METHODS = ("npo-kl", "grad-diff-kl")
+REPAIR_METHODS = ("npo-kl-repair", "grad-diff-kl-repair")
 PASSED_VERDICT = "passed_the_stated_experimental_contract"
 METADATA_RESERVE = 64 * 1024**2
 
@@ -106,24 +107,51 @@ def validated_reuse(plan: dict[str, Any], inventory: dict[str, str], pilot: Any)
     return scratch
 
 
+def candidate_methods(plan: dict[str, Any]) -> tuple[str, ...]:
+    value = plan.get("candidate_methods", list(METHODS))
+    if not isinstance(value, list) or value not in (list(METHODS), list(REPAIR_METHODS)):
+        raise ValueError("candidate_methods must be an exact original or repair cohort")
+    return tuple(value)
+
+
 def candidate_steps(plan: dict[str, Any]) -> int:
     value = plan.get("candidate_steps", 128)
-    if type(value) is not int or not 1 <= value <= 128:
-        raise ValueError("candidate_steps must be an integer from 1 through 128")
+    maximum = 120 if candidate_methods(plan) == REPAIR_METHODS else 128
+    if type(value) is not int or not 1 <= value <= maximum:
+        raise ValueError(f"candidate_steps must be an integer from 1 through {maximum}")
     return value
+
+
+def candidate_step_map(plan: dict[str, Any]) -> dict[str, int]:
+    base = candidate_steps(plan)
+    methods = candidate_methods(plan)
+    if "candidate_steps_by_method" not in plan:
+        return {method: base for method in methods}
+    selected = plan["candidate_steps_by_method"]
+    maximum = 120 if methods == REPAIR_METHODS else 128
+    if (
+        not isinstance(selected, dict)
+        or set(selected) != set(methods)
+        or any(type(value) is not int or not 1 <= value <= maximum for value in selected.values())
+    ):
+        raise ValueError(
+            "candidate_steps_by_method requires exact cohort keys and bounded integer values"
+        )
+    return dict(selected)
 
 
 def prepare(plan_path: Path, plan_sha256: str) -> tuple[dict[str, Any], dict[str, Any], Any]:
     progress("followup_preparation", state="active")
     plan = pinned({"path": str(plan_path), "sha256": plan_sha256})
     if (
-        set(plan) - {"reuse_scratch", "candidate_steps"}
+        set(plan)
+        - {"reuse_scratch", "candidate_steps", "candidate_methods", "candidate_steps_by_method"}
         != {"schema_version", "code", "bundle", "workspace", "budget_root", "planted", "inputs"}
         or type(plan["schema_version"]) is not int
         or plan["schema_version"] != 1
     ):
         raise ValueError("follow-up plan schema differs")
-    candidate_steps(plan)
+    candidate_step_map(plan)
     code, workspace, source = (path(plan[k]) for k in ("code", "workspace", "planted"))
     path(plan["budget_root"])
     if workspace.exists():
@@ -306,6 +334,8 @@ def execute(plan: dict[str, Any], records: dict[str, Any], pilot: Any) -> dict[s
     from lacunai.experimental.resources import ResourceAbort
 
     steps = candidate_steps(plan)
+    methods = candidate_methods(plan)
+    step_map = candidate_step_map(plan)
     source, workspace = path(plan["planted"]), path(plan["workspace"])
     budget = pilot.Budget(path(plan["budget_root"]), None)
     spec, inventory = records["spec"], records["planted_inventory"]
@@ -337,8 +367,31 @@ def execute(plan: dict[str, Any], records: dict[str, Any], pilot: Any) -> dict[s
                 "plan": plan,
                 "runtime": asdict(budget.config()),
                 "candidate_settings": {
-                    "methods": list(METHODS),
+                    "methods": list(methods),
                     "steps": steps,
+                    **(
+                        {
+                            "repair_steps": 8,
+                            **(
+                                {}
+                                if "candidate_steps_by_method" in plan
+                                else {"total_steps": steps + 8}
+                            ),
+                        }
+                        if methods == REPAIR_METHODS
+                        else {}
+                    ),
+                    **(
+                        {
+                            "steps_by_method": step_map,
+                            "total_steps_by_method": {
+                                name: count + (8 if methods == REPAIR_METHODS else 0)
+                                for name, count in step_map.items()
+                            },
+                        }
+                        if "candidate_steps_by_method" in plan
+                        else {}
+                    ),
                     "strength": 1.0,
                     "max_relative_change": 0.25,
                 },
@@ -379,7 +432,7 @@ def execute(plan: dict[str, Any], records: dict[str, Any], pilot: Any) -> dict[s
             },
         )
         service = pilot.Service(workspace / "operations")
-        for method in METHODS:
+        for method in methods:
             if pilot.checkpoint_inventory(scratch, 4 * 1024**3) != inventory:
                 raise ValueError("scratch not restored before next candidate")
             reserve_transaction(scratch, budget)
@@ -400,7 +453,7 @@ def execute(plan: dict[str, Any], records: dict[str, Any], pilot: Any) -> dict[s
                     apply=True,
                     strength=1.0,
                     max_relative_change=0.25,
-                    steps=steps,
+                    steps=step_map[method],
                     config=budget.config(),
                     gradient_data=workspace / "gradient-data.json",
                 )
@@ -467,7 +520,7 @@ def execute(plan: dict[str, Any], records: dict[str, Any], pilot: Any) -> dict[s
         ]
         summary.update(
             status="complete",
-            verdict=PASSED_VERDICT if passed == list(METHODS) else "failed",
+            verdict=PASSED_VERDICT if passed == list(methods) else "failed",
             passed_methods=passed,
         )
     except BaseException as exc:
@@ -523,7 +576,9 @@ def main() -> int:
     args = parser.parse_args()
     plan, records, pilot = prepare(args.plan, args.plan_sha256)
     if not args.apply:
-        progress("followup", state="planned", model_loaded=False, methods=list(METHODS))
+        progress(
+            "followup", state="planned", model_loaded=False, methods=list(candidate_methods(plan))
+        )
         return 0
     result = execute(plan, records, pilot)
     return 0 if result["verdict"] == PASSED_VERDICT else 1

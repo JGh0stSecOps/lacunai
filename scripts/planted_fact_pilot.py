@@ -756,38 +756,18 @@ def benign_relearning(
     if not names or any(name not in parameters for name in names):
         raise ValueError("benign relearning missing actual touched parameters")
     originals = {name: parameters[name].detach().clone() for name in names}
-    for name in names:
-        parameters[name].requires_grad_(True)
-    optimizer = torch.optim.SGD([parameters[name] for name in names], lr=0.05)
-    trace = []
+    from lacunai.erase.retain_repair import repair
+
     try:
-        for step in range(8):
-            budget.check()
-            item = data["retain_development"][step % len(data["retain_development"])]
-            with active_phase("benign_relearning"):
-                optimizer.zero_grad(set_to_none=True)
-                loss = runtime.loss(item["prompt"], item["answer"])
-                if not bool(torch.isfinite(loss)):
-                    raise ValueError("nonfinite benign-relearning loss")
-                loss.backward()
-                for name in names:
-                    grad = parameters[name].grad
-                    if grad is None or not bool(torch.isfinite(grad).all()):
-                        raise ValueError("invalid benign-relearning gradient")
-                torch.nn.utils.clip_grad_norm_(
-                    [parameters[name] for name in names], 1.0, error_if_nonfinite=True
-                )
-                optimizer.step()
-                for name in names:
-                    rel = math.sqrt(
-                        tensors._square_norm(parameters[name] - originals[name])
-                        / tensors._square_norm(originals[name])
-                    )
-                    if rel > MAX_RELATIVE + 1e-9:
-                        raise ValueError("benign relearning exceeds relative-norm bound")
-                trace.append({"step": step + 1, "loss": float(loss.detach())})
-                atomic_json(output.with_name("benign-relearning-trace.json"), trace)
-            runtime.progress("benign_relearning", completed=step + 1, total=8, unit="steps")
+        trace = repair(
+            runtime,
+            names,
+            data["retain_development"],
+            check=budget.check,
+            on_step=lambda values: atomic_json(
+                output.with_name("benign-relearning-trace.json"), values
+            ),
+        )
         for name in names:
             parameters[name].requires_grad_(False)
         result = {
@@ -803,7 +783,7 @@ def benign_relearning(
                 parameters[name].copy_(originals[name])
                 parameters[name].requires_grad_(False)
                 parameters[name].grad = None
-        del runtime, parameters, originals, optimizer
+        del runtime, parameters, originals
         gc.collect()
 
 

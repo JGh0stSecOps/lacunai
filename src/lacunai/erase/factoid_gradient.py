@@ -17,7 +17,8 @@ import lacunai.erase.gradient_objectives as kernels
 from lacunai.erase.methods import round_to_storage
 from lacunai.experimental import tensors
 
-MODES = ("npo-kl", "grad-diff-kl")
+MODES = ("npo-kl", "grad-diff-kl", "npo-kl-repair", "grad-diff-kl-repair")
+REPAIR_MODES = ("npo-kl-repair", "grad-diff-kl-repair")
 MAX_STEPS = 128
 MAX_RELATIVE = 0.25
 
@@ -25,6 +26,12 @@ MAX_RELATIVE = 0.25
 def validate_inputs(mode: str, steps: int, forget: Any, retain_development: Any) -> None:
     if mode not in MODES or type(steps) is not int or not 1 <= steps <= MAX_STEPS:
         raise ValueError("invalid factoid mode or step bound")
+    if mode in REPAIR_MODES and steps > 120:
+        raise ValueError("repair variants allow at most 120 base updates")
+    if mode in REPAIR_MODES and (
+        not isinstance(retain_development, list) or len(retain_development) != 32
+    ):
+        raise ValueError("repair variants require 32 retain development examples")
     for rows in (forget, retain_development):
         if not isinstance(rows, list) or not 1 <= len(rows) <= 256:
             raise ValueError("development example count outside bounds")
@@ -173,7 +180,7 @@ def _propose(
             )
             objective = (
                 kernels.npo_loss(nll, references[fi], 0.1)
-                if mode == "npo-kl"
+                if mode in ("npo-kl", "npo-kl-repair")
                 else -nll / (fb["labels"] != -100).sum()
             )
             objective.backward()
@@ -203,6 +210,45 @@ def _propose(
                 }
             )
             runtime.progress("factoid_gradient", completed=step + 1, total=steps, unit="steps")
+        repair_metadata: dict[str, Any] = {}
+        if mode in REPAIR_MODES:
+            from lacunai.erase.retain_repair import repair
+
+            pre_round_hash = tensors.tensor_hash(parameter)
+            with torch.no_grad():
+                parameter.copy_(proposal)
+            before_repair_hash = tensors.tensor_hash(parameter)
+            parameter.grad = None
+            repair_trace = repair(
+                runtime,
+                [name],
+                retain_development,
+                reference={name: original},
+                check=runtime.check,
+                bound_tolerance=0,
+            )
+            after_repair_hash = tensors.tensor_hash(parameter)
+            proposal = round_to_storage({name: parameter.detach()}, runtime.storage_dtypes)[name]
+            _relative(proposal, original)
+            repair_metadata = {
+                "unlearning_steps": steps,
+                "repair_steps": 8,
+                "total_steps": steps + 8,
+                "repair_trace": repair_trace,
+                "pre_repair_unrounded_hash": pre_round_hash,
+                "pre_repair_rounded_hash": before_repair_hash,
+                "post_repair_unrounded_hash": after_repair_hash,
+                "post_repair_rounded_hash": tensors.tensor_hash(proposal),
+                "repair_settings": {
+                    "optimizer": "SGD",
+                    "learning_rate": 0.05,
+                    "clip": 1.0,
+                    "steps": 8,
+                    "sequence_tokens": inference_prompt_cap,
+                    "retain_indices": list(range(8)),
+                    "bound_reference": "original learned checkpoint",
+                },
+            }
         if any(
             tensors.tensor_hash(value) != before[n]
             for n, value in model.state_dict().items()
@@ -217,6 +263,7 @@ def _propose(
             "trace": trace,
             "mode": mode,
             "completed": steps,
+            **repair_metadata,
             "reference_sequence_nll": references,
             "source_hashes": before,
             "source_fingerprint": tensors.source_fingerprint(before),

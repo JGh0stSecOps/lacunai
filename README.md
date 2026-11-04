@@ -32,10 +32,14 @@ runtime receipts. The earlier 128-step and 512-step attempts remain
 recorded as inconclusive qualification failures. Reliable removal and the
 requested two-method demonstration remain unproven.
 
-The separate multilingual supplement has not run. `npo-kl` and `grad-diff-kl`
-are exposed through the shared CLI/MCP service. Their first follow-up was stopped
-by the physical paging guard after baseline evaluation and scratch copying, before
-either edit ran. See the [measured results](docs/results.md) for controls and limitations.
+The latest eight-step gradient follow-up also **failed**. NPO reduced target
+recovery to 0/8 but lost one of eight retained answers. Retain-only relearning
+recovered that answer while target recovery stayed at zero; this repaired state
+was not saved and independently reloaded in that run. GradDiff produced ambiguous
+target responses and collateral losses. Both methods restored the original weights
+and generations. Explicit repair variants are implemented; their efficacy is
+unmeasured. The separately frozen multilingual supplement has not run. See the
+[measured results](docs/results.md) for controls, prior attempts and limitations.
 
 1. Plant the fact and verify that the model can recall it before editing.
 2. Map the relevant activations and apply bounded edits to isolated checkpoints.
