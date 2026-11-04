@@ -1,0 +1,189 @@
+"""Offline proposal contracts and tiny random Qwen numerical checks."""
+
+from types import SimpleNamespace
+
+import pytest
+
+from lacunai.erase import factoid_gradient as helper
+
+FORGET = [{"prompt": "synthetic target", "answer": "42"}]
+RETAIN = [{"prompt": "synthetic retain", "answer": "oak"}]
+
+
+@pytest.mark.parametrize("steps", [0, 129, True, 1.0, "1"])
+def test_step_guard(steps):
+    with pytest.raises(ValueError):
+        helper.validate_inputs("npo-kl", steps, FORGET, RETAIN)
+
+
+def test_data_guards():
+    for mode in helper.MODES:
+        helper.validate_inputs(mode, 1, FORGET, RETAIN)
+    with pytest.raises(ValueError):
+        helper.validate_inputs("other", 1, FORGET, RETAIN)
+    with pytest.raises(ValueError):
+        helper.validate_inputs("npo-kl", 1, FORGET, FORGET)
+    with pytest.raises(ValueError):
+        helper.validate_inputs("npo-kl", 1, [{"prompt": "p", "answer": ""}], RETAIN)
+
+
+def toy(monkeypatch):
+    torch = pytest.importorskip("torch")
+    transformers = pytest.importorskip("transformers")
+    torch.manual_seed(42)
+    model = transformers.Qwen2ForCausalLM(
+        transformers.Qwen2Config(
+            vocab_size=32,
+            hidden_size=8,
+            intermediate_size=16,
+            num_hidden_layers=1,
+            num_attention_heads=2,
+            num_key_value_heads=2,
+            initializer_range=0.2,
+        )
+    )
+    name = "model.layers.0.mlp.up_proj.weight"
+
+    def batch(tokenizer, item, cap):
+        ids = torch.tensor([[1, 2, 3, 4]])
+        if item["prompts"][0] == RETAIN[0]["prompt"]:
+            ids = torch.tensor([[5, 6, 7, 8]])
+        labels = ids.clone()
+        labels[:, :2] = -100
+        return {"input_ids": ids, "attention_mask": torch.ones_like(ids), "labels": labels}
+
+    monkeypatch.setattr(helper.kernels, "answer_batch", batch)
+    events = []
+    runtime = SimpleNamespace(
+        model=model,
+        tokenizer=object(),
+        config=SimpleNamespace(seed=42, torch_threads=2, max_prompt_tokens=128),
+        storage_dtypes={name: "F32"},
+        check=lambda: None,
+        progress=lambda *args, **kw: events.append(kw),
+    )
+    return torch, runtime, name, events
+
+
+@pytest.mark.parametrize("mode", helper.MODES)
+def test_actual_proposal_likelihood_and_restore(monkeypatch, mode):
+    torch, runtime, name, events = toy(monkeypatch)
+    before = helper._hashes(runtime.model)
+    batch = helper.kernels.answer_batch(None, {"prompts": [FORGET[0]["prompt"]]}, 128)
+
+    def loss():
+        return float(
+            helper.kernels.sequence_nll(
+                helper.kernels.answer_forward(runtime.model, batch), batch, selected_positions=True
+            )
+        )
+
+    with torch.no_grad():
+        initial = loss()
+    result = helper.propose(runtime, name, FORGET, RETAIN, mode=mode, steps=2)
+    assert helper._hashes(runtime.model) == before
+    assert events[0]["state"] == "active" and events[-1]["state"] == "complete"
+    assert all(p.grad is None for p in runtime.model.parameters())
+    with torch.no_grad():
+        dict(runtime.model.named_parameters())[name].copy_(result["replacements"][name])
+        assert loss() > initial + 1e-6
+    assert result["trace"][0]["retain_mean_nll"] > 0
+
+
+def test_failure_restore_and_allowlist(monkeypatch):
+    torch, runtime, name, events = toy(monkeypatch)
+    with pytest.raises(ValueError, match="explicit final"):
+        helper.propose(runtime, "lm_head.weight", FORGET, RETAIN, mode="npo-kl", steps=1)
+    before = helper._hashes(runtime.model)
+    real = helper._relative
+    calls = 0
+
+    def fail(value, original):
+        nonlocal calls
+        calls += 1
+        if calls == 3:
+            raise ValueError("injected after second update")
+        return real(value, original)
+
+    monkeypatch.setattr(helper, "_relative", fail)
+    with pytest.raises(ValueError, match="injected"):
+        helper.propose(runtime, name, FORGET, RETAIN, mode="npo-kl", steps=2)
+    assert helper._hashes(runtime.model) == before
+    assert events[-1]["state"] == "failed"
+    assert all(p.grad is None for p in runtime.model.parameters())
+
+
+def test_retain_gradient_control(monkeypatch):
+    torch, runtime, name, _ = toy(monkeypatch)
+    batch = helper.kernels.answer_batch(None, {"prompts": [RETAIN[0]["prompt"]]}, 128)
+    p = dict(runtime.model.named_parameters())[name]
+    original = p.detach().clone()
+    teacher = helper.kernels.teacher_log_probs(
+        runtime.model, {"original_tensors": {name: original}}, batch
+    )
+    with torch.no_grad():
+        p.add_(0.02)
+    logits = helper.kernels.answer_forward(runtime.model, batch)
+    kl = helper.kernels.retain_kl(logits, teacher, batch, selected_positions=True)
+    grad = torch.autograd.grad(kl, p)[0]
+    assert float(kl) > 0 and float(grad.abs().max()) > 1e-8
+
+
+def test_preparation_failure_terminal(monkeypatch):
+    events = []
+    runtime = SimpleNamespace(progress=lambda *a, **kw: events.append(kw))
+
+    def fail(*args, **kwargs):
+        raise OSError("preparation")
+
+    monkeypatch.setattr(helper, "_propose", fail)
+    with pytest.raises(OSError):
+        helper.propose(runtime, "x", FORGET, RETAIN, mode="npo-kl")
+    assert [e["state"] for e in events] == ["active", "failed"]
+
+
+def test_actual_retain_contribution(monkeypatch):
+    torch, runtime, name, _ = toy(monkeypatch)
+    full = helper.propose(runtime, name, FORGET, RETAIN, mode="npo-kl", steps=2)
+    real_nll = helper.kernels.sequence_nll
+
+    def suppress_retain(logits, batch, **kwargs):
+        result = real_nll(logits, batch, **kwargs)
+        return result * 0 if int(batch["input_ids"][0, 0]) == 5 else result
+
+    monkeypatch.setattr(helper.kernels, "sequence_nll", suppress_retain)
+    real_kl = helper.kernels.retain_kl
+    monkeypatch.setattr(helper.kernels, "retain_kl", lambda *a, **kw: real_kl(*a, **kw) * 0)
+    control = helper.propose(runtime, name, FORGET, RETAIN, mode="npo-kl", steps=2)
+    assert full["reference_sequence_nll"] == control["reference_sequence_nll"]
+    assert full["source_hashes"] == control["source_hashes"]
+    assert not torch.equal(full["replacements"][name], control["replacements"][name])
+    assert control["trace"][0]["retain_mean_nll"] == 0
+    assert full["trace"][0]["retain_mean_nll"] > 0
+
+
+def test_restoration_failure_preserves_primary(monkeypatch):
+    _, runtime, name, events = toy(monkeypatch)
+    real_hashes = helper._hashes
+    calls = 0
+
+    def broken_hashes(model):
+        nonlocal calls
+        calls += 1
+        if calls > 1:
+            raise RuntimeError("restoration hash failure")
+        return real_hashes(model)
+
+    monkeypatch.setattr(helper, "_hashes", broken_hashes)
+
+    def fail(*a, **kw):
+        raise ValueError("batch failure")
+
+    monkeypatch.setattr(helper.kernels, "answer_batch", fail)
+    with pytest.raises(BaseExceptionGroup) as caught:
+        helper.propose(runtime, name, FORGET, RETAIN, mode="npo-kl", steps=1)
+    assert [str(e) for e in caught.value.exceptions] == [
+        "batch failure",
+        "restoration hash failure",
+    ]
+    assert events[-1]["state"] == "failed"
