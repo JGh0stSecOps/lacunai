@@ -106,16 +106,24 @@ def validated_reuse(plan: dict[str, Any], inventory: dict[str, str], pilot: Any)
     return scratch
 
 
+def candidate_steps(plan: dict[str, Any]) -> int:
+    value = plan.get("candidate_steps", 128)
+    if type(value) is not int or not 1 <= value <= 128:
+        raise ValueError("candidate_steps must be an integer from 1 through 128")
+    return value
+
+
 def prepare(plan_path: Path, plan_sha256: str) -> tuple[dict[str, Any], dict[str, Any], Any]:
     progress("followup_preparation", state="active")
     plan = pinned({"path": str(plan_path), "sha256": plan_sha256})
     if (
-        set(plan) - {"reuse_scratch"}
+        set(plan) - {"reuse_scratch", "candidate_steps"}
         != {"schema_version", "code", "bundle", "workspace", "budget_root", "planted", "inputs"}
         or type(plan["schema_version"]) is not int
         or plan["schema_version"] != 1
     ):
         raise ValueError("follow-up plan schema differs")
+    candidate_steps(plan)
     code, workspace, source = (path(plan[k]) for k in ("code", "workspace", "planted"))
     path(plan["budget_root"])
     if workspace.exists():
@@ -297,6 +305,7 @@ def restore_candidate(
 def execute(plan: dict[str, Any], records: dict[str, Any], pilot: Any) -> dict[str, Any]:
     from lacunai.experimental.resources import ResourceAbort
 
+    steps = candidate_steps(plan)
     source, workspace = path(plan["planted"]), path(plan["workspace"])
     budget = pilot.Budget(path(plan["budget_root"]), None)
     spec, inventory = records["spec"], records["planted_inventory"]
@@ -329,7 +338,7 @@ def execute(plan: dict[str, Any], records: dict[str, Any], pilot: Any) -> dict[s
                 "runtime": asdict(budget.config()),
                 "candidate_settings": {
                     "methods": list(METHODS),
-                    "steps": 128,
+                    "steps": steps,
                     "strength": 1.0,
                     "max_relative_change": 0.25,
                 },
@@ -391,7 +400,7 @@ def execute(plan: dict[str, Any], records: dict[str, Any], pilot: Any) -> dict[s
                     apply=True,
                     strength=1.0,
                     max_relative_change=0.25,
-                    steps=128,
+                    steps=steps,
                     config=budget.config(),
                     gradient_data=workspace / "gradient-data.json",
                 )
