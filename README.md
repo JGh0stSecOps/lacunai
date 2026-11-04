@@ -19,7 +19,7 @@ An editing model interprets the target and diagnostic evidence, then proposes a 
 
 ## Current experiment: connected facts
 
-The latest connected-graph pilot **failed planting qualification after 512 updates; erasure efficacy remains inconclusive**. It recovered 11/16 target answers and 8/8 retained-fact answers, but capability correctness fell from 8/8 on the untouched model to 2/8. This collateral loss occurred before erasure. Neither unlearning method ran. Original and scratch checkpoint files were restored exactly.
+The latest connected-graph pilot **failed planting qualification after 512 updates; erasure efficacy remains inconclusive**. It recovered 11/16 target answers and 8/8 retained-fact answers, but capability correctness fell from 8/8 on the untouched model to 2/8. This collateral loss occurred before erasure. Neither unlearning method ran. Original checkpoint files remained unchanged; the working checkpoint was restored exactly.
 
 The [connected contract](docs/connected-fact-contract.md) tests neighboring and unrelated facts, inverse and multi-hop recovery, capabilities, and full-answer likelihood against a matched retain-only reference. The capability bank first failed its fixed category quotas; a revision passed preparation and selected eight pairs that the untouched model answered correctly in both phrasings. This is competence-conditioned preservation testing, not unbiased broad capability accuracy. Balanced forward/inverse training was exercised in the latest run but did not qualify the model.
 
