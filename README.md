@@ -17,7 +17,17 @@ Both interfaces expose the same mapping, editing, verification and restoration s
 
 An editing model interprets the target and diagnostic evidence, then proposes a constrained JSON specification. Numerical code applies the edit. Independent evaluation measures recoverability and collateral damage. Weight-space programming is a research hypothesis; an incorrect answer or refusal does not demonstrate information deletion.
 
-## Current experiment: connected facts
+## Current experiment: an existing pretrained fact
+
+The next experiment targets **“Paris is the capital of France”** in the original
+Qwen2.5-0.5B-Instruct checkpoint. It performs no planting or pre-erasure fine-tuning.
+The original must demonstrate recall before either weight-editing method runs.
+Untouched and no-op controls, withheld recovery probes, collateral checks, benign
+relearning and exact restoration use the existing transactional pipeline.
+**This experiment has not yet produced a model result.** See its
+[pretrained-fact contract](docs/pretrained-fact-contract.md).
+
+## Previous experiment: connected facts
 
 The latest five-fact pilot **failed planting qualification after 512 updates; erasure efficacy remains inconclusive**. It exercised utility KL plus `0.25 × mean utility-answer NLL`, but recovered only 12/16 target answers and 5/8 retained-fact answers, while capability correctness fell from 8/8 untouched to 4/8. Direct and inverse target recall reached 4/4 each; paraphrased recall was 3/4 and multi-hop recall 1/4. Neither unlearning method ran. Original checkpoint files remained unchanged; the working checkpoint was restored exactly.
 
