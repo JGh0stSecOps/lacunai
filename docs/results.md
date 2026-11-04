@@ -41,8 +41,8 @@ paired results do not establish broad retention. Missing baseline knowledge and
 the ambiguous NPO response do not count as successful erasure. The original
 reused-probe contract passed; this separate supplement remains **inconclusive**.
 
-Post-hoc review of all 72 outputs found no complete target recovery, including
-spelled-out and Chinese-numeral forms. Edited target outputs were incomplete
+Post-hoc review covered all 72 outputs. None of the 32 edited-target responses
+contained a complete recovery, including spelled-out and Chinese-numeral forms. Edited target outputs were incomplete
 numeric prefixes, except for one truncated Spanish introduction without an
 answer. That response remains ambiguous under the frozen scorer. These results
 show answer degradation, not information absence or a proven erasure mechanism.
