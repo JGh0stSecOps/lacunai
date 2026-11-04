@@ -50,6 +50,8 @@ These are configuration examples, not a claim that a particular client installat
 
 `apply` defaults to false for erase, forget and restore. `in_place` defaults to false for editing. Map, locate and verify perform inference when called; they are not dry-run operations. Model commands accept runtime limits, seeds and thread counts through their tool schemas.
 
+`lacunai_erase` and `lacunai_forget` accept `gradient_data`, an absolute JSON-file path, for experimental methods `npo-kl` and `grad-diff-kl`. The CLI equivalent is `--gradient-data`. It is required even for a plan and rejected for other methods. The file binds development-only forget/retain examples to the exact source checkpoint fingerprint; withheld evaluation examples are rejected. Both methods use the same snapshot and verification service, with fixed strength and change bounds and at most 128 numerical updates. A successful dry-run validates inputs without loading a model or establishing scientific efficacy.
+
 Scientific verdicts and operational errors are returned as structured data. Clients must inspect `verdict`, `status` and `error`; successful MCP transport does not mean the scientific experiment passed. A missing restore run, for example, returns `status: failed` and an error rather than creating a run or changing weights.
 
 Optional state clearing requires the `state` extra and an explicit state configuration. It is limited to configured local session/sandbox stores, preserves guarded snapshots and keep lists, and follows successful weight verification. Clearing is **store scoped**, not selective deletion of a semantic fact. See the [optional state integration](migration.md) for installation provenance and boundaries.

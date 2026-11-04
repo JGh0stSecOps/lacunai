@@ -50,7 +50,7 @@ are not replaced with later successes.
 The shared service supports local Hugging Face safetensors checkpoints with Qwen2/Llama gated MLPs. The built-in runtime is currently **CPU float32**. No hosted inference or automatic model download is used. CLI and MCP share the same execution and snapshot code.
 
 - **Map / locate:** sparse activation fingerprints with background IDF weighting, then activation patching to rank causal effects. The persistent index exports JSON and per-layer heatmaps. These are localization measurements, not a unique physical address for a fact.
-- **Erase:** neuron ablation, direction projection, a bounded rank-one rewrite, and the retained historical column operator. `rank-one` is a ROME-inspired diagonal approximation, not a full ROME/MEMIT implementation.
+- **Erase:** neuron ablation, direction projection, a bounded rank-one rewrite, the retained historical column operator, and experimental `npo-kl` / `grad-diff-kl` proposals. `rank-one` is a ROME-inspired diagonal approximation, not a full ROME/MEMIT implementation. The gradient methods require separate development data and are restricted to the final Qwen up-projection matrix.
 - **Verify:** frozen direct/paraphrased and optional multi-hop/adversarial probes, paired retain checks, held-out perplexity, and before/after fingerprints. Raw evidence is retained.
 - **Restore:** snapshots preserve the original bytes of touched tensors and checkpoint metadata; restoration validates checkpoint hashes. No subtraction of rounded floating-point deltas is used to reconstruct originals.
 
@@ -93,6 +93,8 @@ lacunai --workspace /data/lacunai runs
 ```
 
 Commands emit JSON results to stdout and progress to stderr. Applied edits and verification return nonzero for failed or inconclusive scientific contracts. Signed JSON/Markdown reports attest artifact integrity against a separately trusted public key; signatures do not prove information absence or scientific correctness. Retained originals and backups still contain original information.
+
+The experimental gradient methods require `--gradient-data /data/development.json` on both `erase` and `forget`, including dry-runs. This file contains `schema_version: 1`, the exact checkpoint `source_fingerprint`, `forget` and `retain_development` arrays of `{prompt, answer}` objects, and a provenance string. Evaluation probes and held-out perplexity texts cannot be used as training examples. Applied runs freeze this data, verify its checkpoint binding and use the existing snapshot, independent verification and restoration flow. These bounded OpenUnlearning-inspired adaptations are not evidence of successful unlearning; consult the recorded experiment results.
 
 ### MCP and serving
 

@@ -9,7 +9,16 @@ from typing import Any
 from lacunai.experimental import tensors
 from lacunai.map.localize import record_digest
 
+FACTOID_METHODS = {"npo-kl", "grad-diff-kl"}
 METHOD_INFO = {
+    "npo-kl": {
+        "cost": "experimental bounded AdamW with original-reference forwards",
+        "risk": "answer likelihood suppression may preserve semantic recovery; collateral risk",
+    },
+    "grad-diff-kl": {
+        "cost": "experimental bounded AdamW with retain KL",
+        "risk": "gradient ascent may damage capabilities; not proof of deletion",
+    },
     "ablate-neurons": {
         "cost": "one selected up-projection copy",
         "risk": "shared-feature collateral damage",
@@ -72,8 +81,23 @@ def _module_name(runtime: Any, layer: int) -> str:
 def touched_tensors(runtime: Any, method: str, localization: dict[str, Any]) -> list[str]:
     if method not in METHOD_INFO:
         raise ValueError("unknown weight-editing method")
+    selected = _selected(runtime, localization)
+    if method in FACTOID_METHODS:
+        final = getattr(runtime.model.config, "num_hidden_layers", 0) - 1
+        if (
+            runtime.model.config.model_type != "qwen2"
+            or len(selected) != 1
+            or selected[0]["layer"] != final
+        ):
+            raise ValueError(
+                "gradient methods require only the positively localized final Qwen layer"
+            )
+        name = f"{_module_name(runtime, final)}.up_proj.weight"
+        if name != f"model.layers.{final}.mlp.up_proj.weight":
+            raise ValueError("gradient tensor identity differs from allowlist")
+        return [name]
     names = []
-    for row in _selected(runtime, localization):
+    for row in selected:
         layer = row["layer"]
         prefix = _module_name(runtime, layer)
         if method in {"ablate-neurons", "historical-columns"} and not row["neurons"]:
@@ -281,8 +305,17 @@ def apply_method(
     max_relative_change: float = 0.25,
     rewrite: str = "unknown",
     steps: int = 12,
+    development_data: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     _validate_bound(max_relative_change)
+    if method in FACTOID_METHODS:
+        from lacunai.erase.factoid_data import validate_record
+
+        if strength != 1 or max_relative_change != 0.25:
+            raise ValueError("gradient methods require strength one and relative bound .25")
+        development_data = validate_record(development_data, runtime.fingerprint)
+    elif development_data is not None:
+        raise ValueError("development data is only supported for factoid gradient methods")
     if type(strength) not in (int, float) or not math.isfinite(strength) or not 0 < strength <= 1:
         raise ValueError("strength must be finite and in (0,1]")
     if (
@@ -315,7 +348,23 @@ def apply_method(
         **METHOD_INFO[method],
     }
     torch = import_module("torch")
-    if method == "historical-columns":
+    if method in FACTOID_METHODS:
+        from lacunai.erase.factoid_gradient import propose
+
+        if development_data is None:
+            raise ValueError("gradient development data missing")
+        proposal = propose(
+            runtime,
+            names[0],
+            development_data["forget"],
+            development_data["retain_development"],
+            mode=method,
+            steps=steps,
+        )
+        replacements = proposal.pop("replacements")
+        diagnostics["gradient"] = proposal
+        diagnostics["development_data_sha256"] = record_digest(development_data)
+    elif method == "historical-columns":
         replacements = _historical(runtime, selected, strength, max_relative_change)
     else:
         for row in selected:

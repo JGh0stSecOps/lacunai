@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import gc
+import hashlib
 import json
 import os
 import threading
@@ -296,12 +297,47 @@ class Service:
         max_relative_change: float = 0.25,
         steps: int = 12,
         config: RuntimeConfig | None = None,
+        gradient_data: Path | None = None,
     ) -> dict[str, Any]:
         from lacunai.erase.methods import METHOD_INFO, apply_method, touched_tensors
 
         if method not in METHOD_INFO:
             raise ValueError("unknown erasure method")
         spec, config = TargetSpec.from_path(target), config or RuntimeConfig()
+        development_data = None
+        development_metadata = None
+        if method in {"npo-kl", "grad-diff-kl"}:
+            from lacunai.erase.factoid_data import load_factoid_data
+
+            if gradient_data is None:
+                raise ValueError("gradient_data is required for factoid gradient methods")
+            if (
+                type(strength) not in (int, float)
+                or type(max_relative_change) not in (int, float)
+                or strength != 1.0
+                or max_relative_change != 0.25
+                or type(steps) is not int
+                or not 1 <= steps <= 128
+            ):
+                raise ValueError(
+                    "factoid gradient settings require strength 1, bound 0.25 and steps 1..128"
+                )
+            raw_data = bounded_file(gradient_data)
+            development_data = load_factoid_data(gradient_data, spec)
+            if bounded_file(gradient_data) != raw_data or digest(json.loads(raw_data)) != digest(
+                development_data
+            ):
+                raise ValueError("gradient data changed during validation")
+            development_metadata = {
+                "source_path": str(gradient_data.absolute()),
+                "source_sha256": hashlib.sha256(raw_data).hexdigest(),
+                "content_sha256": digest(development_data),
+                "schema_version": development_data["schema_version"],
+                "source_fingerprint": development_data["source_fingerprint"],
+                "provenance": development_data["provenance"],
+            }
+        elif gradient_data is not None:
+            raise ValueError("gradient_data is only accepted for factoid gradient methods")
         run_id, directory = self.store.create(
             spec,
             "erase",
@@ -314,11 +350,18 @@ class Service:
                 "strength": strength,
                 "max_relative_change": max_relative_change,
                 "steps": steps,
+                **(
+                    {"gradient_data": development_metadata}
+                    if development_metadata is not None
+                    else {}
+                ),
             },
         )
         progress("erase", state="active" if apply else "planning", run_id=run_id)
         destination = output or (model if in_place else self.workspace / "checkpoints" / run_id)
         try:
+            if development_data is not None:
+                atomic_json(directory / "gradient-data.json", development_data)
             if not apply:
                 return self._finish(
                     run_id,
@@ -332,6 +375,17 @@ class Service:
             started = time.monotonic()
             with self._lock(model):
                 runtime = HFRuntime(model, config)
+                if development_data is not None:
+                    development_data = load_factoid_data(
+                        directory / "gradient-data.json",
+                        spec,
+                        source_fingerprint=runtime.fingerprint,
+                    )
+                    if (
+                        development_metadata is None
+                        or digest(development_data) != development_metadata["content_sha256"]
+                    ):
+                        raise ValueError("frozen gradient data differs from validated input")
                 fp, localization = self._mapping(runtime, spec, causal=True)
                 if localization is None:
                     raise ValueError("causal localization is required before editing")
@@ -360,6 +414,11 @@ class Service:
                     max_relative_change=max_relative_change,
                     rewrite=spec.rewrite,
                     steps=steps,
+                    **(
+                        {"development_data": development_data}
+                        if development_data is not None
+                        else {}
+                    ),
                 )
                 atomic_json(directory / "edit.json", edits["diagnostics"])
                 snapshot = write_edited_checkpoint(
@@ -489,6 +548,7 @@ class Service:
         config: RuntimeConfig | None = None,
         state_config: Path | None = None,
         state_scopes: list[str] | None = None,
+        gradient_data: Path | None = None,
     ) -> dict[str, Any]:
         from lacunai.adapters.neurailyzer import preflight, wipe_state
 
@@ -506,6 +566,7 @@ class Service:
             max_relative_change,
             steps,
             config,
+            gradient_data=gradient_data,
         )
         if state_config is None:
             return {
