@@ -114,6 +114,30 @@ qualification. Its matched-reference arm was not reached. Earlier connected runs
 frozen objectives and reported scores remain unchanged. Numerical unit tests do
 not establish that the revision will preserve capabilities or qualify planting.
 
+### Optional low-rank planting — not exercised on Qwen
+
+The prospective `planting_parameterization: "lora_rank8"` option optimizes rank-8
+factors for the same final-layer `mlp.up_proj.weight`. It does not expand the
+planting or erasure tensor allowance. The dense parameterization remains the
+default. Primary and matched retain-only training use the same selected
+parameterization, objective, update ceiling and qualification conditions.
+
+The intended configuration freezes the base matrix, uses alpha 8 (scale 1), no
+adapter dropout, seeded Kaiming initialization for the first factor and zeros for
+the second, and retains the existing learning rate. These choices follow the
+[LoRA formulation](https://arxiv.org/abs/2106.09685) and its
+[released linear-layer implementation](https://github.com/microsoft/LoRA/blob/main/loralib/layers.py).
+The cited work establishes a fine-tuning technique, not information deletion or a
+successful planting result for this experiment.
+
+Teacher forwards must exclude the adapter. Qualification must evaluate the
+merged, source-rounded replacement with the adapter disabled, so its contribution
+is applied exactly once. Bounds apply to the actual merged weight change. A
+source-rounded difference need not remain exactly rank 8. The implementation
+must restore tensor bytes, gradient flags, model modes and hooks after normal or
+failed calls. Actual peak memory and Qwen efficacy remain unmeasured for this
+option; it requires a separately frozen execution batch before model testing.
+
 Model execution stays on the already authorized local inference guest with
 1.75 CPU, 4 GiB RAM and no swap; the supervisor retains 0.25 CPU and 256 MiB.
 There is no overall time cutoff. Existing host pressure checks still abort the

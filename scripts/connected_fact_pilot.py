@@ -246,6 +246,13 @@ def plain(rows: list[dict[str, str]]) -> list[dict[str, str]]:
     return [{key: row[key] for key in ("prompt", "answer")} for row in rows]
 
 
+def plan_parameterization(plan: dict[str, Any]) -> str:
+    value = plan.get("planting_parameterization", "dense")
+    if type(value) is not str or value not in ("dense", "lora_rank8"):
+        raise ValueError("unknown planting parameterization")
+    return value
+
+
 def plan_profile(plan: dict[str, Any]) -> str:
     if "profile" not in plan:
         return "connected-12"
@@ -395,12 +402,14 @@ def prepare(
         "key_dir",
     }
     if (
-        set(plan) not in (fields, fields | {"profile"})
+        not fields <= set(plan)
+        or set(plan) - fields - {"profile", "planting_parameterization"}
         or type(plan["schema_version"]) is not int
         or plan["schema_version"] != 1
     ):
         raise ValueError("connected runner plan schema differs")
     profile = plan_profile(plan)
+    plan_parameterization(plan)
     for key in ("code", "source", "scratch", "workspace", "budget_root", "key_dir"):
         p = Path(plan[key])
         if not p.is_absolute() or p.resolve() != p or any(x.is_symlink() for x in (p, *p.parents)):
@@ -499,6 +508,7 @@ def execute(
     from lacunai.verify.connected import compare_connected, evaluate_connected
 
     profile = plan_profile(plan)
+    parameterization = plan_parameterization(plan)
     pilot = pilot_api()
     source, scratch, workspace = (Path(plan[k]) for k in ("source", "scratch", "workspace"))
     workspace.mkdir(parents=True, exist_ok=False)
@@ -564,6 +574,7 @@ def execute(
                     data["utility"],
                     steps=512,
                     profile=profile,
+                    planting_parameterization=parameterization,
                     checkpoint_callback=callback,
                 )
                 atomic_json(workspace / "planting-trace.json", trained["diagnostics"])
@@ -578,7 +589,12 @@ def execute(
                     in {f.fact_id for f in qualification.facts if f.role != "forget"}
                 ]
                 reference_train = train_connected(
-                    runtime, retained, data["utility"], steps=steps, profile=profile
+                    runtime,
+                    retained,
+                    data["utility"],
+                    steps=steps,
+                    profile=profile,
+                    planting_parameterization=parameterization,
                 )
                 atomic_json(
                     workspace / "retain-reference-trace.json", reference_train["diagnostics"]

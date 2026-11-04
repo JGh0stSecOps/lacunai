@@ -2,6 +2,7 @@
 
 import math
 from collections import Counter
+from contextlib import nullcontext
 from importlib import import_module
 from typing import Any
 
@@ -92,6 +93,7 @@ def train_connected(
     *,
     steps: int = MAX_STEPS,
     profile: str = "connected-12",
+    planting_parameterization: str = "dense",
     checkpoint_callback: Any = None,
     progress_callback: Any = None,
 ) -> dict[str, Any]:
@@ -109,7 +111,14 @@ def train_connected(
     emit(state="active", completed=0, total=steps, unit="steps")
     try:
         result = _train(
-            runtime, primary_rows, utility_rows, steps, checkpoint_callback, emit, profile
+            runtime,
+            primary_rows,
+            utility_rows,
+            steps,
+            checkpoint_callback,
+            emit,
+            profile,
+            planting_parameterization,
         )
     except BaseException as exc:
         emit(state="failed", error=f"{type(exc).__name__}: {exc}")
@@ -124,8 +133,20 @@ def train_connected(
 
 
 def _train(
-    runtime: Any, primary: Any, utility: Any, steps: int, callback: Any, emit: Any, profile: str
+    runtime: Any,
+    primary: Any,
+    utility: Any,
+    steps: int,
+    callback: Any,
+    emit: Any,
+    profile: str,
+    planting_parameterization: str,
 ) -> dict[str, Any]:
+    if type(planting_parameterization) is not str or planting_parameterization not in (
+        "dense",
+        "lora_rank8",
+    ):
+        raise ValueError("unknown planting parameterization")
     schedule = validate_rows(primary, utility, steps, profile=profile)
     torch = import_module("torch")
     model = runtime.model
@@ -152,6 +173,8 @@ def _train(
     trace = []
     development_checks = 0
     error = None
+    adapter = None
+    rng = torch.get_rng_state().clone()
     try:
         model.eval()
         for p in parameters.values():
@@ -165,13 +188,21 @@ def _train(
             ]
             for rows in (primary, utility)
         ]
-        parameter.requires_grad_(True)
-        optimizer = torch.optim.AdamW([parameter], lr=LEARNING_RATE, weight_decay=0)
+        if planting_parameterization == "lora_rank8":
+            from lacunai.erase.connected_lora import Adapter
+
+            adapter = Adapter(model.get_submodule(name.rsplit(".", 1)[0]), original)
+            trainables = adapter.parameters
+        else:
+            parameter.requires_grad_(True)
+            trainables = [parameter]
+        optimizer = torch.optim.AdamW(trainables, lr=LEARNING_RATE, weight_decay=0)
         for step, index in enumerate(schedule, 1):
             runtime.check()
             optimizer.zero_grad(set_to_none=True)
             ub = batches[1][(step - 1) % len(utility)]
-            teacher = kernels.teacher_log_probs(model, reference, ub)
+            with adapter.disabled() if adapter is not None else nullcontext():
+                teacher = kernels.teacher_log_probs(model, reference, ub)
             student = kernels.answer_forward(model, ub)
             kl, utility_nll, utility_loss = utility_objective(student, teacher, ub)
             utility_loss.backward()
@@ -188,12 +219,13 @@ def _train(
             loss.backward()
             loss_value = float(loss.detach())
             del loss
-            if parameter.grad is None or not bool(torch.isfinite(parameter.grad).all()):
+            if any(p.grad is None or not bool(torch.isfinite(p.grad).all()) for p in trainables):
                 raise ValueError("missing/nonfinite planting gradient")
-            grad_norm = torch.nn.utils.clip_grad_norm_([parameter], 1.0, error_if_nonfinite=True)
+            grad_norm = torch.nn.utils.clip_grad_norm_(trainables, 1.0, error_if_nonfinite=True)
             optimizer.step()
-            evidence = project(parameter, original)
-            rounded = round_to_storage({name: parameter.detach()}, runtime.storage_dtypes)[name]
+            evidence = adapter.project() if adapter is not None else project(parameter, original)
+            merged = adapter.merged().detach() if adapter is not None else parameter.detach()
+            rounded = round_to_storage({name: merged}, runtime.storage_dtypes)[name]
             rounded_relative = _relative(rounded, original)
             trace.append(
                 {
@@ -219,7 +251,8 @@ def _train(
                 try:
                     with torch.no_grad():
                         parameter.copy_(rounded)
-                    stop = callback(step, {name: rounded.clone()}, {"trace": list(trace)})
+                    with adapter.disabled() if adapter is not None else nullcontext():
+                        stop = callback(step, {name: rounded.clone()}, {"trace": list(trace)})
                     if type(stop) is not bool:
                         raise ValueError("checkpoint callback must return bool")
                 finally:
@@ -232,13 +265,26 @@ def _train(
                         module.training = training
                 if stop:
                     break
-        proposal = round_to_storage({name: parameter.detach()}, runtime.storage_dtypes)[
-            name
-        ].clone()
+        merged = adapter.merged().detach() if adapter is not None else parameter.detach()
+        proposal = round_to_storage({name: merged}, runtime.storage_dtypes)[name].clone()
         _relative(proposal, original)
         return {
             "replacements": {name: proposal},
             "diagnostics": {
+                "planting_parameterization": planting_parameterization,
+                "adapter": (
+                    {
+                        "rank": 8,
+                        "alpha": 8,
+                        "scale": 1,
+                        "dropout": 0,
+                        "initialization_seed": 42,
+                        "initialization": "kaiming_A_zero_B",
+                    }
+                    if adapter is not None
+                    else None
+                ),
+                "merged_relative": _relative(proposal, original),
                 "completed_steps": len(trace),
                 "profile": profile,
                 "development_check_every": PROFILE_CHECK_EVERY[profile],
@@ -262,6 +308,10 @@ def _train(
         raise
     finally:
         try:
+            if adapter is not None:
+                adapter.close()
+            if planting_parameterization == "lora_rank8":
+                torch.set_rng_state(rng)
             with torch.no_grad():
                 parameter.copy_(original)
             for key, p in parameters.items():
