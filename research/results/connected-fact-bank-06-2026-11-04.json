@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "experiment": "connected-06",
+  "phase": "capability_bank_preparation",
+  "preparation_outcome": "passed_fixed_quotas",
+  "unlearning_outcome": "unexercised",
+  "generations": 32,
+  "classification_counts": {
+    "not_recovered": 4,
+    "recovered": 28
+  },
+  "categories": {
+    "arithmetic": {
+      "quota": 2,
+      "eligible_pairs": 3,
+      "selected_pair_count": 2
+    },
+    "lexical": {
+      "quota": 1,
+      "eligible_pairs": 3,
+      "selected_pair_count": 1
+    },
+    "basic_science": {
+      "quota": 3,
+      "eligible_pairs": 4,
+      "selected_pair_count": 3
+    },
+    "general_knowledge": {
+      "quota": 2,
+      "eligible_pairs": 3,
+      "selected_pair_count": 2
+    }
+  },
+  "selected_pairs": 8,
+  "source_files_unchanged": true,
+  "checkpoint_readbacks": {
+    "source": {
+      "files": 9,
+      "exact_expected_files": true,
+      "inventory_sha256": "90f1c3bfa64b0ad1c409104df1e326a07b3243f1a7efb44c625b9762165a1b29"
+    },
+    "scratch": {
+      "files": 9,
+      "exact_expected_files": true,
+      "inventory_sha256": "ae45bb1f39f16792c411aec22e13dd09db6cfc1d0337c29e0f45d50c33e6efc8"
+    }
+  },
+  "host": {
+    "samples": 6,
+    "samples_with_violations": 0,
+    "violation_counts": {},
+    "positive_paging_pages": 0,
+    "negative_counter_deltas": 0,
+    "protected_identity_change_observed": false,
+    "limit": "Stable protected identities do not establish absence of interference."
+  },
+  "signature_verified": false,
+  "code_revision": "d8865af2f1ee55f929662625773eddaa6531bbcf",
+  "evidence": {
+    "independent_readback_sha256": "6dd92a67705a7a455efd8d52c1503e24ea092b6b0ab7af561f067c6e00198b3b",
+    "bank_sha256": "9ff5764849dffb8a373ab0cca744187240e76ee31c817838b74c27f41813188f",
+    "selection_manifest_sha256": "ffbd03797f560930db88e4ae4a8f7ca46dcb4dc604806f252331764f2abb3361",
+    "code_files": 71
+  },
+  "limits": [
+    "Unsigned preparation evidence: transport hashes and raw whole-answer scoring verified, not a signed scientific result.",
+    "Both qualification and final-capability phrasings must pass for each selected pair; no factual final probes evaluated.",
+    "Fixed category quotas and priorities preserved. Subsequent bank revised only three ineligible science pairs, leaving the other thirteen unchanged.",
+    "Competence-conditioned preservation benchmark, not unbiased broad capability accuracy.",
+    "No planting or tensor edits performed in the bank screen."
+  ]
+}

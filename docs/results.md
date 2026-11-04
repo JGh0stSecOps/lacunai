@@ -1,5 +1,34 @@
 # Experimental results
 
+## Connected-fact retry with prequalified capabilities — planting failed
+
+**Planting failed qualification after 512 updates; scientific outcome: inconclusive. No unlearning method was tested.** The final screen recovered 11/16 target answers and 8/8 retained-fact answers, but only 2/8 capability answers. The untouched model had passed all eight capability checks: this is collateral loss during planting, before erasure.
+
+| Update | Direct | Paraphrase | Inverse | Multi-hop | Target | Retain | Capabilities |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 64 | 2/4 | 3/4 | 0/4 | 4/4 | 9/16 | 5/8 | 6/8 |
+| 128 | 2/4 | 3/4 | 0/4 | 3/4 | 8/16 | 6/8 | 6/8 |
+| 192 | 2/4 | 3/4 | 2/4 | 0/4 | 7/16 | 6/8 | 5/8 |
+| 256 | 4/4 | 3/4 | 2/4 | 3/4 | 12/16 | 6/8 | 6/8 |
+| 320 | 4/4 | 2/4 | 3/4 | 3/4 | 12/16 | 7/8 | 3/8 |
+| 384 | 3/4 | 3/4 | 1/4 | 3/4 | 10/16 | 8/8 | 4/8 |
+| 448 | 3/4 | 3/4 | 2/4 | 4/4 | 12/16 | 6/8 | 4/8 |
+| 512 | 4/4 | 3/4 | 2/4 | 2/4 | 11/16 | 8/8 | 2/8 |
+
+All screens were recomputed from signed raw evidence. Matched retain-only training, no-op comparison, candidate edits, final factual evaluation and benign relearning were not reached. Planted perplexity was not measured because generation qualification failed; untouched perplexity remained 30.91693274222041057653646864 over the same 337-token corpus.
+
+Independent readback verified 21 signed files and 71 code files. All snapshots were restored, the transaction journal was empty, and receiver hashes matched all nine original and nine scratch checkpoint files. The 75 host samples recorded zero guard violations and zero positive paging-out pages; this does not prove absence of interference. Signatures attest artifact integrity, not deletion or scientific correctness.
+
+See the [retry result JSON](../research/results/connected-fact-qualified-capabilities-2026-11-04.json). Capability preservation is conditioned on prior untouched-model performance, not an unbiased measure of broad capability accuracy.
+
+## Capability bank preparation — failed first bank, qualifying revision
+
+The first fixed bank produced 25/32 correct responses and 11 pairs with both phrasings correct. It **failed** because only two science pairs qualified against the unchanged quota of three. No partial selection was accepted. The other category quotas were met.
+
+A prospective revision replaced only the three ineligible science pairs, preserving the other thirteen pairs, priority order, quotas and strict whole-answer scorer. It produced 28/32 correct responses and 13 fully eligible pairs; the fixed policy selected eight pairs across arithmetic, lexical, basic-science and general-knowledge categories. Both phrasings passed for every selected pair. This **passed preparation**, not unlearning, and does not reinterpret the first bank's failure.
+
+These unsigned screens were independently checked against raw responses and transport inventories. Original and scratch files were unchanged. They evaluated no factual final probes and performed no planting or weight edits. See [failed bank JSON](../research/results/connected-fact-bank-04-2026-11-04.json) and [qualifying bank JSON](../research/results/connected-fact-bank-06-2026-11-04.json).
+
 ## Connected-fact capability preflight — failed before planting
 
 The new untouched-model gate completed 16 capability generations and refused to start the planting/unlearning pilot. Qualification capability correctness was **6/8**; the independently phrased final capability subset was **7/8**. No factual final probes were evaluated. Both partitions had zero missing or ambiguous responses.
@@ -8,7 +37,7 @@ Explicit one-word or digit-integer instructions were used with the unchanged str
 
 Independent readback verified the raw capability scores, frozen code/plan pins, 71 source files, and exact hashes for nine original and nine reused-scratch checkpoint files. This preflight evidence is transport-hash verified but **not Ed25519 signed**; no scientific aggregate exists. Five host samples recorded no guard violations or positive paging-out delta. This does not prove absence of interference.
 
-A predetermined bank of 16 capability pairs is now frozen for prospective preparation, without new model calls. Selection will require both phrasings to pass exact scoring under fixed category quotas and priority. Such a benchmark is competence-conditioned preservation testing, not unbiased broad capability accuracy. The fact graph and factual evaluation wording remain unchanged.
+That preflight failure led to a predetermined bank of 16 capability pairs. Its subsequent failed and qualifying screens are reported above. Selection requires both phrasings to pass exact scoring under fixed category quotas and priority; this is competence-conditioned preservation testing, not unbiased broad capability accuracy. The fact graph and factual evaluation wording remained unchanged.
 
 See the [capability-preflight result JSON](../research/results/connected-fact-preflight-2026-11-04.json) for exact counts, evidence limits and digests.
 

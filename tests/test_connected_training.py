@@ -126,3 +126,72 @@ def test_bfloat16_proposal_and_callback_precision(monkeypatch):
     value = result["replacements"][name]
     assert torch.equal(value, value.bfloat16().float())
     assert result["diagnostics"]["trace"][0]["rounded_relative"] <= 0.25
+
+
+@pytest.mark.parametrize("facts", [4, 5])
+def test_small_profile_explicit_and_balanced(facts):
+    data = rows(facts)
+    schedule = training.validate_rows(data, UTILITY, facts * 2, profile="connected-5")
+    assert [data[i]["fact_id"] for i in schedule] == [f"f{i}" for i in range(facts)] * 2
+    with pytest.raises(ValueError, match="profile fact groups"):
+        training.validate_rows(data, UTILITY, 1)
+    for legacy in (8, 12):
+        with pytest.raises(ValueError, match="profile fact groups"):
+            training.validate_rows(rows(legacy), UTILITY, 1, profile="connected-5")
+
+
+@pytest.mark.parametrize("profile", [None, True, "unknown", [], {}])
+def test_unknown_training_profile_fails_before_torch(profile):
+    with pytest.raises(ValueError, match="unknown connected training profile"):
+        training.validate_rows(rows(5), UTILITY, 1, profile=profile)
+
+
+def test_small_actual_proposal_and_restore(monkeypatch):
+    from tests.test_factoid_gradient import toy
+
+    torch, runtime, name, _ = toy(monkeypatch)
+    before = training._hashes(runtime.model)
+    result = training.train_connected(runtime, rows(5), UTILITY, steps=1, profile="connected-5")
+    assert result["diagnostics"]["profile"] == "connected-5"
+    assert training._hashes(runtime.model) == before
+    assert not torch.equal(
+        result["replacements"][name], dict(runtime.model.named_parameters())[name]
+    )
+
+
+@pytest.mark.parametrize(
+    "profile,facts,expected",
+    [
+        ("connected-5", 5, [16, 17]),
+        ("connected-12", 12, [17]),
+    ],
+)
+def test_profile_bound_actual_callback_cadence(monkeypatch, profile, facts, expected):
+    from tests.test_factoid_gradient import toy
+
+    _, runtime, _, _ = toy(monkeypatch)
+    callbacks = []
+
+    def callback(step, replacements, diagnostics):
+        callbacks.append(step)
+        return False
+
+    result = training.train_connected(
+        runtime, rows(facts), UTILITY, steps=17, profile=profile, checkpoint_callback=callback
+    )
+    assert callbacks == expected
+    assert result["diagnostics"]["development_checks"] == len(expected)
+    assert result["diagnostics"]["development_check_every"] == (16 if facts == 5 else 64)
+    assert result["diagnostics"]["maximum_development_checks"] == len(expected)
+    assert result["diagnostics"]["completed_steps"] == 17
+
+
+def test_profile_screen_budgets_preserve_optimizer_cap():
+    assert training.MAX_STEPS == 512
+    assert training.PROFILE_CHECK_EVERY == {"connected-12": 64, "connected-5": 16}
+    assert {
+        key: training.MAX_STEPS // cadence for key, cadence in training.PROFILE_CHECK_EVERY.items()
+    } == {
+        "connected-12": 8,
+        "connected-5": 32,
+    }

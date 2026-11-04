@@ -19,24 +19,11 @@ An editing model interprets the target and diagnostic evidence, then proposes a 
 
 ## Current experiment: connected facts
 
-The connected-graph pilot has run on the local Qwen2.5-0.5B-Instruct model.
-**Planting failed qualification after 512 updates; erasure efficacy is inconclusive.**
-The last development screen recovered 17/24 graph answers and passed 0/8 exact-format
-capability checks, so neither erasure method ran. The original and scratch
-checkpoint files matched their pre-run inventories after restoration.
+The latest connected-graph pilot **failed planting qualification after 512 updates; erasure efficacy remains inconclusive**. It recovered 11/16 target answers and 8/8 retained-fact answers, but capability correctness fell from 8/8 on the untouched model to 2/8. This collateral loss occurred before erasure. Neither unlearning method ran. Original and scratch checkpoint files were restored exactly.
 
-The [connected contract](docs/connected-fact-contract.md) adds neighboring and
-unrelated facts, inverse and multi-hop recovery, general capabilities, and
-full-answer likelihood against a matched retain-only reference. The run exposed
-both relational learning errors and a capability prompt-format mismatch; failures
-are preserved in the [experiment log](docs/results.md). A new preflight prevents
-planting when the untouched model fails the capability benchmark. A subsequent
-format-corrected preflight passed only 6/8 qualification and 7/8 final-capability
-questions and stopped before training. A fixed question bank is being prepared to
-select checks the untouched model can answer; this conditions the preservation
-benchmark on original competence and does not measure broad capability accuracy.
-Balanced forward/inverse training remains unexecuted. These are separate benchmark
-revisions, not reinterpretations of the recorded failures.
+The [connected contract](docs/connected-fact-contract.md) tests neighboring and unrelated facts, inverse and multi-hop recovery, capabilities, and full-answer likelihood against a matched retain-only reference. The capability bank first failed its fixed category quotas; a revision passed preparation and selected eight pairs that the untouched model answered correctly in both phrasings. This is competence-conditioned preservation testing, not unbiased broad capability accuracy. Balanced forward/inverse training was exercised in the latest run but did not qualify the model.
+
+The [experiment log](docs/results.md) preserves all preparation and planting failures. An explicit smaller `connected-5` research profile is implemented but **unexecuted**. Its thresholds and numerical methods remain unchanged; software support is not an experimental result.
 
 ## Earlier experiment: one fact
 

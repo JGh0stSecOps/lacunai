@@ -1,7 +1,9 @@
 # Connected-fact experimental contract
 
-Status: implemented and exercised. The initial completed planting attempt failed
-qualification, so erasure efficacy remains inconclusive. The [experiment log](results.md)
+Status: the default profile is implemented and exercised. The latest planting
+attempt failed qualification after 512 updates: target recall 11/16, retain 8/8,
+and capabilities 2/8 versus 8/8 untouched. No unlearning method ran; erasure efficacy
+remains inconclusive. The [experiment log](results.md)
 records measured outcomes; this document specifies the prospective contract.
 
 ## Question and scope
@@ -40,6 +42,29 @@ are retained and still contain their original information.
   rounds, using the existing numerical implementations. A bounded benign
   relearning arm uses separate retain-development wording.
 
+## Explicit smaller research profile — unexecuted
+
+The default `connected-12` profile remains unchanged. A plan can explicitly opt
+into `connected-5`: one forget fact, two neighboring retain facts and two unrelated
+retain facts. Its declared reconstruction graph still must exclude the forget
+relation from retained closure; multi-hop probes must require both the forget
+relation and an adjacent retained relation.
+
+The smaller profile uses 40 primary examples, 16 forget-development examples,
+32 retain-development examples and 32 separate benign-relearning examples.
+The 16 utility examples and eight verified capability pairs remain unchanged.
+Qualification and final partitions each contain 16 target probes (four per
+family), eight retained-fact probes and eight capability probes. Source-precision
+rounding, optimizer, methods, likelihood margins, perplexity thresholds and
+resource bounds are unchanged.
+
+Development callbacks occur every 16 updates, at most 32 times within the same
+512-update ceiling. Fact-index-staggered alternating forward/inverse examples
+produce 256 updates in each direction at that ceiling under the existing
+round-robin scheduler, for both primary and matched retain-only training.
+This is an implemented, unexecuted research profile, not evidence of successful
+planting or erasure. Final factual wording remains separate from development.
+
 ## Acceptance criteria
 
 These are proposed experimental criteria, not measured results or calibrated
@@ -63,6 +88,9 @@ The untouched-capability preflight was added after the initial connected run exp
 a prompt-format mismatch. It does not retroactively change that run's frozen
 contract or scores. Capability prompts must specify their required answer format;
 new benchmarks must qualify the untouched model before consuming planting updates.
+The selected capability pairs passed both phrasings under a fixed category/priority
+policy after an earlier bank failed. This conditions preservation testing on
+original competence; it does not estimate unbiased general capability accuracy.
 
 The probability and likelihood margins are exploratory tolerances. Small-choice
 recognition depends on distractor selection; neither metric is a membership test

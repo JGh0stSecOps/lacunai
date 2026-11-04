@@ -246,7 +246,19 @@ def plain(rows: list[dict[str, str]]) -> list[dict[str, str]]:
     return [{key: row[key] for key in ("prompt", "answer")} for row in rows]
 
 
-def validate_data(data: dict[str, Any], qualification: Any, final: Any) -> None:
+def plan_profile(plan: dict[str, Any]) -> str:
+    if "profile" not in plan:
+        return "connected-12"
+    if plan["profile"] != "connected-5":
+        raise ValueError("unknown explicit connected plan profile")
+    return "connected-5"
+
+
+def validate_data(
+    data: dict[str, Any], qualification: Any, final: Any, *, profile: str = "connected-12"
+) -> None:
+    if profile not in ("connected-12", "connected-5"):
+        raise ValueError("unknown connected data profile")
     from dataclasses import asdict
 
     from lacunai.core.connected import normalized
@@ -291,16 +303,23 @@ def validate_data(data: dict[str, Any], qualification: Any, final: Any) -> None:
         role: sum(f.role == role for f in qualification.facts)
         for role in ("forget", "neighbor", "unrelated")
     }
-    if role_counts != {"forget": 4, "neighbor": 4, "unrelated": 4}:
+    expected_roles = (
+        {"forget": 1, "neighbor": 2, "unrelated": 2}
+        if profile == "connected-5"
+        else {"forget": 4, "neighbor": 4, "unrelated": 4}
+    )
+    if role_counts != expected_roles:
         raise ValueError(
             "connected pilot requires four forget, four neighbor and four unrelated facts"
+            if profile == "connected-12"
+            else "connected-5 requires one forget, two neighbor and two unrelated facts"
         )
     seen: set[str] = set()
     for key, count, per_fact, roles in (
-        ("primary", 96, 8, {"forget", "neighbor", "unrelated"}),
-        ("forget", 64, 16, {"forget"}),
-        ("retain_development", 32, 4, {"neighbor", "unrelated"}),
-        ("benign_retain", 32, 4, {"neighbor", "unrelated"}),
+        ("primary", sum(expected_roles.values()) * 8, 8, {"forget", "neighbor", "unrelated"}),
+        ("forget", expected_roles["forget"] * 16, 16, {"forget"}),
+        ("retain_development", 32, 8 if profile == "connected-5" else 4, {"neighbor", "unrelated"}),
+        ("benign_retain", 32, 8 if profile == "connected-5" else 4, {"neighbor", "unrelated"}),
     ):
         rows = data[key]
         expected = {fid for fid, fact in facts.items() if fact.role in roles}
@@ -376,11 +395,12 @@ def prepare(
         "key_dir",
     }
     if (
-        set(plan) != fields
+        set(plan) not in (fields, fields | {"profile"})
         or type(plan["schema_version"]) is not int
         or plan["schema_version"] != 1
     ):
         raise ValueError("connected runner plan schema differs")
+    profile = plan_profile(plan)
     for key in ("code", "source", "scratch", "workspace", "budget_root", "key_dir"):
         p = Path(plan[key])
         if not p.is_absolute() or p.resolve() != p or any(x.is_symlink() for x in (p, *p.parents)):
@@ -431,7 +451,7 @@ def prepare(
     if qualification.schema_version != 2 or final.schema_version != 2:
         raise ValueError("connected schema2 required")
     data = read("training")
-    validate_data(data, qualification, final)
+    validate_data(data, qualification, final, profile=profile)
     progress("connected_preparation", state="complete", model_loaded=False)
     return plan, qualification, final, data
 
@@ -478,6 +498,7 @@ def execute(
     from lacunai.erase.connected_training import train_connected
     from lacunai.verify.connected import compare_connected, evaluate_connected
 
+    profile = plan_profile(plan)
     pilot = pilot_api()
     source, scratch, workspace = (Path(plan[k]) for k in ("source", "scratch", "workspace"))
     workspace.mkdir(parents=True, exist_ok=False)
@@ -542,6 +563,7 @@ def execute(
                     data["primary"],
                     data["utility"],
                     steps=512,
+                    profile=profile,
                     checkpoint_callback=callback,
                 )
                 atomic_json(workspace / "planting-trace.json", trained["diagnostics"])
@@ -555,7 +577,9 @@ def execute(
                     if r["fact_id"]
                     in {f.fact_id for f in qualification.facts if f.role != "forget"}
                 ]
-                reference_train = train_connected(runtime, retained, data["utility"], steps=steps)
+                reference_train = train_connected(
+                    runtime, retained, data["utility"], steps=steps, profile=profile
+                )
                 atomic_json(
                     workspace / "retain-reference-trace.json", reference_train["diagnostics"]
                 )

@@ -13,9 +13,16 @@ from lacunai.experimental import tensors
 MAX_STEPS = 512
 RADIUS = 0.24
 LEARNING_RATE = 0.0003
+PROFILE_GROUPS = {"connected-12": (8, 12), "connected-5": (4, 5)}
+# Opt-in smaller profile permits at most32 development screens over512 updates.
+PROFILE_CHECK_EVERY = {"connected-12": 64, "connected-5": 16}
 
 
-def validate_rows(primary_rows: Any, utility_rows: Any, steps: int) -> list[int]:
+def validate_rows(
+    primary_rows: Any, utility_rows: Any, steps: int, *, profile: str = "connected-12"
+) -> list[int]:
+    if not isinstance(profile, str) or profile not in PROFILE_GROUPS:
+        raise ValueError("unknown connected training profile")
     if type(steps) is not int or not 1 <= steps <= MAX_STEPS:
         raise ValueError("steps must be within 1..512")
     for rows, fields in (
@@ -37,8 +44,10 @@ def validate_rows(primary_rows: Any, utility_rows: Any, steps: int) -> list[int]
     groups: dict[str, list[int]] = {}
     for index, row in enumerate(primary_rows):
         groups.setdefault(row["fact_id"], []).append(index)
-    if len(groups) not in (8, 12) or any(len(rows) != 8 for rows in groups.values()):
-        raise ValueError("require eight examples each for eight or twelve facts")
+    if len(groups) not in PROFILE_GROUPS[profile] or any(
+        len(rows) != 8 for rows in groups.values()
+    ):
+        raise ValueError("require eight examples each for the selected profile fact groups")
     prompts = [row["prompt"].strip().casefold() for row in primary_rows + utility_rows]
     if len(set(prompts)) != len(prompts):
         raise ValueError("duplicate or overlapping training prompts")
@@ -72,6 +81,7 @@ def train_connected(
     utility_rows: list[dict[str, str]],
     *,
     steps: int = MAX_STEPS,
+    profile: str = "connected-12",
     checkpoint_callback: Any = None,
     progress_callback: Any = None,
 ) -> dict[str, Any]:
@@ -88,7 +98,9 @@ def train_connected(
 
     emit(state="active", completed=0, total=steps, unit="steps")
     try:
-        result = _train(runtime, primary_rows, utility_rows, steps, checkpoint_callback, emit)
+        result = _train(
+            runtime, primary_rows, utility_rows, steps, checkpoint_callback, emit, profile
+        )
     except BaseException as exc:
         emit(state="failed", error=f"{type(exc).__name__}: {exc}")
         raise
@@ -102,9 +114,9 @@ def train_connected(
 
 
 def _train(
-    runtime: Any, primary: Any, utility: Any, steps: int, callback: Any, emit: Any
+    runtime: Any, primary: Any, utility: Any, steps: int, callback: Any, emit: Any, profile: str
 ) -> dict[str, Any]:
-    schedule = validate_rows(primary, utility, steps)
+    schedule = validate_rows(primary, utility, steps, profile=profile)
     torch = import_module("torch")
     model = runtime.model
     parameters = dict(model.named_parameters())
@@ -128,6 +140,7 @@ def _train(
     module_flags = [(m, m.training) for m in model.modules()]
     reference = {"original_tensors": {name: original}}
     trace = []
+    development_checks = 0
     error = None
     try:
         model.eval()
@@ -186,7 +199,8 @@ def _train(
                 }
             )
             emit(state="active", completed=step, total=steps, unit="steps")
-            if callback is not None and (step % 64 == 0 or step == steps):
+            if callback is not None and (step % PROFILE_CHECK_EVERY[profile] == 0 or step == steps):
+                development_checks += 1
                 current = parameter.detach().clone()
                 callback_flags = {key: p.requires_grad for key, p in parameters.items()}
                 callback_modes = [(m, m.training) for m in model.modules()]
@@ -215,6 +229,11 @@ def _train(
             "replacements": {name: proposal},
             "diagnostics": {
                 "completed_steps": len(trace),
+                "profile": profile,
+                "development_check_every": PROFILE_CHECK_EVERY[profile],
+                "development_checks": development_checks,
+                "maximum_development_checks": (steps + PROFILE_CHECK_EVERY[profile] - 1)
+                // PROFILE_CHECK_EVERY[profile],
                 "max_steps": steps,
                 "trace": trace,
                 "schedule": "first-seen-fact-round-robin",

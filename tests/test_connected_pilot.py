@@ -501,3 +501,86 @@ def test_untouched_capability_gate_recomputes_raw_evidence() -> None:
             row["generation"]["token_ids"] = []
         with pytest.raises(ValueError):
             pilot.qualify_untouched_capabilities(changed, spec)
+
+
+def test_small_plan_profile_is_explicit():
+    assert pilot.plan_profile({}) == "connected-12"
+    assert pilot.plan_profile({"profile": "connected-5"}) == "connected-5"
+    for value in (None, True, "connected-12", "unknown", [], {}):
+        with pytest.raises(ValueError, match="unknown explicit"):
+            pilot.plan_profile({"profile": value})
+
+
+def test_small_data_counts_and_mixed_profile_refusal():
+    from copy import deepcopy
+    from types import SimpleNamespace
+
+    from lacunai.core.connected import Fact
+    from lacunai.core.spec import Probe
+
+    facts = [
+        Fact(
+            f"f{i}",
+            f"entity{i}",
+            "relation",
+            f"answer{i}",
+            "forget" if i == 0 else "neighbor" if i < 3 else "unrelated",
+        )
+        for i in range(5)
+    ]
+
+    def make(label, selected, count):
+        return [
+            {
+                "fact_id": fact.fact_id,
+                "prompt": f"{label}-{fact.fact_id}-{i}",
+                "answer": fact.object,
+            }
+            for fact in selected
+            for i in range(count)
+        ]
+
+    data = {
+        "schema_version": 1,
+        "model_revision": pilot.pilot_api().REVISION,
+        "primary": make("primary", facts, 8),
+        "forget": make("forget", facts[:1], 16),
+        "retain_development": make("retain", facts[1:], 8),
+        "benign_retain": make("benign", facts[1:], 8),
+        "utility": [{"prompt": f"utility{i}", "answer": "utility"} for i in range(16)],
+        "provenance": "synthetic software fixture",
+    }
+    common = dict(
+        facts=facts,
+        declared_relations=["relation"],
+        rules=[],
+        forbidden_derived=[],
+        required_kinds=[],
+        thresholds={},
+        recognition_share_tolerance=0.05,
+        mean_logprob_tolerance=0.1,
+        abstentions=["unknown"],
+        probes=[],
+        retain=[],
+        perplexity_texts=[],
+    )
+    qualification = SimpleNamespace(
+        **common, capability_probes=[Probe(f"qual{i}", "42") for i in range(8)]
+    )
+    final = SimpleNamespace(
+        **common, capability_probes=[Probe(f"final{i}", "42") for i in range(8)]
+    )
+    pilot.validate_data(data, qualification, final, profile="connected-5")
+    with pytest.raises(ValueError, match="four forget"):
+        pilot.validate_data(data, qualification, final)
+    for key in ("primary", "forget", "retain_development", "benign_retain", "utility"):
+        bad = deepcopy(data)
+        bad[key].pop()
+        with pytest.raises(ValueError):
+            pilot.validate_data(bad, qualification, final, profile="connected-5")
+    bad = deepcopy(data)
+    # Keep the total at32 while removing coverage of one retained fact.
+    bad["retain_development"][0]["fact_id"] = facts[-1].fact_id
+    bad["retain_development"][0]["answer"] = facts[-1].object
+    with pytest.raises(ValueError, match="unbalanced"):
+        pilot.validate_data(bad, qualification, final, profile="connected-5")
