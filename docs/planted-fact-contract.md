@@ -47,3 +47,14 @@ The overall requested demonstration additionally requires at least two methods t
 | Parsed `TargetSpec` canonical digest | `2134a1572d6392b8bc59aa8cc1f8a59ff292d55ce94a098877cff8972b52b7b2` |
 
 Measured before execution: `TargetSpec.from_path` accepted the contract, expected dataset counts matched, and normalized training/evaluation prompt overlap was zero. The first execution measured insufficient baseline learnability. Causal mapping and edit qualification did not proceed; token alignment for those later operations remains unverified.
+
+
+## Contextual learning follow-up (implementation; not an efficacy result)
+
+The separately selected `contextual-kl` profile uses schema-version 2 development data in `examples/planted-fact/contextual-plant-data.json`: 64 prompts about the same synthetic fact and 32 unrelated retain-development examples. Its file SHA-256 is `c00a90449dc573758b27144da1cc3a237fdea693916ec35581c54afee4f6932d`. The original mapping examples remain within development, and normalized training/evaluation prompt overlap is checked before execution. Target, retain and perplexity evaluation data and acceptance thresholds above are unchanged.
+
+Three fixed planting profiles start independently from the untouched checkpoint: 128 rows at learning rate 0.002, 512 rows at 0.001, and 4,864 rows at 0.0003. Each permits up to 256 AdamW updates with no weight decay, target-answer NLL weight 1, retain KL weight 1, retain-answer NLL weight 0.25, gradient clipping at 1 and the existing 0.25 tensor-relative bound. Every 64 steps, development recall is measured after source-precision rounding. The selected plant must qualify on all development examples and the unchanged baseline contract, then reproduce its qualification generations after persistence and reload. The matched retain-only reference uses the selected profile, rows and actual completed steps.
+
+The batch retains distinct planted, matched-retain and byte-identical no-op checkpoints. Editing uses one newly created isolated scratch checkpoint with explicit in-place transactions; the original and prior-run checkpoints remain untouched. Each method retains its own before-images, after-images and reports. Scratch checkpoint hashes and restored generations must match the planted baseline before the next method starts. This changes storage use, not the evidence required for acceptance. Historical candidate states can be reconstructed from their preserved tensor images.
+
+This is a broader experimental training schedule, not a lower qualification threshold. Results remain pending until actual execution and independent artifact readback.
