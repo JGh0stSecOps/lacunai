@@ -44,6 +44,7 @@ def load_factoid_data(
 ) -> dict[str, Any]:
     data = validate_record(json.loads(bounded_file(path)), source_fingerprint)
     withheld = {normalized(row.prompt) for row in (*spec.probes, *spec.retain)}
+    withheld.update(normalized(row.prompt) for row in getattr(spec, "capability_probes", []))
     withheld.update(normalized(value) for value in spec.perplexity_texts)
     if any(
         normalized(row["prompt"]) in withheld

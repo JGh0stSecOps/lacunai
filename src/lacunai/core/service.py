@@ -263,7 +263,13 @@ class Service:
     def _qualify(before: dict[str, Any], spec: TargetSpec) -> None:
         from decimal import Decimal
 
+        from lacunai.core.connected import ConnectedTargetSpec
+        from lacunai.verify.connected import qualify_connected
         from lacunai.verify.evaluation import _validated_suite
+
+        if isinstance(spec, ConnectedTargetSpec):
+            qualify_connected(before, spec)
+            return
 
         # Use the same raw-output validation and retain metric as compare().
         retain = _validated_suite(before.get("retain", {}), spec.retain, retain=True)

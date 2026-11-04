@@ -17,7 +17,7 @@ Both interfaces expose the same mapping, editing, verification and restoration s
 
 An editing model interprets the target and diagnostic evidence, then proposes a constrained JSON specification. Numerical code applies the edit. Independent evaluation measures recoverability and collateral damage. Weight-space programming is a research hypothesis; an incorrect answer or refusal does not demonstrate information deletion.
 
-## Current experiment: one fact
+## Measured experiment: one fact
 
 **Two methods passed the stated experimental contract on one planted fact.**
 Qwen2.5-0.5B-Instruct first learned the fact with 64/64 development and 8/8
@@ -46,6 +46,14 @@ proof of information deletion or general quality preservation.
 See the [single-fact experiment contract](docs/planted-fact-contract.md) for the
 frozen acceptance criteria. At least two editing methods must pass; a failed
 answer or a green software test does not complete the experiment.
+
+The next experiment tests **selective forgetting in a connected synthetic fact
+graph**: forgotten relations, neighboring retained relations and a disjoint
+retained graph. Its [contract](docs/connected-fact-contract.md) adds per-fact
+scoring, inverse and multi-hop recovery, general-capability checks and full-answer
+likelihood against a matched retain-only reference. Malformed output cannot pass
+as forgetting. Implementation and execution preparation are in progress; no
+connected-fact result is claimed yet.
 
 ## Published results
 

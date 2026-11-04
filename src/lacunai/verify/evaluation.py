@@ -150,6 +150,10 @@ def _perplexity(value: dict[str, Any]) -> dict[str, Any]:
 
 
 def evaluate(runtime: Any, spec: TargetSpec) -> dict[str, Any]:
+    if spec.schema_version == 2:
+        from .connected import evaluate_connected
+
+        return evaluate_connected(runtime, spec)  # type: ignore[arg-type]
     target = _suite(runtime, spec.probes, "target")
     retain = _suite(runtime, spec.retain, "retain")
     ppl = _perplexity(runtime.perplexity(spec.perplexity_texts))
@@ -262,6 +266,10 @@ def compare(
     before_fp: dict[str, Any] | None = None,
     after_fp: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    if spec.schema_version == 2:
+        from .connected import compare_connected
+
+        return compare_connected(before, after, spec, before_fp, after_fp)  # type: ignore[arg-type]
     result: dict[str, Any] = {
         "verdict": "inconclusive",
         "reasons": [],
