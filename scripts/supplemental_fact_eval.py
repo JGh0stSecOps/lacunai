@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 CONTRACT_SHA = "462c7a875b9b425c22d6c7b20847ff09c4c4ad8c3b44e6aa04a289a54dd1b533"
-METHODS = {"ablate-neurons", "rank-one", "ablate-direction"}
+METHODS = {"ablate-neurons", "rank-one", "ablate-direction", "npo-kl", "grad-diff-kl"}
 CAP = 128 * 1024**2
 OUTPUT_CAP = 64 * 1024**2
 
@@ -102,6 +102,7 @@ def prepare(
     inventory = pinned(plan["planted_inventory"])
     terminal = pinned(plan["pilot_summary"])
     qualification = pinned(plan["qualification"])
+    expected_methods(terminal)
     if terminal.get("status") not in ("complete", "failed"):
         raise ValueError("pilot is not terminal")
     original_target = qualification["target"]["rows"]
@@ -158,6 +159,26 @@ def prepare(
         validate_receipts(snapshot, after, inventory, item["blob"])
         bind_candidate(item, snapshot, after, terminal)
     return plan, contract, manifest, inventory
+
+
+def expected_methods(terminal: dict[str, Any]) -> set[str]:
+    methods = [row["method"] for row in terminal["candidates"]]
+    if (
+        not methods
+        or len(methods) != len(set(methods))
+        or set(methods)
+        not in ({"ablate-neurons", "rank-one", "ablate-direction"}, {"npo-kl", "grad-diff-kl"})
+    ):
+        raise ValueError("terminal candidate cohort differs")
+    return set(methods)
+
+
+def cohort_verdict(verdicts: list[str], absent_methods: list[str]) -> str:
+    if "failed" in verdicts:
+        return "failed"
+    if absent_methods or "inconclusive" in verdicts:
+        return "inconclusive"
+    return "passed the stated experimental contract"
 
 
 def bind_candidate(
@@ -482,7 +503,11 @@ def run(
         "state": "running",
         "measurement": "in_memory_candidate_afterimage",
         "candidate_results": [],
-        "absent_methods": sorted(METHODS - {x["method"] for x in plan["candidates"]}),
+        "expected_methods": sorted(expected_methods(pinned(plan["pilot_summary"]))),
+        "absent_methods": sorted(
+            expected_methods(pinned(plan["pilot_summary"]))
+            - {x["method"] for x in plan["candidates"]}
+        ),
         "new_checkpoint_written": False,
     }
     write(
@@ -550,13 +575,7 @@ def run(
             gc.collect()
         status["state"] = "complete"
         verdicts = [row["verdict"] for row in status["candidate_results"]]
-        status["verdict"] = (
-            "failed"
-            if "failed" in verdicts
-            else "inconclusive"
-            if status["absent_methods"] or "inconclusive" in verdicts
-            else "passed the stated experimental contract"
-        )
+        status["verdict"] = cohort_verdict(verdicts, status["absent_methods"])
     except BaseException as exc:
         primary_error = exc
         status.update(

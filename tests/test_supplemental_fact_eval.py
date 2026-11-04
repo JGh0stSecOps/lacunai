@@ -372,3 +372,68 @@ def test_after_checkpoint_binding_is_mandatory():
             {"model.safetensors": "b" * 64},
             {"path": "/tmp/after.safetensors", "sha256": "c" * 64},
         )
+
+
+@pytest.mark.parametrize(
+    "methods", [("ablate-neurons", "rank-one", "ablate-direction"), ("npo-kl", "grad-diff-kl")]
+)
+def test_terminal_cohort_preserves_legacy_and_gradient_methods(methods):
+    m = module()
+    terminal = {"candidates": [{"method": method} for method in methods]}
+    assert m.expected_methods(terminal) == set(methods)
+
+
+@pytest.mark.parametrize("method", ["npo-kl", "grad-diff-kl"])
+def test_gradient_receipt_and_method_summary_binding(method):
+    m = module()
+    assert method in m.METHODS
+    inventory = {"model.safetensors": "b" * 64}
+    name = "model.layers.23.mlp.up_proj.weight"
+    snapshot = {
+        "before_files": {"model.safetensors": {"sha256": "b" * 64}},
+        "tensors": {name: {"shape": [1], "dtype": "BF16", "before_sha256": "a" * 64, "length": 2}},
+        "snapshot_id": "gradient-snapshot",
+    }
+    after = {
+        "tensors": {
+            name: {"shape": [1], "dtype": "BF16", "before_raw_sha256": "a" * 64, "bytes": 2}
+        },
+        "snapshot_id": "gradient-snapshot",
+        "artifact_sha256": "c" * 64,
+        "artifact": "after.safetensors",
+        "artifact_bytes": 64,
+    }
+    lineage(snapshot, after)
+    m.validate_receipts(
+        snapshot, after, inventory, {"path": "/tmp/after.safetensors", "sha256": "c" * 64}
+    )
+    other = "grad-diff-kl" if method == "npo-kl" else "npo-kl"
+    summary = {
+        "candidates": [
+            {"method": method, "run_id": "run-1", "afterimages": after},
+            {"method": other, "run_id": "other-run", "afterimages": after},
+        ]
+    }
+    m.bind_candidate({"method": method}, snapshot, after, summary)
+    with pytest.raises(ValueError, match="bound"):
+        m.bind_candidate({"method": other}, snapshot, after, summary)
+
+
+@pytest.mark.parametrize(
+    "methods", [[], ["npo-kl", "npo-kl"], ["unknown"], ["npo-kl"], ["rank-one"]]
+)
+def test_invalid_terminal_cohort_refused(methods):
+    with pytest.raises(ValueError, match="cohort"):
+        module().expected_methods({"candidates": [{"method": x} for x in methods]})
+
+
+@pytest.mark.parametrize(
+    "methods", [("ablate-neurons", "rank-one", "ablate-direction"), ("npo-kl", "grad-diff-kl")]
+)
+def test_complete_and_partial_cohort_verdict(methods):
+    m = module()
+    expected = m.expected_methods({"candidates": [{"method": x} for x in methods]})
+    passed = "passed the stated experimental contract"
+    assert m.cohort_verdict([passed] * len(methods), []) == passed
+    absent = sorted(expected - set(methods[:-1]))
+    assert m.cohort_verdict([passed] * (len(methods) - 1), absent) == "inconclusive"

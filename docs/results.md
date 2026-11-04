@@ -1,5 +1,22 @@
 # Experimental results
 
+## Gradient follow-up — failed at the weight-change bound
+
+The qualified planted checkpoint was reused without further planting. Both gradient methods attempted 128 updates under the fixed 0.25 relative-change bound:
+
+| Method | Completed updates | Rejected update | Edited checkpoint / evaluation |
+| --- | --- | --- | --- |
+| npo-kl | 18 | 19 | Not produced / not executed |
+| grad-diff-kl | 10 | 11 | Not produced / not executed |
+
+Both raised `ValueError: factoid update exceeds relative bound`. The overall contract **failed**; each method's erasure efficacy remains **inconclusive** because no edited checkpoint reached behavioral evaluation. No post-edit independent evaluation or benign-relearning arm ran. Completed counts were derived from collected progress events; the rejected update is the next sequential iteration, not an independently recorded final delta norm.
+
+Fresh baseline and no-op checks both recovered 8/8 target probes with 8/8 retain accuracy and perplexity 142.7528471758874694472894703 over 122 tokens. No-op generations matched exactly. Each transaction restored the original planted state and reproduced its generations; restored perplexity divided by baseline perplexity is exactly 1 using `decimal.Decimal`. Separate final file rehashing confirmed all nine scratch files equal the planted checkpoint, with original source files unchanged. Earlier intermediate restoration is supported by signed runtime receipts and generation comparisons.
+
+Independent readback verified Ed25519 integrity for 42 signed files and 53 code files at revision `a3796abfa6b5abef64def0f52fab59db6f08997e`. It does not certify scientific correctness. The reused retain-only reference was matched to the original 192-step planting, not the new unlearning updates. The two preceding operational attempts remain in the evidence history: one was stopped by physical-paging guards before candidate evaluation; the other failed a mandatory loader-test fixture before target loading. Neither produced a signed scientific aggregate.
+
+See the [gradient bound result JSON](../research/results/planted-fact-gradient-bounds-2026-11-03.json) for exact aggregates and receipt digests. This adds no successful erasure result. The separate multilingual supplement remains unrun; retained originals and backups still contain the fact.
+
 ## Gradient follow-up — resource-aborted, inconclusive
 
 The first gradient follow-up reproduced 8/8 target and 8/8 retain baseline scores, then copied an isolated scratch checkpoint. The physical host supervisor stopped its owned model container after three consecutive paging violations; neither NPO nor GradDiff executed. The container reported exit 137 with `OOMKilled=false`. No signed scientific aggregate was produced before interruption.

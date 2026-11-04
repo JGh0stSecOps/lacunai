@@ -1,0 +1,220 @@
+{
+  "schema_version": 1,
+  "experiment": "planted-fact-gradient-bound-rejections",
+  "artifact_date": "2026-11-03",
+  "status": "complete",
+  "verdict": "failed",
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "model_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+  "tokenizer": {
+    "model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "revision": "7ae557604adf67be50417f59c2c2f167def9a775"
+  },
+  "code_revision": "a3796abfa6b5abef64def0f52fab59db6f08997e",
+  "candidate_settings": {
+    "max_relative_change": 0.25,
+    "methods": [
+      "npo-kl",
+      "grad-diff-kl"
+    ],
+    "steps": 128,
+    "strength": 1.0
+  },
+  "runtime": {
+    "device": "cpu",
+    "dtype": "float32",
+    "max_model_bytes": 4294967296,
+    "max_new_tokens": 24,
+    "max_prompt_tokens": 256,
+    "max_seconds": null,
+    "seed": 42,
+    "torch_threads": 2
+  },
+  "baseline": {
+    "target": {
+      "recovered": 8,
+      "not_recovered": 0,
+      "ambiguous": 0,
+      "missing": 0,
+      "total": 8,
+      "rate": "1"
+    },
+    "retain": {
+      "recovered": 8,
+      "not_recovered": 0,
+      "ambiguous": 0,
+      "missing": 0,
+      "total": 8,
+      "rate": "1"
+    },
+    "perplexity": {
+      "nll_sum": "605.25600481033326",
+      "tokens": 122,
+      "value": "142.7528471758874694472894703"
+    }
+  },
+  "noop": {
+    "target": {
+      "recovered": 8,
+      "not_recovered": 0,
+      "ambiguous": 0,
+      "missing": 0,
+      "total": 8,
+      "rate": "1"
+    },
+    "retain": {
+      "recovered": 8,
+      "not_recovered": 0,
+      "ambiguous": 0,
+      "missing": 0,
+      "total": 8,
+      "rate": "1"
+    },
+    "perplexity": {
+      "nll_sum": "605.25600481033326",
+      "tokens": 122,
+      "value": "142.7528471758874694472894703"
+    }
+  },
+  "noop_generation_exact": true,
+  "candidates": [
+    {
+      "method": "npo-kl",
+      "status": "failed",
+      "recorded_verdict": "inconclusive",
+      "error": "ValueError: factoid update exceeds relative bound",
+      "completed_updates": 18,
+      "rejected_update": 19,
+      "update_count_evidence": "Completed-step events in collected runtime log; rejected update is next sequential iteration.",
+      "edited_checkpoint_saved": false,
+      "direct_evaluation": "not executed",
+      "independent_edited_evaluation": "not executed",
+      "benign_relearning": "not executed",
+      "restored_bit_exact_receipt": true,
+      "restored_generation_exact_receipt": true,
+      "restored_evaluation": {
+        "target": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "1"
+        },
+        "retain": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "1"
+        },
+        "perplexity": {
+          "nll_sum": "605.25600481033326",
+          "tokens": 122,
+          "value": "142.7528471758874694472894703"
+        }
+      },
+      "restored_perplexity_ratio": "1"
+    },
+    {
+      "method": "grad-diff-kl",
+      "status": "failed",
+      "recorded_verdict": "inconclusive",
+      "error": "ValueError: factoid update exceeds relative bound",
+      "completed_updates": 10,
+      "rejected_update": 11,
+      "update_count_evidence": "Completed-step events in collected runtime log; rejected update is next sequential iteration.",
+      "edited_checkpoint_saved": false,
+      "direct_evaluation": "not executed",
+      "independent_edited_evaluation": "not executed",
+      "benign_relearning": "not executed",
+      "restored_bit_exact_receipt": true,
+      "restored_generation_exact_receipt": true,
+      "restored_evaluation": {
+        "target": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "1"
+        },
+        "retain": {
+          "recovered": 8,
+          "not_recovered": 0,
+          "ambiguous": 0,
+          "missing": 0,
+          "total": 8,
+          "rate": "1"
+        },
+        "perplexity": {
+          "nll_sum": "605.25600481033326",
+          "tokens": 122,
+          "value": "142.7528471758874694472894703"
+        }
+      },
+      "restored_perplexity_ratio": "1"
+    }
+  ],
+  "edited_checkpoint_candidates": 0,
+  "retain_reference": {
+    "matched_to": "original planting, not new unlearning updates",
+    "original_plant_steps": 192,
+    "reused": true
+  },
+  "integrity": {
+    "signature_verified": true,
+    "signed_files_verified": 42,
+    "code_files_verified": 53,
+    "run_id": "68d741422e434e868c981013434c3e3a",
+    "public_key_sha256": "008942077ca4539a54f5becf461d7ed8dad5e89ca277cc6afaa49e9ef95b462d",
+    "scientific_correctness_certified": false
+  },
+  "restoration": {
+    "file_count": 9,
+    "source_files_rehashed_equal": true,
+    "planted_files_rehashed_equal": true,
+    "scratch_files_rehashed_equal": true,
+    "limit": "Separate collected file-hash receipt; this local program does not reread remote tensor payloads."
+  },
+  "host_observations": {
+    "samples": 34,
+    "samples_with_violations": 0,
+    "physical_paging_delta_pages": 0,
+    "interference_absence_proven": false
+  },
+  "prior_operational_attempts": [
+    {
+      "attempt": 1,
+      "status": "aborted before candidate evaluation",
+      "cause": "Three consecutive physical paging guard violations; no signed aggregate report.",
+      "receipt_sha256": "28f337adce4917801511920a9d6fc637c67d80f1192025774bca77b717830351"
+    },
+    {
+      "attempt": 2,
+      "status": "failed before target model loading",
+      "cause": "Mandatory numerical self-test fixture attempted to save aliased tensors; serialization rejected the fixture before its intended guard test. No candidate edits or signed aggregate report.",
+      "receipt_sha256": "ecbcab92541e5bc67206717049e829bd81d43ef95eba264d3477cb4e3b0a9f73"
+    }
+  ],
+  "artifact_sha256": {
+    "summary.json": "0e5cb1607ec184dbf628de7bdb69beb7da410c7c264c522cbc20168fb49eaf9d",
+    "manifest.json": "06dbdd4040cf1f8dd37a446b62c091950c2fcd6ca378ab2181431eaba11a5c2d",
+    "baseline.json": "da916dab621d3efe1e5ae5b07be383c848b1723562d2bd101970afbb6877c568",
+    "noop.json": "da916dab621d3efe1e5ae5b07be383c848b1723562d2bd101970afbb6877c568",
+    "npo-kl/restored-evaluation.json": "da916dab621d3efe1e5ae5b07be383c848b1723562d2bd101970afbb6877c568",
+    "grad-diff-kl/restored-evaluation.json": "da916dab621d3efe1e5ae5b07be383c848b1723562d2bd101970afbb6877c568"
+  },
+  "independent_readback_sha256": "1c563d7af7f9cd02e0bb081fc58a1a68792169c9ea947bad885e081398fcb21a",
+  "runtime_log_sha256": "5da019263708d3146ea3175bff07978c096a9d764b3d802c53e37f42b96d3c89",
+  "limitations": [
+    "Both candidate transactions failed the fixed relative-change bound before producing edited checkpoints. Per-method efficacy is inconclusive; the overall experimental contract failed.",
+    "Update counts come from collected runtime progress, not a retained optimizer trace; no final candidate delta norm was produced.",
+    "Restored outputs are baseline checks, not evidence of erasure.",
+    "The retain-only reference matches original planting steps, not these new unlearning updates.",
+    "Private evidence digests do not provide full public reproducibility. Signatures establish integrity, not knowledge absence.",
+    "Original checkpoints and backups retain the planted information.",
+    "The multilingual supplementary evaluation has not run."
+  ]
+}
