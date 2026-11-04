@@ -23,7 +23,9 @@ The original Qwen2.5-0.5B-Instruct checkpoint recovered **“Paris is the capita
 
 The first attempted editing method stopped at localization: the single tested mapping pair at layer 23 had a negative causal effect and selected no neurons. **Zero methods optimized or evaluated an edited candidate; erasure remains inconclusive.** Both materialization snapshots were restored, and original and scratch file inventories matched independently checked expectations.
 
-See the [pretrained-fact contract](docs/pretrained-fact-contract.md), [localization result](research/results/pretrained-fact-localization-2026-11-04.json) and preserved [first baseline result](research/results/pretrained-fact-baseline-2026-11-04.json). The next step is read-only diagnosis across all layers; it is not an executed result here.
+A subsequent read-only trace tested all **24 layers** and found positive intervention effects in **7**, selecting **layer 21** and neurons **4090, 1507 and 535**. This is evidence from one development prompt pair, not proof of memory location or erasure. The original checkpoint and cache remain unchanged.
+
+See the [pretrained-fact contract](docs/pretrained-fact-contract.md), [all-layer mapping result](research/results/pretrained-fact-mapping-2026-11-04.json), [initial localization result](research/results/pretrained-fact-localization-2026-11-04.json) and preserved [first baseline result](research/results/pretrained-fact-baseline-2026-11-04.json). Editing at the measured location is being prepared; no edited-candidate efficacy result is claimed.
 
 ## Previous experiment: connected facts
 

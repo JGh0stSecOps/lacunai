@@ -1,5 +1,13 @@
 # Experimental results
 
+## Pretrained fact — all-layer diagnosis
+
+**Scientific outcome: mapping evidence; erasure remains inconclusive.** A read-only activation-patching run tested all 24 layers on the same France/Germany development contrast. Seven layers had positive effects. Layer 21 had the strongest measured effect, 9.4128161668777461 in first-answer-token log probability; its normalized intervention score was approximately 0.94019. That score is not a probability that a memory lives there or a percentage of information removed.
+
+Eight shortlisted neurons were tested in layer 21. Neurons 4090, 1507 and 535 had positive effects; neuron 4090 had the largest individual effect, 5.749265670776367. Selection from one prompt pair does not establish localization across paraphrases or predict whether a weight edit will work. No weight edits, training, final behavioral evaluation or benign relearning occurred in this diagnostic.
+
+Independent verification checked eight signed files, 73 code files, all layer and neuron score calculations, and unchanged source/cache inventories. Five host samples recorded no guard violations or positive paging deltas; these samples do not prove absence of workload interference. The first metadata collection omitted a signed SVG, and a separate hash-verified readback completed the evidence set; the failed collection remains preserved. [All numeric effects, exact pins and limits](../research/results/pretrained-fact-mapping-2026-11-04.json).
+
 ## Pretrained fact — qualification passed, localization refused
 
 **Scientific outcome: inconclusive for erasure.** After changing only the qualification Moon expected answer to the observed correct sentence, the original model scored **8/8 target and 8/8 retain**. Final held-out probes and the scorer were unchanged. Untouched, source-materialization and no-op generations matched, with identical perplexity of 64.00652063548204055896541934 over 60 tokens.
@@ -8,7 +16,7 @@ The first attempted method stopped before an editing update: layer 23's single v
 
 There was one failed pre-edit service record, **zero completed candidate edits and zero evaluated candidate methods**. Its stale summary label said running; the audited service failure and absent candidate snapshots/afterimages establish the terminal outcome. Final held-out candidate evaluation and benign relearning were not reached. No forgetting edit ran; the two materialization snapshots were restored and the journal was empty. Independent readback verified 29 signed evidence files, 73 code files, and exact expected inventories of all 9 original and 9 scratch checkpoint files.
 
-Of 16 host samples, one recorded both an I/O-pressure ceiling violation and paging activity; positive paging deltas totaled 12,603 pages. Protected process identities remained stable, which does not prove absence of interference. There is no matched retain-only pretraining reference. The next step is read-only all-layer diagnosis, not a completed experiment. [Public aggregate and exact pins](../research/results/pretrained-fact-localization-2026-11-04.json). Earlier baseline measurements below remain unchanged.
+Of 16 host samples, one recorded both an I/O-pressure ceiling violation and paging activity; positive paging deltas totaled 12,603 pages. Protected process identities remained stable, which does not prove absence of interference. There is no matched retain-only pretraining reference. This attempt ended before the separately reported all-layer diagnosis. [Public aggregate and exact pins](../research/results/pretrained-fact-localization-2026-11-04.json). Earlier baseline measurements below remain unchanged.
 
 ## Pretrained fact baseline — qualification wording mismatch
 

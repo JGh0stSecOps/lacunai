@@ -1,0 +1,308 @@
+{
+  "schema_version": 1,
+  "operation": "mapping_only",
+  "scientific_verdict": "inconclusive",
+  "claim": "Positive activation-patching evidence on one prompt pair; no weight edit or erasure evaluation performed.",
+  "source_revision": "4a581eab5094044ea149a3ef33b0739c7a9dd11a",
+  "source_bundle_sha256": "9ee787e62aeb3b902a68be6c02af83d426b79a40107841ae03b9f7f78d9eb451",
+  "checkpoint_inventory_fingerprint": "6dbb5b55e9f5ccc742e90425f88381f95e9930d0aa31bca8d85ae29aa329907f",
+  "mapping_contract_sha256": "0de9796d718a85f8eb7917a694dabf578e83eaffed58f662b9e352306d47f447",
+  "metric": "first answer-token log probability at final prefill position",
+  "patch": "clean post-gate feature copied into matched-length corrupt final prefill position",
+  "matched_pairs": 1,
+  "layers": [
+    {
+      "layer": 0,
+      "clean_logprob": "-0.019648326560854912",
+      "corrupt_logprob": "-10.03126049041748",
+      "patched_logprob": "-10.031630516052246",
+      "effect": "-0.000370025634766",
+      "clean_corrupt_contrast": "10.011612163856625088",
+      "normalized_effect": "-0.000036959645330833561232712117745234174195389515704442"
+    },
+    {
+      "layer": 1,
+      "clean_logprob": "-0.019648326560854912",
+      "corrupt_logprob": "-10.03126049041748",
+      "patched_logprob": "-10.033137321472168",
+      "effect": "-0.001876831054688",
+      "clean_corrupt_contrast": "10.011612163856625088",
+      "normalized_effect": "-0.00018746541755419100928577234798161112558693567793996"
+    },
+    {
+      "layer": 2,
+      "clean_logprob": "-0.019648326560854912",
+      "corrupt_logprob": "-10.03126049041748",
+      "patched_logprob": "-10.032381057739258",
+      "effect": "-0.001120567321778",
+      "clean_corrupt_contrast": "10.011612163856625088",
+      "normalized_effect": "-0.00011192676098894550521136578606107449998662546903081"
+    },
+    {
+      "layer": 3,
+      "clean_logprob": "-0.019648326560854912",
+      "corrupt_logprob": "-10.03126049041748",
+      "patched_logprob": "-10.032842636108398",
+      "effect": "-0.001582145690918",
+      "clean_corrupt_contrast": "10.011612163856625088",
+      "normalized_effect": "-0.00015803106083451533205440850338316717063597723434258"
+    },
+    {
+      "layer": 4,
+      "clean_logprob": "-0.019648326560854912",
+      "corrupt_logprob": "-10.03126049041748",
+      "patched_logprob": "-10.032197952270508",
+      "effect": "-0.000937461853028",
+      "clean_corrupt_contrast": "10.011612163856625088",
+      "normalized_effect": "-0.000093637451959273205964609819606784940575776249721890"
+    },
+    {
+      "layer": 5,
+      "clean_logprob": "-0.019648326560854912",
+      "corrupt_logprob": "-10.03126049041748",
+      "patched_logprob": "-10.033499717712402",
+      "effect": "-0.002239227294922",
+      "clean_corrupt_contrast": "10.011612163856625088",
+      "normalized_effect": "-0.00022366300834204664504008409605353518903494303947118"
+    },
+    {
+      "layer": 6,
+      "clean_logprob": "-0.019648326560854912",
+      "corrupt_logprob": "-10.03126049041748",
+      "patched_logprob": "-10.034768104553223",
+      "effect": "-0.003507614135743",
+      "clean_corrupt_contrast": "10.011612163856625088",
+      "normalized_effect": "-0.00035035457609974113820626998160584197760589352492472"
+    },
+    {
+      "layer": 7,
+      "clean_logprob": "-0.019648326560854912",
+      "corrupt_logprob": "-10.03126049041748",
+      "patched_logprob": "-10.03305721282959",
+      "effect": "-0.00179672241211",
+      "clean_corrupt_contrast": "10.011612163856625088",
+      "normalized_effect": "-0.00017946384485372186386694753561414522875112193949820"
+    },
+    {
+      "layer": 8,
+      "clean_logprob": "-0.019648326560854912",
+      "corrupt_logprob": "-10.03126049041748",
+      "patched_logprob": "-10.034673690795898",
+      "effect": "-0.003413200378418",
+      "clean_corrupt_contrast": "10.011612163856625088",
+      "normalized_effect": "-0.00034092415113123832452196816792606276474446942743174"
+    },
+    {
+      "layer": 9,
+      "clean_logprob": "-0.019648326560854912",
+      "corrupt_logprob": "-10.03126049041748",
+      "patched_logprob": "-10.00344467163086",
+      "effect": "0.02781581878662",
+      "clean_corrupt_contrast": "10.011612163856625088",
+      "normalized_effect": "0.0027783556066064113358718298073213721867366254373607"
+    },
+    {
+      "layer": 10,
+      "clean_logprob": "-0.019648326560854912",
+      "corrupt_logprob": "-10.03126049041748",
+      "patched_logprob": "-10.047618865966797",
+      "effect": "-0.016358375549317",
+      "clean_corrupt_contrast": "10.011612163856625088",
+      "normalized_effect": "-0.0016339401968019809154015234079508408795050175408917"
+    },
+    {
+      "layer": 11,
+      "clean_logprob": "-0.019648326560854912",
+      "corrupt_logprob": "-10.03126049041748",
+      "patched_logprob": "-10.058773040771484",
+      "effect": "-0.027512550354004",
+      "clean_corrupt_contrast": "10.011612163856625088",
+      "normalized_effect": "-0.0027480639385261352025098840059661700653235179704363"
+    },
+    {
+      "layer": 12,
+      "clean_logprob": "-0.019648326560854912",
+      "corrupt_logprob": "-10.03126049041748",
+      "patched_logprob": "-10.044280052185059",
+      "effect": "-0.013019561767579",
+      "clean_corrupt_contrast": "10.011612163856625088",
+      "normalized_effect": "-0.0013004460774640781762026271587875477117872875963190"
+    },
+    {
+      "layer": 13,
+      "clean_logprob": "-0.019648326560854912",
+      "corrupt_logprob": "-10.03126049041748",
+      "patched_logprob": "-10.093527793884277",
+      "effect": "-0.062267303466797",
+      "clean_corrupt_contrast": "10.011612163856625088",
+      "normalized_effect": "-0.0062195081519029487481015817653181290825583454362442"
+    },
+    {
+      "layer": 14,
+      "clean_logprob": "-0.019648326560854912",
+      "corrupt_logprob": "-10.03126049041748",
+      "patched_logprob": "-9.999886512756348",
+      "effect": "0.031373977661132",
+      "clean_corrupt_contrast": "10.011612163856625088",
+      "normalized_effect": "0.0031337587940528318683007416279363190901608827534238"
+    },
+    {
+      "layer": 15,
+      "clean_logprob": "-0.019648326560854912",
+      "corrupt_logprob": "-10.03126049041748",
+      "patched_logprob": "-10.038814544677734",
+      "effect": "-0.007554054260254",
+      "clean_corrupt_contrast": "10.011612163856625088",
+      "normalized_effect": "-0.00075452925429185458461348366244860808954095306576445"
+    },
+    {
+      "layer": 16,
+      "clean_logprob": "-0.019648326560854912",
+      "corrupt_logprob": "-10.03126049041748",
+      "patched_logprob": "-10.053304672241211",
+      "effect": "-0.022044181823731",
+      "clean_corrupt_contrast": "10.011612163856625088",
+      "normalized_effect": "-0.0022018613449004447148859114464751685764241086721375"
+    },
+    {
+      "layer": 17,
+      "clean_logprob": "-0.019648326560854912",
+      "corrupt_logprob": "-10.03126049041748",
+      "patched_logprob": "-10.485053062438965",
+      "effect": "-0.453792572021485",
+      "clean_corrupt_contrast": "10.011612163856625088",
+      "normalized_effect": "-0.045326623184599792554484050728027922634432419803558"
+    },
+    {
+      "layer": 18,
+      "clean_logprob": "-0.019648326560854912",
+      "corrupt_logprob": "-10.03126049041748",
+      "patched_logprob": "-9.33312702178955",
+      "effect": "0.69813346862793",
+      "clean_corrupt_contrast": "10.011612163856625088",
+      "normalized_effect": "0.069732372489247364413705734697999333257654246561551"
+    },
+    {
+      "layer": 19,
+      "clean_logprob": "-0.019648326560854912",
+      "corrupt_logprob": "-10.03126049041748",
+      "patched_logprob": "-7.619877815246582",
+      "effect": "2.411382675170898",
+      "clean_corrupt_contrast": "10.011612163856625088",
+      "normalized_effect": "0.24085857858900486644037399378562866736775272640780"
+    },
+    {
+      "layer": 20,
+      "clean_logprob": "-0.019648326560854912",
+      "corrupt_logprob": "-10.03126049041748",
+      "patched_logprob": "-7.6826252937316895",
+      "effect": "2.3486351966857905",
+      "clean_corrupt_contrast": "10.011612163856625088",
+      "normalized_effect": "0.23459110862930796402709207763147261007366261315551"
+    },
+    {
+      "layer": 21,
+      "clean_logprob": "-0.019648326560854912",
+      "corrupt_logprob": "-10.03126049041748",
+      "patched_logprob": "-0.6184443235397339",
+      "effect": "9.4128161668777461",
+      "clean_corrupt_contrast": "10.011612163856625088",
+      "normalized_effect": "0.94018985282504055032350763166249479959588840157477"
+    },
+    {
+      "layer": 22,
+      "clean_logprob": "-0.019648326560854912",
+      "corrupt_logprob": "-10.03126049041748",
+      "patched_logprob": "-8.182426452636719",
+      "effect": "1.848834037780761",
+      "clean_corrupt_contrast": "10.011612163856625088",
+      "normalized_effect": "0.18466896315214052835747357570781007717624094407817"
+    },
+    {
+      "layer": 23,
+      "clean_logprob": "-0.019648326560854912",
+      "corrupt_logprob": "-10.03126049041748",
+      "patched_logprob": "-12.397492408752441",
+      "effect": "-2.366231918334961",
+      "clean_corrupt_contrast": "10.011612163856625088",
+      "normalized_effect": "-0.23634873980410488859311794208260024331798655425990"
+    }
+  ],
+  "selected_neurons": [
+    {
+      "layer": 21,
+      "neuron": 4090,
+      "clean_logprob": "-0.019648326560854912",
+      "corrupt_logprob": "-10.03126049041748",
+      "patched_logprob": "-4.281994819641113",
+      "effect": "5.749265670776367",
+      "clean_corrupt_contrast": "10.011612163856625088",
+      "normalized_effect": "0.57425972727270155546777207195033478522709750846901"
+    },
+    {
+      "layer": 21,
+      "neuron": 1507,
+      "clean_logprob": "-0.019648326560854912",
+      "corrupt_logprob": "-10.03126049041748",
+      "patched_logprob": "-9.935534477233887",
+      "effect": "0.095726013183593",
+      "clean_corrupt_contrast": "10.011612163856625088",
+      "normalized_effect": "0.0095614983498040225307005107581777478678916180078385"
+    },
+    {
+      "layer": 21,
+      "neuron": 535,
+      "clean_logprob": "-0.019648326560854912",
+      "corrupt_logprob": "-10.03126049041748",
+      "patched_logprob": "-10.030999183654785",
+      "effect": "0.000261306762695",
+      "clean_corrupt_contrast": "10.011612163856625088",
+      "normalized_effect": "0.000026100368094396963295980686403427928559817419207371"
+    }
+  ],
+  "counts": {
+    "layers_checked": 24,
+    "positive_layers": 7,
+    "neuron_interventions": 8,
+    "signed_files": 8,
+    "code_files": 73,
+    "canonical_loader_receipts": 1
+  },
+  "source_cache_unchanged": true,
+  "host_observations": {
+    "samples": 5,
+    "samples_with_violations": 0,
+    "violation_counts": {},
+    "positive_paging_pages": 0,
+    "limit": "Stable protected identities do not prove absence of workload interference."
+  },
+  "evidence_sha256": {
+    "independent_audit": "96afbf141540a55714c5699d5eb864acef11c19644005caa3004e467da75a878",
+    "freeze": "1a92c386c110ca8bd4ffe21bb12f154b74857f319a7eccb9b6b552d00cf7d574",
+    "localization": "42a8f199711cba3ab4479a1de02eb11b38b2978bd4aec45443b202e5e6835730",
+    "fingerprint": "78ffba07863ab59c7552000b59a06d43b7d7e7a16fc793ebaeedf558d56acc10",
+    "signed_report": "bb012255742466d18e1d3b2451e38dbeb57b699bf76043513162f1c34ec581ca",
+    "signature": "80dcd30872097cb5e7ab5aba38d80e16dca11890638cd0fdf5226a183becf67a",
+    "recovery_transport_receipt": "bc94ee2a2f9372bffbecfd51d4a39aa657c2cc97b3bf75e456e08de3546ef2ea"
+  },
+  "limits": [
+    "Intervention-dependent mediation; uncalibrated scores are not memory-location probabilities. Only the best positive layer receives bounded channel tests; rankings need not predict edit efficacy.",
+    "First answer-token log-probability is not full-answer recoverability.",
+    "One mapping prompt pair does not establish general localization or information deletion.",
+    "Signatures authenticate preserved artifacts, not scientific truth.",
+    "Unsigned runner summary is transport-bound and corroborated by signed service evidence.",
+    "Original collection omitted one signed SVG; separate hash-verified readback completed a new recovery collection. Original failed receipts remain preserved.",
+    "No new paid model API used; existing compute electricity and subscription allocation were not measured."
+  ],
+  "weight_writes": false,
+  "training": false,
+  "heldout_evaluation": false,
+  "absence_proven": false,
+  "publication_state": "public_aggregate",
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "model_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+  "tokenizer": {
+    "repository": "Qwen/Qwen2.5-0.5B-Instruct",
+    "revision": "7ae557604adf67be50417f59c2c2f167def9a775"
+  }
+}
